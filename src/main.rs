@@ -50,8 +50,7 @@ impl Stream for StdoutStream {
 }
 
 struct ProcessBuffer {
-    lines: VecDeque<String>,
-    closed: bool,
+    lines: VecDeque<Option<String>>,
     rclosed: bool,
 }
 
@@ -59,7 +58,6 @@ impl ProcessBuffer {
     fn new() -> ProcessBuffer {
         return ProcessBuffer {
             lines: VecDeque::new(),
-            closed: false,
             rclosed: false,
         };
     }
@@ -108,13 +106,10 @@ impl ProcessStream {
                             match buffers.stdin.lines.pop_front() {
                                 None => {
                                 }
-                                Some(line) => {
+                                Some(maybe_line) => {
                                     cond.notify_all();
-                                    return Some(line);
+                                    return maybe_line;
                                 }
-                            }
-                            if buffers.stdin.closed {
-                                return None;
                             }
                             buffers = cond.wait(buffers).unwrap();
                         }
@@ -159,7 +154,7 @@ impl ProcessStream {
                             return;
                         }
                         if buffers.stdout.lines.len() < 1024 {
-                            buffers.stdout.lines.push_back(line);
+                            buffers.stdout.lines.push_back(Some(line));
                             cond.notify_all();
                             break;
                         }
@@ -168,7 +163,7 @@ impl ProcessStream {
                 }
                 {
                     let mut buffers = buffers.lock().unwrap();
-                    buffers.stdout.closed = true;
+                    buffers.stdout.lines.push_back(None);
                     cond.notify_all();
                 }
             });
@@ -186,14 +181,16 @@ impl Stream for ProcessStream {
         let (ref cond, ref buffers) = *self.buffers;
         let mut buffers = buffers.lock().unwrap();
         loop {
-            while let Some(line) = buffers.stdout.lines.pop_front() {
-                println!("[line ferry] Output line: {}", line);
-                self.os.write_line(line);
-            }
-
-            if buffers.stdout.closed {
-                // TODO: uh, oh, don't double close below...
-                self.os.close();
+            while let Some(maybe_line) = buffers.stdout.lines.pop_front() {
+                match maybe_line {
+                    Some(line) => {
+                        println!("[line ferry] Output line: {}", line);
+                        self.os.write_line(line);
+                    }
+                    None => {
+                        self.os.close();
+                    }
+                }
             }
 
             if buffers.stdin.rclosed {
@@ -202,7 +199,7 @@ impl Stream for ProcessStream {
             }
             if buffers.stdin.lines.len() < 1024 {
                 println!("[frontend] input ready");
-                buffers.stdin.lines.push_back(line);
+                buffers.stdin.lines.push_back(Some(line));
                 return;
             }
 
