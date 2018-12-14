@@ -60,8 +60,7 @@ struct ProcessStream {
 }
 
 impl ProcessStream {
-    fn new(os: Box<Stream>, args: &[&str]) -> ProcessStream
-    {
+    fn new(os: Box<Stream>, args: &[&str]) -> ProcessStream {
         let p = Command::new(args[0])
             .args(&args[1..])
             .stdin(Stdio::piped())
