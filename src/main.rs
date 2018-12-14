@@ -100,6 +100,7 @@ impl ProcessStream {
             let buffers = buffers.clone();
             thread::spawn(move|| {
                 let mut r = LineWriter::new(p_stdin.unwrap());
+                let (ref cond, ref buffers) = *buffers;
                 loop {
                     fn read_line(cond: &Condvar, buffers: &Mutex<ProcessBuffers>) -> Option<String> {
                         let mut buffers = buffers.lock().unwrap();
@@ -118,7 +119,6 @@ impl ProcessStream {
                             buffers = cond.wait(buffers).unwrap();
                         }
                     }
-                    let (ref cond, ref buffers) = *buffers;
                     match read_line(cond, buffers) {
                         Some(line) => {
                             println!("[backend] input line {}", line);
@@ -144,15 +144,35 @@ impl ProcessStream {
             });
         }
 
-        //let p_stdout = p.stdout;
-        //let stdout_tx_2 = stdout_tx.clone();
-        //thread::spawn(move|| {
-        //    let r = BufReader::new(p_stdout.unwrap());
-        //    for line in r.lines() {
-        //        stdout_tx_2.send(ChannelElement::Line(line.unwrap())).unwrap();
-        //    }
-        //    stdout_tx_2.send(ChannelElement::End).unwrap();
-        //});
+        {
+            let p_stdout = p.stdout;
+            let buffers = buffers.clone();
+            thread::spawn(move|| {
+                let r = BufReader::new(p_stdout.unwrap());
+                let (ref cond, ref buffers) = *buffers;
+                for line in r.lines() {
+                    let line = line.unwrap();
+                    let mut buffers = buffers.lock().unwrap();
+                    loop {
+                        if buffers.stdout.rclosed {
+                            // drops r
+                            return;
+                        }
+                        if buffers.stdout.lines.len() < 1024 {
+                            buffers.stdout.lines.push_back(line);
+                            cond.notify_all();
+                            break;
+                        }
+                        buffers = cond.wait(buffers).unwrap();
+                    }
+                }
+                {
+                    let mut buffers = buffers.lock().unwrap();
+                    buffers.stdout.closed = true;
+                    cond.notify_all();
+                }
+            });
+        }
 
         return ProcessStream {
             os: os,
