@@ -82,8 +82,9 @@ impl ProcessStream {
                 let e = stdin_rx.recv().unwrap();
                 match e {
                     Some(line) => {
-                        r.write_all(&line.into_bytes()).unwrap();
-                        r.write_all(b"\n").unwrap();
+                        let mut bytes = line.into_bytes();
+                        bytes.push(b'\n');
+                        r.write_all(&bytes).unwrap();
                         stdout_tx_1.send(ChannelElement::AllowInput).unwrap();
                     }
                     None => {
