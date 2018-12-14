@@ -15,6 +15,7 @@ use std::thread;
 
 trait Stream {
     fn write_line(&mut self, String);
+    fn rclosed(&mut self);
     fn close(&mut self);
 }
 
@@ -45,6 +46,10 @@ impl Stream for StdoutStream {
         println!("StdoutStream line: {}", line);
     }
 
+    fn rclosed(&mut self) {
+        return false;
+    }
+
     fn close(&mut self) {
     }
 }
@@ -64,6 +69,7 @@ impl ProcessBuffer {
 }
 
 struct ProcessBuffers {
+    os_closed: bool,
     stdin: ProcessBuffer,
     stdout: ProcessBuffer,
 }
@@ -71,6 +77,7 @@ struct ProcessBuffers {
 impl ProcessBuffers {
     fn new() -> ProcessBuffers {
         return ProcessBuffers {
+            os_closed: false,
             stdin: ProcessBuffer::new(),
             stdout: ProcessBuffer::new(),
         };
@@ -103,13 +110,9 @@ impl ProcessStream {
                     fn read_line(cond: &Condvar, buffers: &Mutex<ProcessBuffers>) -> Option<String> {
                         let mut buffers = buffers.lock().unwrap();
                         loop {
-                            match buffers.stdin.lines.pop_front() {
-                                None => {
-                                }
-                                Some(maybe_line) => {
-                                    cond.notify_all();
-                                    return maybe_line;
-                                }
+                            while let Some(maybe_line) = buffers.stdout.lines.pop_front() {
+                                cond.notify_all();
+                                return maybe_line;
                             }
                             buffers = cond.wait(buffers).unwrap();
                         }
@@ -182,6 +185,7 @@ impl Stream for ProcessStream {
         let mut buffers = buffers.lock().unwrap();
         loop {
             while let Some(maybe_line) = buffers.stdout.lines.pop_front() {
+                cond.notify_all();
                 match maybe_line {
                     Some(line) => {
                         println!("[line ferry] Output line: {}", line);
@@ -189,6 +193,7 @@ impl Stream for ProcessStream {
                     }
                     None => {
                         self.os.close();
+                        buffers.os_closed = true
                     }
                 }
             }
@@ -207,28 +212,31 @@ impl Stream for ProcessStream {
         }
     }
 
+    fn rclosed(&mut self) {
+        let (ref cond, ref buffers) = *self.buffers;
+        let mut buffers = buffers.lock().unwrap();
+        return buffers.stdin.rclosed;
+    }
+
     fn close(&mut self) {
-//        self.stdin_tx.send(None).unwrap();
-//        loop {
-//            let e = self.stdout_rx.recv().unwrap();
-//            match e {
-//                ChannelElement::Line(line) => {
-//                    println!("[eof ferry] Output line: {}", line);
-//                    self.os.write_line(line);
-//                }
-//                ChannelElement::AllowInput => {
-//                    println!("[eof ferry] AllowInput");
-//                    self.stdin_space += 1;
-//                }
-//                ChannelElement::EndInput => {
-//                    println!("[eof ferry] EndInput");
-//                    self.end_input = true;
-//                }
-//                ChannelElement::End => {
-//                    println!("[eof ferry] EOF");
-//                    return;
-//                }
-//            }
-//        }
+        let (ref cond, ref buffers) = *self.buffers;
+        let mut buffers = buffers.lock().unwrap();
+        buffers.stdin.lines.push_back(None);
+        loop {
+            while let Some(maybe_line) = buffers.stdout.lines.pop_front() {
+                match maybe_line {
+                    Some(line) => {
+                        println!("[line ferry] Output line: {}", line);
+                        self.os.write_line(line);
+                    }
+                    None => {
+                        self.os.close();
+                        buffers.os_closed = true
+                    }
+                }
+            }
+
+            ...
+        }
     }
 }
