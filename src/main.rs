@@ -19,7 +19,7 @@ trait Stream {
 
 fn main() {
     let os = StdoutStream::new();
-    let mut os = ProcessStream::new(Box::new(os), env::args());
+    let mut os = ProcessStream::new(Box::new(os), env::args().skip(1));
     let stdin = io::stdin();
     for line in stdin.lock().lines() {
         let line = line.unwrap();
