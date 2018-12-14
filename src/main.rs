@@ -1,4 +1,4 @@
-//#![feature(mpsc_select)]
+#![feature(mpsc_select)]
 
 use std::io::BufRead;
 use std::io::BufReader;
@@ -26,6 +26,16 @@ fn main() {
         stdout_tx.send(None).unwrap();
     });
 
-    //std::select! {
-    //}
+    std::select! {
+        e = stdout_rx.recv() => {
+            match(e) {
+                Some(line) => {
+                    println!("Line: {}", line)
+                }
+                None => {
+                    println!("EOF")
+                }
+            }
+        }
+    }
 }
