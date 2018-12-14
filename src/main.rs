@@ -1,3 +1,5 @@
+use std::env;
+use std::ffi::OsStr;
 use std::io::BufRead;
 use std::io::BufReader;
 use std::io::LineWriter;
@@ -17,7 +19,7 @@ trait Stream {
 
 fn main() {
     let os = StdoutStream::new();
-    let mut os = ProcessStream::new(Box::new(os), &["cat"]);
+    let mut os = ProcessStream::new(Box::new(os), env::args());
     let stdin = io::stdin();
     for line in stdin.lock().lines() {
         let line = line.unwrap();
@@ -60,9 +62,10 @@ struct ProcessStream {
 }
 
 impl ProcessStream {
-    fn new(os: Box<Stream>, args: &[&str]) -> ProcessStream {
-        let p = Command::new(args[0])
-            .args(&args[1..])
+    fn new<I, S>(os: Box<Stream>, args: I) -> ProcessStream where I: IntoIterator<Item = S>, S: AsRef<OsStr> {
+        let mut args = args.into_iter();
+        let p = Command::new(args.next().unwrap())
+            .args(args)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()
