@@ -183,38 +183,31 @@ impl ProcessStream {
 
 impl Stream for ProcessStream {
     fn write_line(&mut self, line: String) {
-//        loop {
-//            if self.end_input {
-//                println!("[frontend] input dropped");
-//                return;
-//            }
-//            if self.stdin_space > 0 {
-//                println!("[frontend] input ready");
-//                break;
-//            }
-//
-//            let e = self.stdout_rx.recv().unwrap();
-//            match e {
-//                ChannelElement::Line(line) => {
-//                    println!("[line ferry] Output line: {}", line);
-//                    self.os.write_line(line);
-//                }
-//                ChannelElement::EndInput => {
-//                    println!("[line ferry] EndInput");
-//                    self.end_input = true;
-//                }
-//                ChannelElement::AllowInput => {
-//                    println!("[line ferry] AllowInput");
-//                    self.stdin_space += 1;
-//                }
-//                ChannelElement::End => {
-//                    println!("[line ferry] EOF");
-//                }
-//            }
-//        }
-//
-//        self.stdin_space -= 1;
-//        self.stdin_tx.send(Some(line)).unwrap();
+        let (ref cond, ref buffers) = *self.buffers;
+        let mut buffers = buffers.lock().unwrap();
+        loop {
+            while let Some(line) = buffers.stdout.lines.pop_front() {
+                println!("[line ferry] Output line: {}", line);
+                self.os.write_line(line);
+            }
+
+            if buffers.stdout.closed {
+                // TODO: uh, oh, don't double close below...
+                self.os.close();
+            }
+
+            if buffers.stdin.rclosed {
+                println!("[frontend] input dropped");
+                return;
+            }
+            if buffers.stdin.lines.len() < 1024 {
+                println!("[frontend] input ready");
+                buffers.stdin.lines.push_back(line);
+                return;
+            }
+
+            buffers = cond.wait(buffers).unwrap();
+        }
     }
 
     fn close(&mut self) {
