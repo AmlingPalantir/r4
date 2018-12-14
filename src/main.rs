@@ -1,23 +1,31 @@
-#![feature(mpsc_select)]
+//#![feature(mpsc_select)]
 
+use std::io::BufRead;
+use std::io::BufReader;
 use std::process::Command;
 use std::process::Stdio;
-use std::select;
+use std::sync::mpsc;
+use std::thread;
 
 fn main() {
     println!("Hello, world!");
-    let p = Command::new("cat")
+    let p = Command::new("yes")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
-        .spawn();
+        .spawn()
+        .unwrap();
 
-    let (stdin_tx, stdin_rx) = mpsc::channel()
-    let (stdout_tx, stdout_rx) = mpsc::channel()
+    //let (stdin_tx, stdin_rx) = mpsc::channel();
+    let (stdout_tx, stdout_rx) = mpsc::channel();
 
     thread::spawn(move|| {
-        ...
+        let r = BufReader::new(p.stdout.unwrap());
+        for line in r.lines() {
+            stdout_tx.send(Some(line)).unwrap();
+        }
+        stdout_tx.send(None).unwrap();
     });
 
-    select! {
-    }
+    //std::select! {
+    //}
 }
