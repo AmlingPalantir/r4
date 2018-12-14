@@ -37,7 +37,7 @@ fn main() {
                 Some(line) => {
                     r.write_all(&line.into_bytes()).unwrap();
                     r.write_all(b"\n").unwrap();
-                    stdout_tx_1.send(ChannelElement::AllowInput).unwrap()
+                    stdout_tx_1.send(ChannelElement::AllowInput).unwrap();
                 }
                 None => {
                     break 'E;
@@ -58,23 +58,26 @@ fn main() {
 
     let stdin = io::stdin();
     for line in stdin.lock().lines() {
+        let line = line.unwrap();
+        println!("Input line: {}", line);
         while stdin_space == 0 {
             let e = stdout_rx.recv().unwrap();
             match e {
                 ChannelElement::Line(line) => {
-                    println!("Line: {}", line);
+                    println!("[line ferry] Output line: {}", line);
                 }
                 ChannelElement::AllowInput => {
+                    println!("[line ferry] AllowInput");
                     stdin_space += 1;
                 }
                 ChannelElement::End => {
-                    println!("EOF");
+                    println!("[line ferry] EOF");
                 }
             };
         }
 
         stdin_space -= 1;
-        stdin_tx.send(Some(line.unwrap())).unwrap();
+        stdin_tx.send(Some(line)).unwrap();
     }
 
     stdin_tx.send(None).unwrap();
@@ -82,13 +85,14 @@ fn main() {
         let e = stdout_rx.recv().unwrap();
         match e {
             ChannelElement::Line(line) => {
-                println!("Line: {}", line);
+                println!("[eof ferry] Output line: {}", line);
             }
             ChannelElement::AllowInput => {
+                println!("[eof ferry] AllowInput");
                 stdin_space += 1;
             }
             ChannelElement::End => {
-                println!("EOF");
+                println!("[eof ferry] EOF");
                 break 'E;
             }
         };
