@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use std::env;
 use std::ffi::OsStr;
 use std::io::BufRead;
@@ -7,9 +8,9 @@ use std::io::Write;
 use std::io;
 use std::process::Command;
 use std::process::Stdio;
-use std::sync::mpsc::Receiver;
-use std::sync::mpsc::Sender;
-use std::sync::mpsc;
+use std::sync::Arc;
+use std::sync::Condvar;
+use std::sync::Mutex;
 use std::thread;
 
 trait Stream {
@@ -48,19 +49,39 @@ impl Stream for StdoutStream {
     }
 }
 
-enum ChannelElement {
-    Line(String),
-    EndInput,
-    AllowInput,
-    End,
+struct ProcessBuffer {
+    lines: VecDeque<String>,
+    closed: bool,
+    rclosed: bool,
+}
+
+impl ProcessBuffer {
+    fn new() -> ProcessBuffer {
+        return ProcessBuffer {
+            lines: VecDeque::new(),
+            closed: false,
+            rclosed: false,
+        };
+    }
+}
+
+struct ProcessBuffers {
+    stdin: ProcessBuffer,
+    stdout: ProcessBuffer,
+}
+
+impl ProcessBuffers {
+    fn new() -> ProcessBuffers {
+        return ProcessBuffers {
+            stdin: ProcessBuffer::new(),
+            stdout: ProcessBuffer::new(),
+        };
+    }
 }
 
 struct ProcessStream {
     os: Box<Stream>,
-    end_input: bool,
-    stdin_space: u8,
-    stdin_tx: Sender<Option<String>>,
-    stdout_rx: Receiver<ChannelElement>,
+    buffers: Arc<(Condvar, Mutex<ProcessBuffers>)>,
 }
 
 impl ProcessStream {
@@ -73,116 +94,131 @@ impl ProcessStream {
             .spawn()
             .unwrap();
 
-        let (stdin_tx, stdin_rx) = mpsc::channel::<Option<String>>();
-        let (stdout_tx, stdout_rx) = mpsc::channel();
-
-        let p_stdin = p.stdin;
-        let stdout_tx_1 = stdout_tx.clone();
-        thread::spawn(move|| {
-            let mut r = LineWriter::new(p_stdin.unwrap());
-            loop {
-                let e = stdin_rx.recv().unwrap();
-                match e {
-                    Some(line) => {
-                        println!("[backend] input line {}", line);
-                        let mut bytes = line.into_bytes();
-                        bytes.push(b'\n');
-                        match r.write_all(&bytes) {
-                            Err(_) => {
-                                stdout_tx_1.send(ChannelElement::EndInput).unwrap();
-                                return;
+        let buffers = Arc::new((Condvar::new(), Mutex::new(ProcessBuffers::new())));
+        {
+            let p_stdin = p.stdin;
+            let buffers = buffers.clone();
+            thread::spawn(move|| {
+                let mut r = LineWriter::new(p_stdin.unwrap());
+                loop {
+                    fn read_line(cond: &Condvar, buffers: &Mutex<ProcessBuffers>) -> Option<String> {
+                        let mut buffers = buffers.lock().unwrap();
+                        loop {
+                            match buffers.stdin.lines.pop_front() {
+                                None => {
+                                }
+                                Some(line) => {
+                                    cond.notify_all();
+                                    return Some(line);
+                                }
                             }
-                            Ok(_) => {
-                                stdout_tx_1.send(ChannelElement::AllowInput).unwrap();
+                            if buffers.stdin.closed {
+                                return None;
                             }
+                            buffers = cond.wait(buffers).unwrap();
                         }
                     }
-                    None => {
-                        println!("[backend] eof");
-                        return;
+                    let (ref cond, ref buffers) = *buffers;
+                    match read_line(cond, buffers) {
+                        Some(line) => {
+                            println!("[backend] input line {}", line);
+                            let mut bytes = line.into_bytes();
+                            bytes.push(b'\n');
+                            match r.write_all(&bytes) {
+                                Err(_) => {
+                                    let mut buffers = buffers.lock().unwrap();
+                                    buffers.stdin.rclosed = true;
+                                    buffers.stdin.lines.clear();
+                                    cond.notify_all();
+                                }
+                                Ok(_) => {
+                                }
+                            }
+                        }
+                        None => {
+                            // drops r
+                            return;
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
 
-        let p_stdout = p.stdout;
-        let stdout_tx_2 = stdout_tx.clone();
-        thread::spawn(move|| {
-            let r = BufReader::new(p_stdout.unwrap());
-            for line in r.lines() {
-                stdout_tx_2.send(ChannelElement::Line(line.unwrap())).unwrap();
-            }
-            stdout_tx_2.send(ChannelElement::End).unwrap();
-        });
+        //let p_stdout = p.stdout;
+        //let stdout_tx_2 = stdout_tx.clone();
+        //thread::spawn(move|| {
+        //    let r = BufReader::new(p_stdout.unwrap());
+        //    for line in r.lines() {
+        //        stdout_tx_2.send(ChannelElement::Line(line.unwrap())).unwrap();
+        //    }
+        //    stdout_tx_2.send(ChannelElement::End).unwrap();
+        //});
 
         return ProcessStream {
             os: os,
-            end_input: false,
-            stdin_space: 1,
-            stdin_tx: stdin_tx,
-            stdout_rx: stdout_rx,
+            buffers: buffers,
         };
     }
 }
 
 impl Stream for ProcessStream {
     fn write_line(&mut self, line: String) {
-        loop {
-            if self.end_input {
-                println!("[frontend] input dropped");
-                return;
-            }
-            if self.stdin_space > 0 {
-                println!("[frontend] input ready");
-                break;
-            }
-
-            let e = self.stdout_rx.recv().unwrap();
-            match e {
-                ChannelElement::Line(line) => {
-                    println!("[line ferry] Output line: {}", line);
-                    self.os.write_line(line);
-                }
-                ChannelElement::EndInput => {
-                    println!("[line ferry] EndInput");
-                    self.end_input = true;
-                }
-                ChannelElement::AllowInput => {
-                    println!("[line ferry] AllowInput");
-                    self.stdin_space += 1;
-                }
-                ChannelElement::End => {
-                    println!("[line ferry] EOF");
-                }
-            }
-        }
-
-        self.stdin_space -= 1;
-        self.stdin_tx.send(Some(line)).unwrap();
+//        loop {
+//            if self.end_input {
+//                println!("[frontend] input dropped");
+//                return;
+//            }
+//            if self.stdin_space > 0 {
+//                println!("[frontend] input ready");
+//                break;
+//            }
+//
+//            let e = self.stdout_rx.recv().unwrap();
+//            match e {
+//                ChannelElement::Line(line) => {
+//                    println!("[line ferry] Output line: {}", line);
+//                    self.os.write_line(line);
+//                }
+//                ChannelElement::EndInput => {
+//                    println!("[line ferry] EndInput");
+//                    self.end_input = true;
+//                }
+//                ChannelElement::AllowInput => {
+//                    println!("[line ferry] AllowInput");
+//                    self.stdin_space += 1;
+//                }
+//                ChannelElement::End => {
+//                    println!("[line ferry] EOF");
+//                }
+//            }
+//        }
+//
+//        self.stdin_space -= 1;
+//        self.stdin_tx.send(Some(line)).unwrap();
     }
 
     fn close(&mut self) {
-        self.stdin_tx.send(None).unwrap();
-        loop {
-            let e = self.stdout_rx.recv().unwrap();
-            match e {
-                ChannelElement::Line(line) => {
-                    println!("[eof ferry] Output line: {}", line);
-                    self.os.write_line(line);
-                }
-                ChannelElement::AllowInput => {
-                    println!("[eof ferry] AllowInput");
-                    self.stdin_space += 1;
-                }
-                ChannelElement::EndInput => {
-                    println!("[eof ferry] EndInput");
-                    self.end_input = true;
-                }
-                ChannelElement::End => {
-                    println!("[eof ferry] EOF");
-                    return;
-                }
-            }
-        }
+//        self.stdin_tx.send(None).unwrap();
+//        loop {
+//            let e = self.stdout_rx.recv().unwrap();
+//            match e {
+//                ChannelElement::Line(line) => {
+//                    println!("[eof ferry] Output line: {}", line);
+//                    self.os.write_line(line);
+//                }
+//                ChannelElement::AllowInput => {
+//                    println!("[eof ferry] AllowInput");
+//                    self.stdin_space += 1;
+//                }
+//                ChannelElement::EndInput => {
+//                    println!("[eof ferry] EndInput");
+//                    self.end_input = true;
+//                }
+//                ChannelElement::End => {
+//                    println!("[eof ferry] EOF");
+//                    return;
+//                }
+//            }
+//        }
     }
 }
