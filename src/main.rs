@@ -50,12 +50,14 @@ impl Stream for StdoutStream {
 
 enum ChannelElement {
     Line(String),
+    EndInput,
     AllowInput,
     End,
 }
 
 struct ProcessStream {
     os: Box<Stream>,
+    end_input: bool,
     stdin_space: u8,
     stdin_tx: Sender<Option<String>>,
     stdout_rx: Receiver<ChannelElement>,
@@ -82,15 +84,24 @@ impl ProcessStream {
                 let e = stdin_rx.recv().unwrap();
                 match e {
                     Some(line) => {
+                        println!("[backend] input line {}", line);
                         let mut bytes = line.into_bytes();
                         bytes.push(b'\n');
-                        r.write_all(&bytes).unwrap();
-                        stdout_tx_1.send(ChannelElement::AllowInput).unwrap();
+                        match r.write_all(&bytes) {
+                            Err(_) => {
+                                stdout_tx_1.send(ChannelElement::EndInput).unwrap();
+                                return;
+                            }
+                            Ok(_) => {
+                                stdout_tx_1.send(ChannelElement::AllowInput).unwrap();
+                            }
+                        }
                     }
                     None => {
+                        println!("[backend] eof");
                         return;
                     }
-                };
+                }
             }
         });
 
@@ -106,6 +117,7 @@ impl ProcessStream {
 
         return ProcessStream {
             os: os,
+            end_input: false,
             stdin_space: 1,
             stdin_tx: stdin_tx,
             stdout_rx: stdout_rx,
@@ -115,12 +127,25 @@ impl ProcessStream {
 
 impl Stream for ProcessStream {
     fn write_line(&mut self, line: String) {
-        while self.stdin_space == 0 {
+        loop {
+            if self.end_input {
+                println!("[frontend] input dropped");
+                return;
+            }
+            if self.stdin_space > 0 {
+                println!("[frontend] input ready");
+                break;
+            }
+
             let e = self.stdout_rx.recv().unwrap();
             match e {
                 ChannelElement::Line(line) => {
                     println!("[line ferry] Output line: {}", line);
                     self.os.write_line(line);
+                }
+                ChannelElement::EndInput => {
+                    println!("[line ferry] EndInput");
+                    self.end_input = true;
                 }
                 ChannelElement::AllowInput => {
                     println!("[line ferry] AllowInput");
@@ -129,7 +154,7 @@ impl Stream for ProcessStream {
                 ChannelElement::End => {
                     println!("[line ferry] EOF");
                 }
-            };
+            }
         }
 
         self.stdin_space -= 1;
@@ -149,11 +174,15 @@ impl Stream for ProcessStream {
                     println!("[eof ferry] AllowInput");
                     self.stdin_space += 1;
                 }
+                ChannelElement::EndInput => {
+                    println!("[eof ferry] EndInput");
+                    self.end_input = true;
+                }
                 ChannelElement::End => {
                     println!("[eof ferry] EOF");
                     return;
                 }
-            };
+            }
         }
     }
 }
