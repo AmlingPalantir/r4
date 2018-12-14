@@ -2,6 +2,7 @@ use std::io::BufRead;
 use std::io::BufReader;
 use std::io::LineWriter;
 use std::io::Write;
+use std::io;
 use std::process::Command;
 use std::process::Stdio;
 use std::sync::mpsc;
@@ -15,16 +16,16 @@ enum ChannelElement {
 
 fn main() {
     println!("Hello, world!");
-    let p = Command::new("yes")
+    let p = Command::new("cat")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .spawn()
         .unwrap();
 
-    let (stdin_tx, stdin_rx) = mpsc::channel();
+    let (stdin_tx, stdin_rx) = mpsc::channel::<Option<String>>();
     let (stdout_tx, stdout_rx) = mpsc::channel();
 
-    let mut stdin_space = 1024;
+    let mut stdin_space = 1;
 
     let p_stdin = p.stdin;
     let stdout_tx_1 = stdout_tx.clone();
@@ -34,7 +35,7 @@ fn main() {
             let e = stdin_rx.recv().unwrap();
             match e {
                 Some(line) => {
-                    r.write_all(line).unwrap();
+                    r.write_all(&line.into_bytes()).unwrap();
                     r.write_all(b"\n").unwrap();
                     stdout_tx_1.send(ChannelElement::AllowInput).unwrap()
                 }
@@ -55,17 +56,40 @@ fn main() {
         stdout_tx_2.send(ChannelElement::End).unwrap();
     });
 
-    loop {
+    let stdin = io::stdin();
+    for line in stdin.lock().lines() {
+        while stdin_space == 0 {
+            let e = stdout_rx.recv().unwrap();
+            match e {
+                ChannelElement::Line(line) => {
+                    println!("Line: {}", line);
+                }
+                ChannelElement::AllowInput => {
+                    stdin_space += 1;
+                }
+                ChannelElement::End => {
+                    println!("EOF");
+                }
+            };
+        }
+
+        stdin_space -= 1;
+        stdin_tx.send(Some(line.unwrap())).unwrap();
+    }
+
+    stdin_tx.send(None).unwrap();
+    'E: loop {
         let e = stdout_rx.recv().unwrap();
         match e {
             ChannelElement::Line(line) => {
-                println!("Line: {}", line)
+                println!("Line: {}", line);
             }
             ChannelElement::AllowInput => {
                 stdin_space += 1;
             }
             ChannelElement::End => {
-                println!("EOF")
+                println!("EOF");
+                break 'E;
             }
         };
     }
