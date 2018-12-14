@@ -76,7 +76,7 @@ impl ProcessStream {
         let stdout_tx_1 = stdout_tx.clone();
         thread::spawn(move|| {
             let mut r = LineWriter::new(p_stdin.unwrap());
-            'E: loop {
+            loop {
                 let e = stdin_rx.recv().unwrap();
                 match e {
                     Some(line) => {
@@ -85,7 +85,7 @@ impl ProcessStream {
                         stdout_tx_1.send(ChannelElement::AllowInput).unwrap();
                     }
                     None => {
-                        break 'E;
+                        return;
                     }
                 };
             }
@@ -117,7 +117,7 @@ impl Stream for ProcessStream {
             match e {
                 ChannelElement::Line(line) => {
                     println!("[line ferry] Output line: {}", line);
-                    self.os.write_line(line)
+                    self.os.write_line(line);
                 }
                 ChannelElement::AllowInput => {
                     println!("[line ferry] AllowInput");
@@ -134,22 +134,23 @@ impl Stream for ProcessStream {
     }
 
     fn close(&mut self) {
-//    stdin_tx.send(None).unwrap();
-//    'E: loop {
-//        let e = stdout_rx.recv().unwrap();
-//        match e {
-//            ChannelElement::Line(line) => {
-//                println!("[eof ferry] Output line: {}", line);
-//            }
-//            ChannelElement::AllowInput => {
-//                println!("[eof ferry] AllowInput");
-//                stdin_space += 1;
-//            }
-//            ChannelElement::End => {
-//                println!("[eof ferry] EOF");
-//                break 'E;
-//            }
-//        };
-//    }
+        self.stdin_tx.send(None).unwrap();
+        loop {
+            let e = self.stdout_rx.recv().unwrap();
+            match e {
+                ChannelElement::Line(line) => {
+                    println!("[eof ferry] Output line: {}", line);
+                    self.os.write_line(line);
+                }
+                ChannelElement::AllowInput => {
+                    println!("[eof ferry] AllowInput");
+                    self.stdin_space += 1;
+                }
+                ChannelElement::End => {
+                    println!("[eof ferry] EOF");
+                    return;
+                }
+            };
+        }
     }
 }
