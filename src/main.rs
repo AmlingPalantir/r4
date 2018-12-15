@@ -15,7 +15,7 @@ use std::thread;
 
 trait Stream {
     fn write_line(&mut self, String);
-    fn rclosed(&mut self);
+    fn rclosed(&mut self) -> bool;
     fn close(&mut self);
 }
 
@@ -27,6 +27,9 @@ fn main() {
         let line = line.unwrap();
         println!("Input line: {}", line);
         os.write_line(line);
+        if os.rclosed() {
+            break;
+        }
     }
     os.close();
 }
@@ -46,7 +49,7 @@ impl Stream for StdoutStream {
         println!("StdoutStream line: {}", line);
     }
 
-    fn rclosed(&mut self) {
+    fn rclosed(&mut self) -> bool {
         return false;
     }
 
@@ -110,7 +113,7 @@ impl ProcessStream {
                     fn read_line(cond: &Condvar, buffers: &Mutex<ProcessBuffers>) -> Option<String> {
                         let mut buffers = buffers.lock().unwrap();
                         loop {
-                            while let Some(maybe_line) = buffers.stdout.lines.pop_front() {
+                            while let Some(maybe_line) = buffers.stdin.lines.pop_front() {
                                 cond.notify_all();
                                 return maybe_line;
                             }
@@ -119,7 +122,7 @@ impl ProcessStream {
                     }
                     match read_line(cond, buffers) {
                         Some(line) => {
-                            println!("[backend] input line {}", line);
+                            println!("[backend stdin] got line {}", line);
                             let mut bytes = line.into_bytes();
                             bytes.push(b'\n');
                             match r.write_all(&bytes) {
@@ -134,6 +137,7 @@ impl ProcessStream {
                             }
                         }
                         None => {
+                            println!("[backend stdin] got eof");
                             // drops r
                             return;
                         }
@@ -205,6 +209,7 @@ impl Stream for ProcessStream {
             if buffers.stdin.lines.len() < 1024 {
                 println!("[frontend] input ready");
                 buffers.stdin.lines.push_back(Some(line));
+                cond.notify_all();
                 return;
             }
 
@@ -212,9 +217,9 @@ impl Stream for ProcessStream {
         }
     }
 
-    fn rclosed(&mut self) {
-        let (ref cond, ref buffers) = *self.buffers;
-        let mut buffers = buffers.lock().unwrap();
+    fn rclosed(&mut self) -> bool {
+        let (_, ref buffers) = *self.buffers;
+        let buffers = buffers.lock().unwrap();
         return buffers.stdin.rclosed;
     }
 
@@ -224,6 +229,7 @@ impl Stream for ProcessStream {
         buffers.stdin.lines.push_back(None);
         loop {
             while let Some(maybe_line) = buffers.stdout.lines.pop_front() {
+                cond.notify_all();
                 match maybe_line {
                     Some(line) => {
                         println!("[line ferry] Output line: {}", line);
@@ -236,7 +242,11 @@ impl Stream for ProcessStream {
                 }
             }
 
-            ...
+            if buffers.os_closed {
+                return;
+            }
+
+            buffers = cond.wait(buffers).unwrap();
         }
     }
 }
