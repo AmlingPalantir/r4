@@ -97,7 +97,7 @@ struct ProcessStream {
 impl ProcessStream {
     fn new<I, S>(os: Box<Stream>, args: I) -> ProcessStream where I: IntoIterator<Item = S>, S: AsRef<OsStr> {
         let mut args = args.into_iter();
-        let p = Command::new(args.next().unwrap())
+        let mut p = Command::new(args.next().unwrap())
             .args(args)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -106,10 +106,10 @@ impl ProcessStream {
 
         let buffers = Arc::new((Condvar::new(), Mutex::new(ProcessBuffers::new())));
         {
-            let p_stdin = p.stdin;
+            let p_stdin = p.stdin.take().unwrap();
             let buffers = buffers.clone();
             thread::spawn(move|| {
-                let mut r = LineWriter::new(p_stdin.unwrap());
+                let mut r = LineWriter::new(p_stdin);
                 let (ref cond, ref buffers) = *buffers;
                 loop {
                     fn read_line(cond: &Condvar, buffers: &Mutex<ProcessBuffers>) -> Option<String> {
@@ -149,10 +149,10 @@ impl ProcessStream {
         }
 
         {
-            let p_stdout = p.stdout;
+            let p_stdout = p.stdout.take().unwrap();
             let buffers = buffers.clone();
             thread::spawn(move|| {
-                let r = BufReader::new(p_stdout.unwrap());
+                let r = BufReader::new(p_stdout);
                 let (ref cond, ref buffers) = *buffers;
                 for line in r.lines() {
                     let line = line.unwrap();
