@@ -6,6 +6,7 @@ use std::io::BufReader;
 use std::io::LineWriter;
 use std::io::Write;
 use std::io;
+use std::process::Child;
 use std::process::Command;
 use std::process::Stdio;
 use std::sync::Arc;
@@ -89,6 +90,7 @@ impl ProcessBuffers {
 
 struct ProcessStream {
     os: Box<Stream>,
+    p: Child,
     buffers: Arc<(Condvar, Mutex<ProcessBuffers>)>,
 }
 
@@ -178,6 +180,7 @@ impl ProcessStream {
 
         return ProcessStream {
             os: os,
+            p: p,
             buffers: buffers,
         };
     }
@@ -243,10 +246,12 @@ impl Stream for ProcessStream {
             }
 
             if buffers.os_closed {
-                return;
+                break;
             }
 
             buffers = cond.wait(buffers).unwrap();
         }
+
+        self.p.wait().unwrap();
     }
 }
