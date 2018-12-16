@@ -63,7 +63,7 @@ impl Stream for StdoutStream {
 struct ProcessStream {
     os: Box<Stream>,
     p: Child,
-    bgop: BackgroundOp<Arc<str>>,
+    bgop: Arc<BackgroundOp<Arc<str>>>,
 }
 
 impl ProcessStream {
@@ -76,7 +76,7 @@ impl ProcessStream {
             .spawn()
             .unwrap();
 
-        let bgop = BackgroundOp::<Arc<str>>::new();
+        let bgop = Arc::new(BackgroundOp::<Arc<str>>::new());
         {
             let p_stdin = p.stdin.take().unwrap();
             let bgop = bgop.clone();

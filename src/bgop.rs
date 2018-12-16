@@ -1,7 +1,6 @@
 use std::collections::VecDeque;
 use wns::WaitNotifyState;
 
-#[derive(Clone)]
 struct OneBuffer<E> {
     buf: VecDeque<Option<E>>,
     rclosed: bool,
@@ -16,7 +15,6 @@ impl<E> OneBuffer<E> {
     }
 }
 
-#[derive(Clone)]
 struct TwoBuffers<E> {
     os_closed: bool,
     fe_to_be: OneBuffer<E>,
@@ -33,7 +31,6 @@ impl<E> TwoBuffers<E> {
     }
 }
 
-#[derive(Clone)]
 pub struct BackgroundOp<E> where E: Clone {
     wns: WaitNotifyState<TwoBuffers<E>>,
 }
