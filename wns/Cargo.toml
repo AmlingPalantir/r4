@@ -1,7 +1,4 @@
 [package]
-name = "r4"
+name = "wns"
 version = "1.0.0"
 authors = ["Keith Amling <me@amling2.org>"]
-
-[dependencies]
-wns = { path = "../wns" }

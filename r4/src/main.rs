@@ -1,6 +1,7 @@
+extern crate wns;
+
 mod bgop;
 mod stream;
-mod wns;
 
 use std::env;
 use std::io::BufRead;

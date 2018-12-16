@@ -1,4 +1,11 @@
 [[package]]
 name = "r4"
 version = "1.0.0"
+dependencies = [
+ "wns 1.0.0",
+]
+
+[[package]]
+name = "wns"
+version = "1.0.0"
 
