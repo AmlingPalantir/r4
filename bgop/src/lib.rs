@@ -94,7 +94,11 @@ impl<E: Clone> BgopFe<E> {
         };
     }
 
-    fn ferry<F: FnMut(&mut BgopState<E>) -> bool>(&mut self, f: &mut F) {
+    fn ferry<R, F: FnMut(&mut BgopState<E>) -> Option<R>>(&mut self, f: &mut F) -> R {
+        enum Ret<E, R> {
+            Ferry(Vec<Option<E>>),
+            Return(R),
+        }
         loop {
             let ret = self.state.await(&mut |buffers| {
                 if buffers.be_to_fe.buf.len() > 0 {
@@ -105,17 +109,17 @@ impl<E: Clone> BgopFe<E> {
                         }
                         es.push(e);
                     }
-                    return (Some(Some(es)), true);
+                    return (Some(Ret::Ferry(es)), true);
                 }
 
-                if f(buffers) {
-                    return (Some(None), true);
+                if let Some(ret) = f(buffers) {
+                    return (Some(Ret::Return(ret)), true);
                 }
 
                 return (None, false);
             });
             match ret {
-                Some(es) => {
+                Ret::Ferry(es) => {
                     for e in es {
                         if !(self.os)(e) {
                             self.state.write(|buffers| {
@@ -126,28 +130,25 @@ impl<E: Clone> BgopFe<E> {
                         }
                     }
                 }
-                None => {
-                    return;
+                Ret::Return(ret) => {
+                    return ret;
                 }
             }
         }
     }
 
     pub fn write_line(&mut self, e: E) -> bool {
-        self.ferry(&mut |buffers| {
+        return self.ferry(&mut |buffers| {
             if buffers.fe_to_be.rclosed {
-                return true;
+                return Some(false);
             }
 
             if buffers.fe_to_be.buf.len() < 1024 {
                 buffers.fe_to_be.buf.push_back(Some(e.clone()));
-                return true;
+                return Some(true);
             }
 
-            return false;
-        });
-        return self.state.read(|buffers| {
-            return !buffers.fe_to_be.rclosed;
+            return None;
         });
     }
 
@@ -156,7 +157,10 @@ impl<E: Clone> BgopFe<E> {
             buffers.fe_to_be.buf.push_back(None);
         });
         self.ferry(&mut |buffers| {
-            return buffers.os_closed;
+            if buffers.os_closed {
+                return Some(());
+            }
+            return None;
         });
     }
 }
