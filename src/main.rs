@@ -49,15 +49,21 @@ impl StdoutStream {
     }
 }
 
-impl Stream for StdoutStream {
-    fn write_line(&mut self, line: Arc<str>) {
-        match writeln!(io::stdout(), "{}", line) {
+impl StdoutStream {
+    fn maybe_rclosed<T, E>(&mut self, r: Result<T, E>) {
+        match r {
             Err(_) => {
                 self.rclosed = true;
             }
             Ok(_) => {
             }
         }
+    }
+}
+
+impl Stream for StdoutStream {
+    fn write_line(&mut self, line: Arc<str>) {
+        self.maybe_rclosed(writeln!(io::stdout(), "{}", line));
     }
 
     fn rclosed(&mut self) -> bool {
@@ -67,7 +73,7 @@ impl Stream for StdoutStream {
     fn close(&mut self) {
         // This seems to be all we can do?  We hope/expect the process to be
         // donezo soon anyway...
-        io::stdout().flush().unwrap();
+        self.maybe_rclosed(io::stdout().flush());
     }
 }
 
