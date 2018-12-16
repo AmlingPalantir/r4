@@ -33,13 +33,15 @@ impl<E> TwoBuffers<E> {
     }
 }
 
-pub struct BackgroundOp<E> where E: Clone {
+pub struct BackgroundOp<E, OS> where E: Clone, OS: FnMut(Option<E>) -> bool {
+    os: OS,
     wns: WaitNotifyState<TwoBuffers<E>>,
 }
 
-impl<E> BackgroundOp<E> where E: Clone {
-    pub fn new() -> BackgroundOp<E> {
+impl<E, OS> BackgroundOp<E, OS> where E: Clone, OS: FnMut(Option<E>) -> bool {
+    pub fn new(os: OS) -> BackgroundOp<E, OS> {
         return BackgroundOp {
+            os: os,
             wns: WaitNotifyState::new(TwoBuffers::new()),
         }
     }
@@ -79,7 +81,7 @@ impl<E> BackgroundOp<E> where E: Clone {
         });
     }
 
-    fn fe_ferry<F, F2>(&self, f: &mut F, f2: &mut F2) where F: FnMut(Option<E>) -> bool, F2: FnMut(&mut TwoBuffers<E>) -> bool {
+    fn fe_ferry<F>(&mut self, f: &mut F) where F: FnMut(&mut TwoBuffers<E>) -> bool {
         loop {
             let ret = self.wns.await(&mut |buffers| {
                 if buffers.be_to_fe.buf.len() > 0 {
@@ -93,7 +95,7 @@ impl<E> BackgroundOp<E> where E: Clone {
                     return (Some(Some(es)), true);
                 }
 
-                if f2(buffers) {
+                if f(buffers) {
                     return (Some(None), true);
                 }
 
@@ -102,8 +104,9 @@ impl<E> BackgroundOp<E> where E: Clone {
             match ret {
                 Some(es) => {
                     for e in es {
-                        if !f(e) {
+                        if !(self.os)(e) {
                             self.fe_rclose();
+                            break;
                         }
                     }
                 }
@@ -114,8 +117,8 @@ impl<E> BackgroundOp<E> where E: Clone {
         }
     }
 
-    pub fn fe_write_line<F>(&self, e: E, f: &mut F) -> bool where F: FnMut(Option<E>) -> bool {
-        self.fe_ferry(f, &mut |buffers| {
+    pub fn fe_write_line(&mut self, e: E) -> bool {
+        self.fe_ferry(&mut |buffers| {
             if buffers.fe_to_be.rclosed {
                 return true;
             }
@@ -143,11 +146,11 @@ impl<E> BackgroundOp<E> where E: Clone {
         });
     }
 
-    pub fn fe_close<F>(&self, f: &mut F) where F: FnMut(Option<E>) -> bool {
+    pub fn fe_close(&mut self) {
         self.wns.write(|buffers| {
             buffers.fe_to_be.buf.push_back(None);
         });
-        self.fe_ferry(f, &mut |buffers| {
+        self.fe_ferry(&mut |buffers| {
             return buffers.os_closed;
         });
     }

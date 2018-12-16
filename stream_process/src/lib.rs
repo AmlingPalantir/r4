@@ -18,7 +18,7 @@ use stream::Stream;
 pub struct ProcessStream {
     os: Box<Stream>,
     p: Child,
-    bgop: Arc<BackgroundOp<Line>>,
+    bgop: Arc<BackgroundOp<Line, _>>,
 }
 
 impl ProcessStream {
