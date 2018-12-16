@@ -1,3 +1,6 @@
+extern crate bgop;
+extern crate stream;
+
 use bgop::BackgroundOp;
 use std::ffi::OsStr;
 use std::io::BufRead;

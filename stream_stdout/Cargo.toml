@@ -1,9 +1,7 @@
 [package]
-name = "r4"
+name = "stream_stdout"
 version = "1.0.0"
 authors = ["Keith Amling <me@amling2.org>"]
 
 [dependencies]
 stream = { path = "../stream" }
-stream_process = { path = "../stream_process" }
-stream_stdout = { path = "../stream_stdout" }

@@ -1,14 +1,14 @@
-extern crate bgop;
-
-mod stream;
+extern crate stream;
+extern crate stream_process;
+extern crate stream_stdout;
 
 use std::env;
 use std::io::BufRead;
 use std::io;
 use std::sync::Arc;
 use stream::Stream;
-use stream::process::ProcessStream;
-use stream::stdout::StdoutStream;
+use stream_process::ProcessStream;
+use stream_stdout::StdoutStream;
 
 fn main() {
     let os = StdoutStream::new();

@@ -1,3 +1,5 @@
+extern crate stream;
+
 use std::io::Write;
 use std::io;
 use stream::Line;
