@@ -164,7 +164,7 @@ impl ProcessStream {
                             return (Some(Ret::RClosed), false);
                         }
                         if buffers.stdout.lines.len() < 1024 {
-                            buffers.stdout.lines.push_back(Some(line));
+                            buffers.stdout.lines.push_back(Some(line.clone()));
                             return (Some(Ret::Written), true);
                         }
                         return (None, false);
@@ -202,7 +202,7 @@ impl Stream for ProcessStream {
             }
             let ret = self.buffers.await(|buffers| {
                 if buffers.stdout.lines.len() > 0 {
-                    let ret = Vec::new();
+                    let mut ret = Vec::new();
                     while let Some(maybe_line) = buffers.stdout.lines.pop_front() {
                         ret.push(maybe_line);
                     }
@@ -216,7 +216,7 @@ impl Stream for ProcessStream {
 
                 if buffers.stdin.lines.len() < 1024 {
                     println!("[frontend] input ready");
-                    buffers.stdin.lines.push_back(Some(line));
+                    buffers.stdin.lines.push_back(Some(line.clone()));
                     return (Some(Ret::Written), true);
                 }
 
@@ -273,7 +273,7 @@ impl Stream for ProcessStream {
             }
             let ret = self.buffers.await(|buffers| {
                 if buffers.stdout.lines.len() > 0 {
-                    let ret = Vec::new();
+                    let mut ret = Vec::new();
                     while let Some(maybe_line) = buffers.stdout.lines.pop_front() {
                         ret.push(maybe_line);
                     }
