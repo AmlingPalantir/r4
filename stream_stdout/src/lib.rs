@@ -10,7 +10,7 @@ pub struct StdoutStream {
 }
 
 impl StdoutStream {
-    pub fn new() -> StdoutStream {
+    pub fn new() -> Self {
         return StdoutStream {
             rclosed: false,
         };

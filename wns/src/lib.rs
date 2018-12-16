@@ -7,7 +7,7 @@ pub struct WaitNotifyState<S> {
 }
 
 impl<S> WaitNotifyState<S> {
-    pub fn new(s: S) -> WaitNotifyState<S> {
+    pub fn new(s: S) -> Self {
         return WaitNotifyState {
             c: Condvar::new(),
             m: Mutex::new(s),

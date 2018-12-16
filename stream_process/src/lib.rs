@@ -21,7 +21,7 @@ pub struct ProcessStream {
 }
 
 impl ProcessStream {
-    pub fn new<I: IntoIterator<Item = S>, S: AsRef<OsStr>>(mut os: Box<Stream>, args: I) -> ProcessStream {
+    pub fn new<I: IntoIterator<Item = S>, S: AsRef<OsStr>>(mut os: Box<Stream>, args: I) -> Self {
         let mut args = args.into_iter();
         let mut p = Command::new(args.next().unwrap())
             .args(args)

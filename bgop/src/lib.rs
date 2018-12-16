@@ -10,7 +10,7 @@ struct OneBuffer<E> {
 }
 
 impl<E> OneBuffer<E> {
-    fn new() -> OneBuffer<E> {
+    fn new() -> Self {
         return OneBuffer {
             buf: VecDeque::new(),
             rclosed: false,
@@ -25,7 +25,7 @@ struct BgopState<E> {
 }
 
 impl<E> BgopState<E> {
-    fn new() -> BgopState<E> {
+    fn new() -> Self {
         return BgopState {
             os_closed: false,
             fe_to_be: OneBuffer::new(),
@@ -81,7 +81,7 @@ pub struct BgopFe<E: Clone> {
 }
 
 impl<E: Clone> BgopFe<E> {
-    pub fn new<OS: FnMut(Option<E>) -> bool + 'static>(os: OS) -> BgopFe<E> {
+    pub fn new<OS: FnMut(Option<E>) -> bool + 'static>(os: OS) -> Self {
         return BgopFe {
             os: Box::new(os),
             state: Arc::new(WaitNotifyState::new(BgopState::new())),
