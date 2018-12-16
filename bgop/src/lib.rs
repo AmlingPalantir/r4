@@ -82,8 +82,12 @@ pub struct BgopFe<E: Clone> {
 
 impl<E: Clone> BgopFe<E> {
     pub fn new<OS: FnMut(Option<E>) -> bool + 'static>(os: OS) -> Self {
+        return Self::new_box(Box::new(os));
+    }
+
+    pub fn new_box(os: Box<FnMut(Option<E>) -> bool>) -> Self {
         return BgopFe {
-            os: Box::new(os),
+            os: os,
             state: Arc::new(WaitNotifyState::new(BgopState::new())),
         }
     }
