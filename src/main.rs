@@ -15,8 +15,10 @@ use std::process::Stdio;
 use std::sync::Arc;
 use std::thread;
 
+type Line = Arc<str>;
+
 trait Stream {
-    fn write_line(&mut self, Arc<str>);
+    fn write_line(&mut self, Line);
     fn rclosed(&mut self) -> bool;
     fn close(&mut self);
 }
@@ -62,7 +64,7 @@ impl StdoutStream {
 }
 
 impl Stream for StdoutStream {
-    fn write_line(&mut self, line: Arc<str>) {
+    fn write_line(&mut self, line: Line) {
         self.maybe_rclosed(writeln!(io::stdout(), "{}", line));
     }
 
@@ -80,7 +82,7 @@ impl Stream for StdoutStream {
 struct ProcessStream {
     os: Box<Stream>,
     p: Child,
-    bgop: Arc<BackgroundOp<Arc<str>>>,
+    bgop: Arc<BackgroundOp<Line>>,
 }
 
 impl ProcessStream {
@@ -93,7 +95,7 @@ impl ProcessStream {
             .spawn()
             .unwrap();
 
-        let bgop = Arc::new(BackgroundOp::<Arc<str>>::new());
+        let bgop = Arc::new(BackgroundOp::<Line>::new());
         {
             let p_stdin = p.stdin.take().unwrap();
             let bgop = bgop.clone();
@@ -147,7 +149,7 @@ impl ProcessStream {
     }
 }
 
-fn write_on_maybe_line(os: &mut Box<Stream>, bgop: &BackgroundOp<Arc<str>>, maybe_line: Option<Arc<str>>) {
+fn write_on_maybe_line(os: &mut Box<Stream>, bgop: &BackgroundOp<Line>, maybe_line: Option<Line>) {
     match maybe_line {
         Some(line) => {
             os.write_line(line);
@@ -162,7 +164,7 @@ fn write_on_maybe_line(os: &mut Box<Stream>, bgop: &BackgroundOp<Arc<str>>, mayb
 }
 
 impl Stream for ProcessStream {
-    fn write_line(&mut self, line: Arc<str>) {
+    fn write_line(&mut self, line: Line) {
         let os = &mut self.os;
         let bgop = &self.bgop;
         self.bgop.fe_write_line(line, &mut |x| write_on_maybe_line(os, bgop, x));
