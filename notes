@@ -1,3 +1,0 @@
-http://esr.ibiblio.org/?p=7294
-
-I guess we're doing a two threads per child to reify our pipes as "channels" (which we can actually select on maybe?)
