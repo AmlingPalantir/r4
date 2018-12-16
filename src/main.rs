@@ -159,6 +159,8 @@ impl ProcessStream {
                     let mut buffers = buffers.lock().unwrap();
                     loop {
                         if buffers.stdout.rclosed {
+                            buffers.stdout.lines.push_back(None);
+                            cond.notify_all();
                             // drops r
                             return;
                         }
@@ -197,6 +199,10 @@ impl Stream for ProcessStream {
                     Some(line) => {
                         println!("[line ferry] Output line: {}", line);
                         self.os.write_line(line);
+                        if self.os.rclosed() {
+                            buffers.stdout.rclosed = true;
+                            buffers.stdout.lines.clear();
+                        }
                     }
                     None => {
                         self.os.close();
