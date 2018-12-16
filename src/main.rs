@@ -63,7 +63,6 @@ impl Stream for StdoutStream {
 struct ProcessStream {
     os: Box<Stream>,
     p: Child,
-    os_closed: bool,
     bgop: BackgroundOp<Arc<str>>,
 }
 
@@ -129,32 +128,28 @@ impl ProcessStream {
         return ProcessStream {
             os: os,
             p: p,
-            os_closed: false,
             bgop: bgop,
         };
     }
 }
 
-impl ProcessStream {
-    fn write_on_maybe_line(&self, maybe_line: Option<Arc<str>>) {
-        match maybe_line {
-            Some(line) => {
-                self.os.write_line(line);
-                if self.os.rclosed() {
-                    self.bgop.fe_rclose();
-                }
+fn write_on_maybe_line(os: &mut Box<Stream>, bgop: &BackgroundOp<Arc<str>>, maybe_line: Option<Arc<str>>) {
+    match maybe_line {
+        Some(line) => {
+            os.write_line(line);
+            if os.rclosed() {
+                bgop.fe_rclose();
             }
-            None => {
-                self.os.close();
-                self.os_closed = true;
-            }
+        }
+        None => {
+            os.close();
         }
     }
 }
 
 impl Stream for ProcessStream {
     fn write_line(&mut self, line: Arc<str>) {
-        self.bgop.fe_write_line(line, |x| self.write_on_maybe_line(x));
+        self.bgop.fe_write_line(line, |x| write_on_maybe_line(&mut self.os, &self.bgop, x));
     }
 
     fn rclosed(&mut self) -> bool {
@@ -162,7 +157,7 @@ impl Stream for ProcessStream {
     }
 
     fn close(&mut self) {
-        self.bgop.fe_close(|x| self.write_on_maybe_line(x));
+        self.bgop.fe_close(|x| write_on_maybe_line(&mut self.os, &self.bgop, x));
         self.p.wait().unwrap();
     }
 }

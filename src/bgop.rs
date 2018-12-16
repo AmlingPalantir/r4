@@ -67,7 +67,7 @@ impl<E> BackgroundOp<E> where E: Clone {
                 return (Some(false), false);
             }
             if buffers.be_to_fe.buf.len() < 1024 {
-                buffers.be_to_fe.buf.push_back(Some(e));
+                buffers.be_to_fe.buf.push_back(Some(e.clone()));
                 return (Some(true), true);
             }
             return (None, false);
@@ -86,6 +86,9 @@ impl<E> BackgroundOp<E> where E: Clone {
                 if buffers.be_to_fe.buf.len() > 0 {
                     let mut es = Vec::new();
                     while let Some(e) = buffers.be_to_fe.buf.pop_front() {
+                        if e.is_none() {
+                            buffers.os_closed = true;
+                        }
                         es.push(e);
                     }
                     return (Some(Some(es)), true);
@@ -96,7 +99,7 @@ impl<E> BackgroundOp<E> where E: Clone {
                 }
 
                 if buffers.fe_to_be.buf.len() < 1024 {
-                    buffers.fe_to_be.buf.push_back(Some(e));
+                    buffers.fe_to_be.buf.push_back(Some(e.clone()));
                     return (Some(None), true);
                 }
 
@@ -137,6 +140,9 @@ impl<E> BackgroundOp<E> where E: Clone {
                 if buffers.be_to_fe.buf.len() > 0 {
                     let mut es = Vec::new();
                     while let Some(e) = buffers.be_to_fe.buf.pop_front() {
+                        if e.is_none() {
+                            buffers.os_closed = true;
+                        }
                         es.push(e);
                     }
                     return (Some(Some(es)), true);
