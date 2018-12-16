@@ -27,10 +27,10 @@ fn main() {
     let stdin = io::stdin();
     for line in stdin.lock().lines() {
         let line = line.unwrap();
-        println!("[main] Input line: {}", line);
+        eprintln!("[main] Input line: {}", line);
         os.write_line(Arc::from(line));
         if os.rclosed() {
-            println!("[main] got rclosed");
+            eprintln!("[main] got rclosed");
             break;
         }
     }
@@ -85,13 +85,13 @@ impl ProcessStream {
                 loop {
                     match bgop.be_read_line() {
                         Some(line) => {
-                            println!("[backend stdin] got line {}", line);
+                            eprintln!("[backend stdin] got line {}", line);
                             let mut bytes = Vec::new();
                             bytes.extend_from_slice(line.as_bytes());
                             bytes.push(b'\n');
                             match r.write_all(&bytes) {
                                 Err(_) => {
-                                    println!("[backend stdin] got rclosed");
+                                    eprintln!("[backend stdin] got rclosed");
                                     bgop.be_rclose();
                                 }
                                 Ok(_) => {
@@ -99,7 +99,7 @@ impl ProcessStream {
                             }
                         }
                         None => {
-                            println!("[backend stdin] got eof");
+                            eprintln!("[backend stdin] got eof");
                             // drops r
                             return;
                         }
@@ -116,7 +116,7 @@ impl ProcessStream {
                 for line in r.lines() {
                     let line = line.unwrap();
                     if !bgop.be_write_line(Arc::from(line)) {
-                        println!("[backend stdout] got rclosed");
+                        eprintln!("[backend stdout] got rclosed");
                         break;
                     }
                 }
