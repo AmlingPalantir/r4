@@ -18,15 +18,15 @@ impl<E> OneBuffer<E> {
     }
 }
 
-struct TwoBuffers<E> {
+struct BgopState<E> {
     os_closed: bool,
     fe_to_be: OneBuffer<E>,
     be_to_fe: OneBuffer<E>,
 }
 
-impl<E> TwoBuffers<E> {
-    fn new() -> TwoBuffers<E> {
-        return TwoBuffers {
+impl<E> BgopState<E> {
+    fn new() -> BgopState<E> {
+        return BgopState {
             os_closed: false,
             fe_to_be: OneBuffer::new(),
             be_to_fe: OneBuffer::new(),
@@ -34,25 +34,13 @@ impl<E> TwoBuffers<E> {
     }
 }
 
-struct BgopState<E: Clone> {
-    wns: WaitNotifyState<TwoBuffers<E>>,
-}
-
-impl<E: Clone> BgopState<E> {
-    fn new() -> BgopState<E> {
-        return BgopState {
-            wns: WaitNotifyState::new(TwoBuffers::new()),
-        };
-    }
-}
-
 pub struct BgopBe<E: Clone> {
-    state: Arc<BgopState<E>>,
+    state: Arc<WaitNotifyState<BgopState<E>>>,
 }
 
 impl<E: Clone> BgopBe<E> {
     pub fn read_line(&self) -> Option<E> {
-        return self.state.wns.await(&mut |buffers| {
+        return self.state.await(&mut |buffers| {
             if let Some(maybe) = buffers.fe_to_be.buf.pop_front() {
                 return (Some(maybe), true);
             }
@@ -61,14 +49,14 @@ impl<E: Clone> BgopBe<E> {
     }
 
     pub fn rclose(&self) {
-        self.state.wns.write(|buffers| {
+        self.state.write(|buffers| {
             buffers.fe_to_be.rclosed = true;
             buffers.fe_to_be.buf.clear();
         });
     }
 
     pub fn write_line(&self, e: E) -> bool {
-        return self.state.wns.await(&mut |buffers| {
+        return self.state.await(&mut |buffers| {
             if buffers.be_to_fe.rclosed {
                 return (Some(false), false);
             }
@@ -81,7 +69,7 @@ impl<E: Clone> BgopBe<E> {
     }
 
     pub fn close(&self) {
-        self.state.wns.write(|buffers| {
+        self.state.write(|buffers| {
             buffers.be_to_fe.buf.push_back(None);
         });
     }
@@ -89,14 +77,14 @@ impl<E: Clone> BgopBe<E> {
 
 pub struct BgopFe<E: Clone> {
     os: Box<FnMut(Option<E>) -> bool>,
-    state: Arc<BgopState<E>>,
+    state: Arc<WaitNotifyState<BgopState<E>>>,
 }
 
 impl<E: Clone> BgopFe<E> {
     pub fn new<OS: FnMut(Option<E>) -> bool + 'static>(os: OS) -> BgopFe<E> {
         return BgopFe {
             os: Box::new(os),
-            state: Arc::new(BgopState::new()),
+            state: Arc::new(WaitNotifyState::new(BgopState::new())),
         }
     }
 
@@ -106,9 +94,9 @@ impl<E: Clone> BgopFe<E> {
         };
     }
 
-    fn ferry<F: FnMut(&mut TwoBuffers<E>) -> bool>(&mut self, f: &mut F) {
+    fn ferry<F: FnMut(&mut BgopState<E>) -> bool>(&mut self, f: &mut F) {
         loop {
-            let ret = self.state.wns.await(&mut |buffers| {
+            let ret = self.state.await(&mut |buffers| {
                 if buffers.be_to_fe.buf.len() > 0 {
                     let mut es = Vec::new();
                     while let Some(e) = buffers.be_to_fe.buf.pop_front() {
@@ -130,7 +118,7 @@ impl<E: Clone> BgopFe<E> {
                 Some(es) => {
                     for e in es {
                         if !(self.os)(e) {
-                            self.state.wns.write(|buffers| {
+                            self.state.write(|buffers| {
                                 buffers.be_to_fe.rclosed = true;
                                 buffers.be_to_fe.buf.clear();
                             });
@@ -158,13 +146,13 @@ impl<E: Clone> BgopFe<E> {
 
             return false;
         });
-        return self.state.wns.read(|buffers| {
+        return self.state.read(|buffers| {
             return !buffers.fe_to_be.rclosed;
         });
     }
 
     pub fn close(&mut self) {
-        self.state.wns.write(|buffers| {
+        self.state.write(|buffers| {
             buffers.fe_to_be.buf.push_back(None);
         });
         self.ferry(&mut |buffers| {
