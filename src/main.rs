@@ -1,6 +1,7 @@
+mod bgop;
 mod wns;
 
-use std::collections::VecDeque;
+use bgop::BackgroundOp;
 use std::env;
 use std::ffi::OsStr;
 use std::io::BufRead;
@@ -13,7 +14,6 @@ use std::process::Command;
 use std::process::Stdio;
 use std::sync::Arc;
 use std::thread;
-use wns::WaitNotifyState;
 
 trait Stream {
     fn write_line(&mut self, Arc<str>);
@@ -60,42 +60,11 @@ impl Stream for StdoutStream {
     }
 }
 
-#[derive(Clone)]
-struct ProcessBuffer {
-    lines: VecDeque<Option<Arc<str>>>,
-    rclosed: bool,
-}
-
-impl ProcessBuffer {
-    fn new() -> ProcessBuffer {
-        return ProcessBuffer {
-            lines: VecDeque::new(),
-            rclosed: false,
-        };
-    }
-}
-
-#[derive(Clone)]
-struct ProcessBuffers {
-    os_closed: bool,
-    stdin: ProcessBuffer,
-    stdout: ProcessBuffer,
-}
-
-impl ProcessBuffers {
-    fn new() -> ProcessBuffers {
-        return ProcessBuffers {
-            os_closed: false,
-            stdin: ProcessBuffer::new(),
-            stdout: ProcessBuffer::new(),
-        };
-    }
-}
-
 struct ProcessStream {
     os: Box<Stream>,
     p: Child,
-    buffers: WaitNotifyState<ProcessBuffers>,
+    os_closed: bool,
+    bgop: BackgroundOp<Arc<str>>,
 }
 
 impl ProcessStream {
@@ -108,20 +77,14 @@ impl ProcessStream {
             .spawn()
             .unwrap();
 
-        let buffers = WaitNotifyState::new(ProcessBuffers::new());
+        let bgop = BackgroundOp::new();
         {
             let p_stdin = p.stdin.take().unwrap();
-            let buffers = buffers.clone();
+            let bgop = bgop.clone();
             thread::spawn(move|| {
                 let mut r = LineWriter::new(p_stdin);
                 loop {
-                    let maybe_line = buffers.await(|buffers| {
-                        if let Some(maybe_line) = buffers.stdin.lines.pop_front() {
-                            return (Some(maybe_line), true);
-                        }
-                        return (None, false);
-                    });
-                    match maybe_line {
+                    match bgop.be_read_line() {
                         Some(line) => {
                             println!("[backend stdin] got line {}", line);
                             let mut bytes = Vec::new();
@@ -130,10 +93,7 @@ impl ProcessStream {
                             match r.write_all(&bytes) {
                                 Err(_) => {
                                     println!("[backend stdin] got rclosed");
-                                    buffers.write(|buffers| {
-                                        buffers.stdin.rclosed = true;
-                                        buffers.stdin.lines.clear();
-                                    });
+                                    bgop.be_rclose();
                                 }
                                 Ok(_) => {
                                 }
@@ -151,29 +111,17 @@ impl ProcessStream {
 
         {
             let p_stdout = p.stdout.take().unwrap();
-            let buffers = buffers.clone();
+            let bgop = bgop.clone();
             thread::spawn(move|| {
                 let r = BufReader::new(p_stdout);
-                'LINE: for line in r.lines() {
+                for line in r.lines() {
                     let line = line.unwrap();
-                    let cont = buffers.await(|buffers| {
-                        if buffers.stdout.rclosed {
-                            println!("[backend stdout] got rclosed");
-                            return (Some(false), false);
-                        }
-                        if buffers.stdout.lines.len() < 1024 {
-                            buffers.stdout.lines.push_back(Some(Arc::from(line.clone())));
-                            return (Some(true), true);
-                        }
-                        return (None, false);
-                    });
-                    if !cont {
-                        break 'LINE;
+                    if !bgop.be_write_line(Arc::from(line.unwrap())) {
+                        println!("[backend stdout] got rclosed");
+                        break;
                     }
                 }
-                buffers.write(|buffers| {
-                    buffers.stdout.lines.push_back(None);
-                });
+                bgop.be_close();
                 // return drops r
             });
         }
@@ -181,115 +129,40 @@ impl ProcessStream {
         return ProcessStream {
             os: os,
             p: p,
-            buffers: buffers,
+            os_closed: false,
+            bgop: bgop,
         };
+    }
+}
+
+impl ProcessStream {
+    fn write_on_maybe_line(&self, maybe_line: Option<Arc<str>>) {
+        match maybe_line {
+            Some(line) => {
+                self.os.write_line(line);
+                if self.os.rclosed() {
+                    self.bgop.fe_rclose();
+                }
+            }
+            None => {
+                self.os.close();
+                self.os_closed = true;
+            }
+        }
     }
 }
 
 impl Stream for ProcessStream {
     fn write_line(&mut self, line: Arc<str>) {
-        loop {
-            let ret = self.buffers.await(|buffers| {
-                if buffers.stdout.lines.len() > 0 {
-                    let mut ret = Vec::new();
-                    while let Some(maybe_line) = buffers.stdout.lines.pop_front() {
-                        ret.push(maybe_line);
-                    }
-                    return (Some(Some(ret)), true);
-                }
-
-                if buffers.stdin.rclosed {
-                    println!("[frontend] input dropped");
-                    return (Some(None), false);
-                }
-
-                if buffers.stdin.lines.len() < 1024 {
-                    println!("[frontend] input ready");
-                    buffers.stdin.lines.push_back(Some(line.clone()));
-                    return (Some(None), true);
-                }
-
-                return (None, false);
-            });
-            match ret {
-                Some(maybe_lines) => {
-                    for maybe_line in maybe_lines {
-                        match maybe_line {
-                            Some(line) => {
-                                println!("[line ferry] Output line: {}", line);
-                                self.os.write_line(line);
-                                if self.os.rclosed() {
-                                    println!("[line ferry] got rclosed");
-                                    self.buffers.write(|buffers| {
-                                        buffers.stdout.rclosed = true;
-                                        buffers.stdout.lines.clear();
-                                    });
-                                }
-                            }
-                            None => {
-                                self.os.close();
-                                self.buffers.write(|buffers| {
-                                    buffers.os_closed = true;
-                                });
-                            }
-                        }
-                    }
-                }
-                None => {
-                    return;
-                }
-            }
-        }
+        self.bgop.fe_write_line(line, |x| self.write_on_maybe_line(x));
     }
 
     fn rclosed(&mut self) -> bool {
-        return self.buffers.read(|buffers| {
-            return buffers.stdin.rclosed;
-        });
+        return self.bgop.fe_rclosed();
     }
 
     fn close(&mut self) {
-        self.buffers.write(|buffers| {
-            buffers.stdin.lines.push_back(None);
-        });
-        loop {
-            let ret = self.buffers.await(|buffers| {
-                if buffers.stdout.lines.len() > 0 {
-                    let mut ret = Vec::new();
-                    while let Some(maybe_line) = buffers.stdout.lines.pop_front() {
-                        ret.push(maybe_line);
-                    }
-                    return (Some(Some(ret)), true);
-                }
-
-                if buffers.os_closed {
-                    return (Some(None), false);
-                }
-
-                return (None, false);
-            });
-            match ret {
-                Some(maybe_lines) => {
-                    for maybe_line in maybe_lines {
-                        match maybe_line {
-                            Some(line) => {
-                                println!("[line ferry] Output line: {}", line);
-                                self.os.write_line(line);
-                            }
-                            None => {
-                                self.os.close();
-                                self.buffers.write(|buffers| {
-                                    buffers.os_closed = true
-                                });
-                            }
-                        }
-                    }
-                }
-                None => {
-                    self.p.wait().unwrap();
-                    return;
-                }
-            }
-        }
+        self.bgop.fe_close(|x| self.write_on_maybe_line(x));
+        self.p.wait().unwrap();
     }
 }
