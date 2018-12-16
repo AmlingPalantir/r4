@@ -1,6 +1,6 @@
 mod bgop;
-mod wns;
 mod stream;
+mod wns;
 
 use bgop::BackgroundOp;
 use std::env;
@@ -17,6 +17,7 @@ use std::sync::Arc;
 use std::thread;
 use stream::Line;
 use stream::Stream;
+use stream::stdout::StdoutStream;
 
 fn main() {
     let os = StdoutStream::new();
@@ -32,46 +33,6 @@ fn main() {
         }
     }
     os.close();
-}
-
-struct StdoutStream {
-    rclosed: bool,
-}
-
-impl StdoutStream {
-    fn new() -> StdoutStream {
-        return StdoutStream {
-            rclosed: false,
-        };
-    }
-}
-
-impl StdoutStream {
-    fn maybe_rclosed<T, E>(&mut self, r: Result<T, E>) {
-        match r {
-            Err(_) => {
-                self.rclosed = true;
-            }
-            Ok(_) => {
-            }
-        }
-    }
-}
-
-impl Stream for StdoutStream {
-    fn write_line(&mut self, line: Line) {
-        self.maybe_rclosed(writeln!(io::stdout(), "{}", line));
-    }
-
-    fn rclosed(&mut self) -> bool {
-        return self.rclosed;
-    }
-
-    fn close(&mut self) {
-        // This seems to be all we can do?  We hope/expect the process to be
-        // donezo soon anyway...
-        self.maybe_rclosed(io::stdout().flush());
-    }
 }
 
 struct ProcessStream {

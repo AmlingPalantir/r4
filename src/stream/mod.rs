@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+pub mod stdout;
+
 pub type Line = Arc<str>;
 
 pub trait Stream {
