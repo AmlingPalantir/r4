@@ -86,10 +86,7 @@ impl ProcessStream {
                     match bgop.be_read_line() {
                         Some(line) => {
                             eprintln!("[backend stdin] got line {}", line);
-                            let mut bytes = Vec::new();
-                            bytes.extend_from_slice(line.as_bytes());
-                            bytes.push(b'\n');
-                            match r.write_all(&bytes) {
+                            match writeln!(r, "{}", line) {
                                 Err(_) => {
                                     eprintln!("[backend stdin] got rclosed");
                                     bgop.be_rclose();
