@@ -156,16 +156,13 @@ impl ProcessStream {
             thread::spawn(move|| {
                 let r = BufReader::new(p_stdout);
                 let (ref cond, ref buffers) = *buffers;
-                for line in r.lines() {
+                'LINE: for line in r.lines() {
                     let line = line.unwrap();
                     let mut buffers = buffers.lock().unwrap();
                     loop {
                         if buffers.stdout.rclosed {
                             println!("[backend stdout] got rclosed");
-                            buffers.stdout.lines.push_back(None);
-                            cond.notify_all();
-                            // drops r
-                            return;
+                            break 'LINE;
                         }
                         if buffers.stdout.lines.len() < 1024 {
                             buffers.stdout.lines.push_back(Some(line));
@@ -180,6 +177,7 @@ impl ProcessStream {
                     buffers.stdout.lines.push_back(None);
                     cond.notify_all();
                 }
+                // return drops r
             });
         }
 
