@@ -153,27 +153,27 @@ impl ProcessStream {
             thread::spawn(move|| {
                 let r = BufReader::new(p_stdout);
                 enum Ret {
-                    RClosed,
-                    Written,
+                    RClosed(),
+                    Written(),
                 }
                 'LINE: for line in r.lines() {
                     let line = line.unwrap();
                     let ret = buffers.await(|buffers| {
                         if buffers.stdout.rclosed {
                             println!("[backend stdout] got rclosed");
-                            return (Some(Ret::RClosed), false);
+                            return (Some(Ret::RClosed()), false);
                         }
                         if buffers.stdout.lines.len() < 1024 {
                             buffers.stdout.lines.push_back(Some(line.clone()));
-                            return (Some(Ret::Written), true);
+                            return (Some(Ret::Written()), true);
                         }
                         return (None, false);
                     });
                     match ret {
-                        RClosed => {
+                        Ret::RClosed() => {
                             break 'LINE;
                         }
-                        Written => {
+                        Ret::Written() => {
                         }
                     }
                 }
@@ -197,8 +197,8 @@ impl Stream for ProcessStream {
         loop {
             enum Ret {
                 MaybeLines(Vec<Option<String>>),
-                RClosed,
-                Written,
+                RClosed(),
+                Written(),
             }
             let ret = self.buffers.await(|buffers| {
                 if buffers.stdout.lines.len() > 0 {
@@ -211,13 +211,13 @@ impl Stream for ProcessStream {
 
                 if buffers.stdin.rclosed {
                     println!("[frontend] input dropped");
-                    return (Some(Ret::RClosed), false);
+                    return (Some(Ret::RClosed()), false);
                 }
 
                 if buffers.stdin.lines.len() < 1024 {
                     println!("[frontend] input ready");
                     buffers.stdin.lines.push_back(Some(line.clone()));
-                    return (Some(Ret::Written), true);
+                    return (Some(Ret::Written()), true);
                 }
 
                 return (None, false);
@@ -246,10 +246,10 @@ impl Stream for ProcessStream {
                         }
                     }
                 }
-                RClosed => {
+                Ret::RClosed() => {
                     return;
                 }
-                Written => {
+                Ret::Written() => {
                     return;
                 }
             }
@@ -269,7 +269,7 @@ impl Stream for ProcessStream {
         loop {
             enum Ret {
                 MaybeLines(Vec<Option<String>>),
-                Done,
+                Done(),
             }
             let ret = self.buffers.await(|buffers| {
                 if buffers.stdout.lines.len() > 0 {
@@ -281,7 +281,7 @@ impl Stream for ProcessStream {
                 }
 
                 if buffers.os_closed {
-                    return (Some(Ret::Done), false);
+                    return (Some(Ret::Done()), false);
                 }
 
                 return (None, false);
@@ -303,7 +303,7 @@ impl Stream for ProcessStream {
                         }
                     }
                 }
-                Done => {
+                Ret::Done() => {
                     self.p.wait().unwrap();
                     return;
                 }
