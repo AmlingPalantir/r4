@@ -79,7 +79,7 @@ impl<E> BackgroundOp<E> where E: Clone {
         });
     }
 
-    fn fe_ferry<F, F2>(&self, f: &mut F, f2: &mut F2) where F: FnMut(Option<E>), F2: FnMut(&mut TwoBuffers<E>) -> bool {
+    fn fe_ferry<F, F2>(&self, f: &mut F, f2: &mut F2) where F: FnMut(Option<E>) -> bool, F2: FnMut(&mut TwoBuffers<E>) -> bool {
         loop {
             let ret = self.wns.await(&mut |buffers| {
                 if buffers.be_to_fe.buf.len() > 0 {
@@ -102,7 +102,9 @@ impl<E> BackgroundOp<E> where E: Clone {
             match ret {
                 Some(es) => {
                     for e in es {
-                        f(e);
+                        if !f(e) {
+                            self.fe_rclose();
+                        }
                     }
                 }
                 None => {
@@ -112,7 +114,7 @@ impl<E> BackgroundOp<E> where E: Clone {
         }
     }
 
-    pub fn fe_write_line<F>(&self, e: E, f: &mut F) where F: FnMut(Option<E>) {
+    pub fn fe_write_line<F>(&self, e: E, f: &mut F) -> bool where F: FnMut(Option<E>) -> bool {
         self.fe_ferry(f, &mut |buffers| {
             if buffers.fe_to_be.rclosed {
                 return true;
@@ -125,6 +127,7 @@ impl<E> BackgroundOp<E> where E: Clone {
 
             return false;
         });
+        return !self.fe_rclosed();
     }
 
     pub fn fe_rclose(&self) {
@@ -140,7 +143,7 @@ impl<E> BackgroundOp<E> where E: Clone {
         });
     }
 
-    pub fn fe_close<F>(&self, f: &mut F) where F: FnMut(Option<E>) {
+    pub fn fe_close<F>(&self, f: &mut F) where F: FnMut(Option<E>) -> bool {
         self.wns.write(|buffers| {
             buffers.fe_to_be.buf.push_back(None);
         });
