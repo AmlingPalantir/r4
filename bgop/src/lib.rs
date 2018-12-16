@@ -34,11 +34,11 @@ impl<E> TwoBuffers<E> {
     }
 }
 
-struct BgopState<E> where E: Clone {
+struct BgopState<E: Clone> {
     wns: WaitNotifyState<TwoBuffers<E>>,
 }
 
-impl<E> BgopState<E> where E: Clone {
+impl<E: Clone> BgopState<E> {
     fn new() -> BgopState<E> {
         return BgopState {
             wns: WaitNotifyState::new(TwoBuffers::new()),
@@ -46,11 +46,11 @@ impl<E> BgopState<E> where E: Clone {
     }
 }
 
-pub struct BgopBe<E> where E: Clone {
+pub struct BgopBe<E: Clone> {
     state: Arc<BgopState<E>>,
 }
 
-impl<E> BgopBe<E> where E: Clone {
+impl<E: Clone> BgopBe<E> {
     pub fn read_line(&self) -> Option<E> {
         return self.state.wns.await(&mut |buffers| {
             if let Some(maybe) = buffers.fe_to_be.buf.pop_front() {
@@ -87,12 +87,12 @@ impl<E> BgopBe<E> where E: Clone {
     }
 }
 
-pub struct BgopFe<E> where E: Clone {
+pub struct BgopFe<E: Clone> {
     os: Box<FnMut(Option<E>) -> bool>,
     state: Arc<BgopState<E>>,
 }
 
-impl<E> BgopFe<E> where E: Clone {
+impl<E: Clone> BgopFe<E> {
     pub fn new<OS: FnMut(Option<E>) -> bool + 'static>(os: OS) -> BgopFe<E> {
         return BgopFe {
             os: Box::new(os),
@@ -106,7 +106,7 @@ impl<E> BgopFe<E> where E: Clone {
         };
     }
 
-    fn ferry<F>(&mut self, f: &mut F) where F: FnMut(&mut TwoBuffers<E>) -> bool {
+    fn ferry<F: FnMut(&mut TwoBuffers<E>) -> bool>(&mut self, f: &mut F) {
         loop {
             let ret = self.state.wns.await(&mut |buffers| {
                 if buffers.be_to_fe.buf.len() > 0 {
