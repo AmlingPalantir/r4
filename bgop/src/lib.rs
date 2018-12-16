@@ -87,17 +87,13 @@ impl<E> BgopBe<E> where E: Clone {
     }
 }
 
-trait BgopOs<E> {
-    fn write(&mut self, Option<E>) -> bool;
-}
-
 pub struct BgopFe<E> where E: Clone {
-    os: Box<BgopOs<E>>,
+    os: Box<FnMut(Option<E>) -> bool>,
     state: Arc<BgopState<E>>,
 }
 
 impl<E> BgopFe<E> where E: Clone {
-    pub fn new(os: Box<BgopOs<E>>) -> BgopFe<E> {
+    pub fn new(os: Box<FnMut(Option<E>) -> bool>) -> BgopFe<E> {
         return BgopFe {
             os: os,
             state: Arc::new(BgopState::new()),
