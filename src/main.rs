@@ -11,11 +11,12 @@ use std::io;
 use std::process::Child;
 use std::process::Command;
 use std::process::Stdio;
+use std::sync::Arc;
 use std::thread;
 use wns::WaitNotifyState;
 
 trait Stream {
-    fn write_line(&mut self, String);
+    fn write_line(&mut self, Arc<str>);
     fn rclosed(&mut self) -> bool;
     fn close(&mut self);
 }
@@ -27,7 +28,7 @@ fn main() {
     for line in stdin.lock().lines() {
         let line = line.unwrap();
         println!("[main] Input line: {}", line);
-        os.write_line(line);
+        os.write_line(Arc::from(line));
         if os.rclosed() {
             println!("[main] got rclosed");
             break;
@@ -47,7 +48,7 @@ impl StdoutStream {
 }
 
 impl Stream for StdoutStream {
-    fn write_line(&mut self, line: String) {
+    fn write_line(&mut self, line: Arc<str>) {
         println!("StdoutStream line: {}", line);
     }
 
@@ -61,7 +62,7 @@ impl Stream for StdoutStream {
 
 #[derive(Clone)]
 struct ProcessBuffer {
-    lines: VecDeque<Option<String>>,
+    lines: VecDeque<Option<Arc<str>>>,
     rclosed: bool,
 }
 
@@ -123,7 +124,8 @@ impl ProcessStream {
                     match maybe_line {
                         Some(line) => {
                             println!("[backend stdin] got line {}", line);
-                            let mut bytes = line.into_bytes();
+                            let mut bytes = Vec::new();
+                            bytes.extend_from_slice(line.as_bytes());
                             bytes.push(b'\n');
                             match r.write_all(&bytes) {
                                 Err(_) => {
@@ -164,7 +166,7 @@ impl ProcessStream {
                             return (Some(Ret::RClosed()), false);
                         }
                         if buffers.stdout.lines.len() < 1024 {
-                            buffers.stdout.lines.push_back(Some(line.clone()));
+                            buffers.stdout.lines.push_back(Some(Arc::from(line.clone())));
                             return (Some(Ret::Written()), true);
                         }
                         return (None, false);
@@ -193,10 +195,10 @@ impl ProcessStream {
 }
 
 impl Stream for ProcessStream {
-    fn write_line(&mut self, line: String) {
+    fn write_line(&mut self, line: Arc<str>) {
         loop {
             enum Ret {
-                MaybeLines(Vec<Option<String>>),
+                MaybeLines(Vec<Option<Arc<str>>>),
                 RClosed(),
                 Written(),
             }
@@ -268,7 +270,7 @@ impl Stream for ProcessStream {
         });
         loop {
             enum Ret {
-                MaybeLines(Vec<Option<String>>),
+                MaybeLines(Vec<Option<Arc<str>>>),
                 Done(),
             }
             let ret = self.buffers.await(|buffers| {
