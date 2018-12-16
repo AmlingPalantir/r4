@@ -1,7 +1,7 @@
 extern crate bgop;
 extern crate stream;
 
-use bgop::BackgroundOp;
+use bgop::BgopFe;
 use std::ffi::OsStr;
 use std::io::BufRead;
 use std::io::BufReader;
@@ -18,7 +18,7 @@ use stream::Stream;
 pub struct ProcessStream {
     os: Box<Stream>,
     p: Child,
-    bgop: Arc<BackgroundOp<Line, _>>,
+    bgop: BgopFe<Line, _>,
 }
 
 impl ProcessStream {
@@ -31,10 +31,10 @@ impl ProcessStream {
             .spawn()
             .unwrap();
 
-        let bgop = Arc::new(BackgroundOp::<Line>::new());
+        let bgop = BgopFe::new();
         {
             let p_stdin = p.stdin.take().unwrap();
-            let bgop = bgop.clone();
+            let bgop = bgop.be();
             thread::spawn(move|| {
                 let mut r = LineWriter::new(p_stdin);
                 loop {
@@ -62,7 +62,7 @@ impl ProcessStream {
 
         {
             let p_stdout = p.stdout.take().unwrap();
-            let bgop = bgop.clone();
+            let bgop = bgop.be();
             thread::spawn(move|| {
                 let r = BufReader::new(p_stdout);
                 for line in r.lines() {

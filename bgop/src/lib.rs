@@ -1,6 +1,7 @@
 extern crate wns;
 
 use std::collections::VecDeque;
+use std::sync::Arc;
 use wns::WaitNotifyState;
 
 struct OneBuffer<E> {
@@ -33,21 +34,25 @@ impl<E> TwoBuffers<E> {
     }
 }
 
-pub struct BackgroundOp<E, OS> where E: Clone, OS: FnMut(Option<E>) -> bool {
-    os: OS,
+struct BgopState<E> where E: Clone {
     wns: WaitNotifyState<TwoBuffers<E>>,
 }
 
-impl<E, OS> BackgroundOp<E, OS> where E: Clone, OS: FnMut(Option<E>) -> bool {
-    pub fn new(os: OS) -> BackgroundOp<E, OS> {
-        return BackgroundOp {
-            os: os,
+impl<E> BgopState<E> where E: Clone {
+    fn new() -> BgopState<E> {
+        return BgopState {
             wns: WaitNotifyState::new(TwoBuffers::new()),
-        }
+        };
     }
+}
 
-    pub fn be_read_line(&self) -> Option<E> {
-        return self.wns.await(&mut |buffers| {
+pub struct BgopBe<E> where E: Clone {
+    state: Arc<BgopState<E>>,
+}
+
+impl<E> BgopBe<E> where E: Clone {
+    pub fn read_line(&self) -> Option<E> {
+        return self.state.wns.await(&mut |buffers| {
             if let Some(maybe) = buffers.fe_to_be.buf.pop_front() {
                 return (Some(maybe), true);
             }
@@ -55,15 +60,15 @@ impl<E, OS> BackgroundOp<E, OS> where E: Clone, OS: FnMut(Option<E>) -> bool {
         });
     }
 
-    pub fn be_rclose(&self) {
-        self.wns.write(|buffers| {
+    pub fn rclose(&self) {
+        self.state.wns.write(|buffers| {
             buffers.fe_to_be.rclosed = true;
             buffers.fe_to_be.buf.clear();
         });
     }
 
-    pub fn be_write_line(&self, e: E) -> bool {
-        return self.wns.await(&mut |buffers| {
+    pub fn write_line(&self, e: E) -> bool {
+        return self.state.wns.await(&mut |buffers| {
             if buffers.be_to_fe.rclosed {
                 return (Some(false), false);
             }
@@ -75,15 +80,35 @@ impl<E, OS> BackgroundOp<E, OS> where E: Clone, OS: FnMut(Option<E>) -> bool {
         });
     }
 
-    pub fn be_close(&self) {
-        self.wns.write(|buffers| {
+    pub fn close(&self) {
+        self.state.wns.write(|buffers| {
             buffers.be_to_fe.buf.push_back(None);
         });
     }
+}
 
-    fn fe_ferry<F>(&mut self, f: &mut F) where F: FnMut(&mut TwoBuffers<E>) -> bool {
+pub struct BgopFe<E, OS> where E: Clone, OS: FnMut(Option<E>) -> bool {
+    os: OS,
+    state: Arc<BgopState<E>>,
+}
+
+impl<E, OS> BgopFe<E, OS> where E: Clone, OS: FnMut(Option<E>) -> bool {
+    pub fn new(os: OS) -> BgopFe<E, OS> {
+        return BgopFe {
+            os: os,
+            state: Arc::new(BgopState::new()),
+        }
+    }
+
+    pub fn be(&self) -> BgopBe<E> {
+        return BgopBe {
+            state: self.state.clone(),
+        };
+    }
+
+    fn ferry<F>(&mut self, f: &mut F) where F: FnMut(&mut TwoBuffers<E>) -> bool {
         loop {
-            let ret = self.wns.await(&mut |buffers| {
+            let ret = self.state.wns.await(&mut |buffers| {
                 if buffers.be_to_fe.buf.len() > 0 {
                     let mut es = Vec::new();
                     while let Some(e) = buffers.be_to_fe.buf.pop_front() {
@@ -105,7 +130,10 @@ impl<E, OS> BackgroundOp<E, OS> where E: Clone, OS: FnMut(Option<E>) -> bool {
                 Some(es) => {
                     for e in es {
                         if !(self.os)(e) {
-                            self.fe_rclose();
+                            self.state.wns.write(|buffers| {
+                                buffers.be_to_fe.rclosed = true;
+                                buffers.be_to_fe.buf.clear();
+                            });
                             break;
                         }
                     }
@@ -117,8 +145,8 @@ impl<E, OS> BackgroundOp<E, OS> where E: Clone, OS: FnMut(Option<E>) -> bool {
         }
     }
 
-    pub fn fe_write_line(&mut self, e: E) -> bool {
-        self.fe_ferry(&mut |buffers| {
+    pub fn write_line(&mut self, e: E) -> bool {
+        self.ferry(&mut |buffers| {
             if buffers.fe_to_be.rclosed {
                 return true;
             }
@@ -130,27 +158,16 @@ impl<E, OS> BackgroundOp<E, OS> where E: Clone, OS: FnMut(Option<E>) -> bool {
 
             return false;
         });
-        return !self.fe_rclosed();
-    }
-
-    pub fn fe_rclose(&self) {
-        self.wns.write(|buffers| {
-            buffers.be_to_fe.rclosed = true;
-            buffers.be_to_fe.buf.clear();
+        return self.state.wns.read(|buffers| {
+            return !buffers.fe_to_be.rclosed;
         });
     }
 
-    pub fn fe_rclosed(&self) -> bool {
-        return self.wns.read(|buffers| {
-            return buffers.fe_to_be.rclosed;
-        });
-    }
-
-    pub fn fe_close(&mut self) {
-        self.wns.write(|buffers| {
+    pub fn close(&mut self) {
+        self.state.wns.write(|buffers| {
             buffers.fe_to_be.buf.push_back(None);
         });
-        self.fe_ferry(&mut |buffers| {
+        self.ferry(&mut |buffers| {
             return buffers.os_closed;
         });
     }
