@@ -1,5 +1,6 @@
 mod bgop;
 mod wns;
+mod stream;
 
 use bgop::BackgroundOp;
 use std::env;
@@ -14,14 +15,8 @@ use std::process::Command;
 use std::process::Stdio;
 use std::sync::Arc;
 use std::thread;
-
-type Line = Arc<str>;
-
-trait Stream {
-    fn write_line(&mut self, Line);
-    fn rclosed(&mut self) -> bool;
-    fn close(&mut self);
-}
+use stream::Line;
+use stream::Stream;
 
 fn main() {
     let os = StdoutStream::new();
