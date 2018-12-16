@@ -16,13 +16,12 @@ use stream::Line;
 use stream::Stream;
 
 pub struct ProcessStream {
-    os: Box<Stream>,
     p: Child,
-    bgop: BgopFe<Line, _>,
+    bgop_fe: BgopFe<Line>,
 }
 
 impl ProcessStream {
-    pub fn new<I, S>(os: Box<Stream>, args: I) -> ProcessStream where I: IntoIterator<Item = S>, S: AsRef<OsStr> {
+    pub fn new<I, S>(mut os: Box<Stream>, args: I) -> ProcessStream where I: IntoIterator<Item = S>, S: AsRef<OsStr> {
         let mut args = args.into_iter();
         let mut p = Command::new(args.next().unwrap())
             .args(args)
@@ -31,20 +30,30 @@ impl ProcessStream {
             .spawn()
             .unwrap();
 
-        let bgop = BgopFe::new();
+        let bgop_fe = BgopFe::new(&mut move |maybe_line| {
+            match maybe_line {
+                Some(line) => {
+                    return os.write_line(line);
+                }
+                None => {
+                    os.close();
+                    return false;
+                }
+            }
+        });
         {
             let p_stdin = p.stdin.take().unwrap();
-            let bgop = bgop.be();
+            let bgop_be = bgop_fe.be();
             thread::spawn(move|| {
                 let mut r = LineWriter::new(p_stdin);
                 loop {
-                    match bgop.be_read_line() {
+                    match bgop_be.read_line() {
                         Some(line) => {
                             eprintln!("[backend stdin] got line {}", line);
                             match writeln!(r, "{}", line) {
                                 Err(_) => {
                                     eprintln!("[backend stdin] got rclosed");
-                                    bgop.be_rclose();
+                                    bgop_be.rclose();
                                 }
                                 Ok(_) => {
                                 }
@@ -62,50 +71,35 @@ impl ProcessStream {
 
         {
             let p_stdout = p.stdout.take().unwrap();
-            let bgop = bgop.be();
+            let bgop_be = bgop_fe.be();
             thread::spawn(move|| {
                 let r = BufReader::new(p_stdout);
                 for line in r.lines() {
                     let line = line.unwrap();
-                    if !bgop.be_write_line(Arc::from(line)) {
+                    if !bgop_be.write_line(Arc::from(line)) {
                         eprintln!("[backend stdout] got rclosed");
                         break;
                     }
                 }
-                bgop.be_close();
+                bgop_be.close();
                 // return drops r
             });
         }
 
         return ProcessStream {
-            os: os,
             p: p,
-            bgop: bgop,
+            bgop_fe: bgop_fe,
         };
-    }
-}
-
-fn write_on_maybe_line(os: &mut Box<Stream>, maybe_line: Option<Line>) -> bool {
-    match maybe_line {
-        Some(line) => {
-            return os.write_line(line);
-        }
-        None => {
-            os.close();
-            return false;
-        }
     }
 }
 
 impl Stream for ProcessStream {
     fn write_line(&mut self, line: Line) -> bool {
-        let os = &mut self.os;
-        return self.bgop.fe_write_line(line, &mut |x| write_on_maybe_line(os, x));
+        return self.bgop_fe.write_line(line);
     }
 
     fn close(&mut self) {
-        let os = &mut self.os;
-        self.bgop.fe_close(&mut |x| write_on_maybe_line(os, x));
+        self.bgop_fe.close();
         self.p.wait().unwrap();
     }
 }

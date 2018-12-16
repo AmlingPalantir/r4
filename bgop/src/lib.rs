@@ -93,9 +93,9 @@ pub struct BgopFe<E> where E: Clone {
 }
 
 impl<E> BgopFe<E> where E: Clone {
-    pub fn new(os: Box<FnMut(Option<E>) -> bool>) -> BgopFe<E> {
+    pub fn new<OS>(os: OS) -> BgopFe<E> where OS: FnMut(Option<E>) -> bool + 'static {
         return BgopFe {
-            os: os,
+            os: Box::new(os),
             state: Arc::new(BgopState::new()),
         }
     }
