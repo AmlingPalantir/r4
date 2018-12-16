@@ -79,7 +79,7 @@ impl<E> BackgroundOp<E> where E: Clone {
         });
     }
 
-    pub fn fe_write_line<F>(&self, e: E, f: &mut F) where F: FnMut(Option<E>) {
+    fn fe_ferry<F, F2>(&self, f: &mut F, f2: &mut F2) where F: FnMut(Option<E>), F2: FnMut(&mut TwoBuffers<E>) -> bool {
         loop {
             let ret = self.wns.await(&mut |buffers| {
                 if buffers.be_to_fe.buf.len() > 0 {
@@ -93,12 +93,7 @@ impl<E> BackgroundOp<E> where E: Clone {
                     return (Some(Some(es)), true);
                 }
 
-                if buffers.fe_to_be.rclosed {
-                    return (Some(None), false);
-                }
-
-                if buffers.fe_to_be.buf.len() < 1024 {
-                    buffers.fe_to_be.buf.push_back(Some(e.clone()));
+                if f2(buffers) {
                     return (Some(None), true);
                 }
 
@@ -115,6 +110,21 @@ impl<E> BackgroundOp<E> where E: Clone {
                 }
             }
         }
+    }
+
+    pub fn fe_write_line<F>(&self, e: E, f: &mut F) where F: FnMut(Option<E>) {
+        self.fe_ferry(f, &mut |buffers| {
+            if buffers.fe_to_be.rclosed {
+                return true;
+            }
+
+            if buffers.fe_to_be.buf.len() < 1024 {
+                buffers.fe_to_be.buf.push_back(Some(e.clone()));
+                return true;
+            }
+
+            return false;
+        });
     }
 
     pub fn fe_rclose(&self) {
@@ -134,35 +144,8 @@ impl<E> BackgroundOp<E> where E: Clone {
         self.wns.write(|buffers| {
             buffers.fe_to_be.buf.push_back(None);
         });
-        loop {
-            let ret = self.wns.await(&mut |buffers| {
-                if buffers.be_to_fe.buf.len() > 0 {
-                    let mut es = Vec::new();
-                    while let Some(e) = buffers.be_to_fe.buf.pop_front() {
-                        if e.is_none() {
-                            buffers.os_closed = true;
-                        }
-                        es.push(e);
-                    }
-                    return (Some(Some(es)), true);
-                }
-
-                if buffers.os_closed {
-                    return (Some(None), false);
-                }
-
-                return (None, false);
-            });
-            match ret {
-                Some(es) => {
-                    for e in es {
-                        f(e);
-                    }
-                }
-                None => {
-                    return;
-                }
-            }
-        }
+        self.fe_ferry(f, &mut |buffers| {
+            return buffers.os_closed;
+        });
     }
 }
