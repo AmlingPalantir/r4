@@ -14,18 +14,18 @@ impl<S> WaitNotifyState<S> {
         };
     }
 
-    pub fn read<F, R>(&self, f: F) -> R where F: Fn(&S) -> R {
+    pub fn read<F, R>(&self, f: F) -> R where F: FnOnce(&S) -> R {
         let mg = self.m.lock().unwrap();
         return f(&mg);
     }
 
-    pub fn write<F, R>(&self, f: F) -> R where F: Fn(&mut S) -> R {
+    pub fn write<F, R>(&self, f: F) -> R where F: FnOnce(&mut S) -> R {
         let mut mg = self.m.lock().unwrap();
         self.c.notify_all();
         return f(&mut mg);
     }
 
-    pub fn await<F, R>(&self, f: F) -> R where F: Fn(&mut S) -> (Option<R>, bool) {
+    pub fn await<F, R>(&self, f: &mut F) -> R where F: FnMut(&mut S) -> (Option<R>, bool) {
         let mut mg = self.m.lock().unwrap();
         loop {
             let (r, n) = f(&mut mg);

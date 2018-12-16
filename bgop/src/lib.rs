@@ -45,7 +45,7 @@ impl<E> BackgroundOp<E> where E: Clone {
     }
 
     pub fn be_read_line(&self) -> Option<E> {
-        return self.wns.await(|buffers| {
+        return self.wns.await(&mut |buffers| {
             if let Some(maybe) = buffers.fe_to_be.buf.pop_front() {
                 return (Some(maybe), true);
             }
@@ -61,7 +61,7 @@ impl<E> BackgroundOp<E> where E: Clone {
     }
 
     pub fn be_write_line(&self, e: E) -> bool {
-        return self.wns.await(|buffers| {
+        return self.wns.await(&mut |buffers| {
             if buffers.be_to_fe.rclosed {
                 return (Some(false), false);
             }
@@ -81,7 +81,7 @@ impl<E> BackgroundOp<E> where E: Clone {
 
     pub fn fe_write_line<F>(&self, e: E, f: &mut F) where F: FnMut(Option<E>) {
         loop {
-            let ret = self.wns.await(|buffers| {
+            let ret = self.wns.await(&mut |buffers| {
                 if buffers.be_to_fe.buf.len() > 0 {
                     let mut es = Vec::new();
                     while let Some(e) = buffers.be_to_fe.buf.pop_front() {
@@ -135,7 +135,7 @@ impl<E> BackgroundOp<E> where E: Clone {
             buffers.fe_to_be.buf.push_back(None);
         });
         loop {
-            let ret = self.wns.await(|buffers| {
+            let ret = self.wns.await(&mut |buffers| {
                 if buffers.be_to_fe.buf.len() > 0 {
                     let mut es = Vec::new();
                     while let Some(e) = buffers.be_to_fe.buf.pop_front() {
