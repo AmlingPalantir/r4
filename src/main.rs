@@ -149,7 +149,9 @@ fn write_on_maybe_line(os: &mut Box<Stream>, bgop: &BackgroundOp<Arc<str>>, mayb
 
 impl Stream for ProcessStream {
     fn write_line(&mut self, line: Arc<str>) {
-        self.bgop.fe_write_line(line, |x| write_on_maybe_line(&mut self.os, &self.bgop, x));
+        let os = &mut self.os;
+        let bgop = &self.bgop;
+        self.bgop.fe_write_line(line, &mut |x| write_on_maybe_line(os, bgop, x));
     }
 
     fn rclosed(&mut self) -> bool {
@@ -157,7 +159,9 @@ impl Stream for ProcessStream {
     }
 
     fn close(&mut self) {
-        self.bgop.fe_close(|x| write_on_maybe_line(&mut self.os, &self.bgop, x));
+        let os = &mut self.os;
+        let bgop = &self.bgop;
+        self.bgop.fe_close(&mut |x| write_on_maybe_line(os, bgop, x));
         self.p.wait().unwrap();
     }
 }

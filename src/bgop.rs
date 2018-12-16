@@ -80,7 +80,7 @@ impl<E> BackgroundOp<E> where E: Clone {
         });
     }
 
-    pub fn fe_write_line<F>(&self, e: E, f: F) where F: Fn(Option<E>) {
+    pub fn fe_write_line<F>(&self, e: E, f: &mut F) where F: FnMut(Option<E>) {
         loop {
             let ret = self.wns.await(|buffers| {
                 if buffers.be_to_fe.buf.len() > 0 {
@@ -131,7 +131,7 @@ impl<E> BackgroundOp<E> where E: Clone {
         });
     }
 
-    pub fn fe_close<F>(&self, f: F) where F: Fn(Option<E>) {
+    pub fn fe_close<F>(&self, f: &mut F) where F: FnMut(Option<E>) {
         self.wns.write(|buffers| {
             buffers.fe_to_be.buf.push_back(None);
         });
