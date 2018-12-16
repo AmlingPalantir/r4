@@ -30,7 +30,7 @@ impl ProcessStream {
             .spawn()
             .unwrap();
 
-        let bgop_fe = BgopFe::new(&mut move |maybe_line| {
+        let bgop_fe = BgopFe::new(Box::new(move |maybe_line| {
             match maybe_line {
                 Some(line) => {
                     return os.write_line(line);
@@ -40,7 +40,7 @@ impl ProcessStream {
                     return false;
                 }
             }
-        });
+        }));
         {
             let p_stdin = p.stdin.take().unwrap();
             let bgop_be = bgop_fe.be();
