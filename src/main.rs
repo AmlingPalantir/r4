@@ -77,7 +77,7 @@ impl ProcessStream {
             .spawn()
             .unwrap();
 
-        let bgop = BackgroundOp::new();
+        let bgop = BackgroundOp::<Arc<str>>::new();
         {
             let p_stdin = p.stdin.take().unwrap();
             let bgop = bgop.clone();
@@ -116,7 +116,7 @@ impl ProcessStream {
                 let r = BufReader::new(p_stdout);
                 for line in r.lines() {
                     let line = line.unwrap();
-                    if !bgop.be_write_line(Arc::from(line.unwrap())) {
+                    if !bgop.be_write_line(Arc::from(line)) {
                         println!("[backend stdout] got rclosed");
                         break;
                     }

@@ -1,5 +1,4 @@
 use std::collections::VecDeque;
-use std::io::Write;
 use wns::WaitNotifyState;
 
 #[derive(Clone)]
@@ -34,6 +33,7 @@ impl<E> TwoBuffers<E> {
     }
 }
 
+#[derive(Clone)]
 pub struct BackgroundOp<E> where E: Clone {
     wns: WaitNotifyState<TwoBuffers<E>>,
 }
@@ -122,13 +122,13 @@ impl<E> BackgroundOp<E> where E: Clone {
         });
     }
 
-    pub fn fe_rclosed(&self) {
+    pub fn fe_rclosed(&self) -> bool {
         return self.wns.read(|buffers| {
             return buffers.fe_to_be.rclosed;
         });
     }
 
-    pub fn fe_close<F>(&self, e: E, f: F) where F: Fn(Option<E>) {
+    pub fn fe_close<F>(&self, f: F) where F: Fn(Option<E>) {
         self.wns.write(|buffers| {
             buffers.fe_to_be.buf.push_back(None);
         });
