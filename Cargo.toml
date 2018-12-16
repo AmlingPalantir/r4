@@ -1,4 +1,5 @@
-[package]
-name = "r4"
-version = "1.0.0"
-authors = ["Keith Amling <me@amling2.org>"]
+[workspace]
+
+members = [
+    "r4",
+]
