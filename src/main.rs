@@ -1,3 +1,5 @@
+mod wns;
+
 use std::collections::VecDeque;
 use std::env;
 use std::ffi::OsStr;
@@ -9,10 +11,8 @@ use std::io;
 use std::process::Child;
 use std::process::Command;
 use std::process::Stdio;
-use std::sync::Arc;
-use std::sync::Condvar;
-use std::sync::Mutex;
 use std::thread;
+use wns::WaitNotifyState;
 
 trait Stream {
     fn write_line(&mut self, String);
@@ -59,6 +59,7 @@ impl Stream for StdoutStream {
     }
 }
 
+#[derive(Clone)]
 struct ProcessBuffer {
     lines: VecDeque<Option<String>>,
     rclosed: bool,
@@ -73,6 +74,7 @@ impl ProcessBuffer {
     }
 }
 
+#[derive(Clone)]
 struct ProcessBuffers {
     os_closed: bool,
     stdin: ProcessBuffer,
@@ -92,7 +94,7 @@ impl ProcessBuffers {
 struct ProcessStream {
     os: Box<Stream>,
     p: Child,
-    buffers: Arc<(Condvar, Mutex<ProcessBuffers>)>,
+    buffers: WaitNotifyState<ProcessBuffers>,
 }
 
 impl ProcessStream {
@@ -105,25 +107,20 @@ impl ProcessStream {
             .spawn()
             .unwrap();
 
-        let buffers = Arc::new((Condvar::new(), Mutex::new(ProcessBuffers::new())));
+        let buffers = WaitNotifyState::new(ProcessBuffers::new());
         {
             let p_stdin = p.stdin.take().unwrap();
             let buffers = buffers.clone();
             thread::spawn(move|| {
                 let mut r = LineWriter::new(p_stdin);
-                let (ref cond, ref buffers) = *buffers;
                 loop {
-                    fn read_line(cond: &Condvar, buffers: &Mutex<ProcessBuffers>) -> Option<String> {
-                        let mut buffers = buffers.lock().unwrap();
-                        loop {
-                            while let Some(maybe_line) = buffers.stdin.lines.pop_front() {
-                                cond.notify_all();
-                                return maybe_line;
-                            }
-                            buffers = cond.wait(buffers).unwrap();
+                    let maybe_line = buffers.await(|buffers| {
+                        if let Some(maybe_line) = buffers.stdin.lines.pop_front() {
+                            return (Some(maybe_line), true);
                         }
-                    }
-                    match read_line(cond, buffers) {
+                        return (None, false);
+                    });
+                    match maybe_line {
                         Some(line) => {
                             println!("[backend stdin] got line {}", line);
                             let mut bytes = line.into_bytes();
@@ -131,10 +128,10 @@ impl ProcessStream {
                             match r.write_all(&bytes) {
                                 Err(_) => {
                                     println!("[backend stdin] got rclosed");
-                                    let mut buffers = buffers.lock().unwrap();
-                                    buffers.stdin.rclosed = true;
-                                    buffers.stdin.lines.clear();
-                                    cond.notify_all();
+                                    buffers.write(|buffers| {
+                                        buffers.stdin.rclosed = true;
+                                        buffers.stdin.lines.clear();
+                                    });
                                 }
                                 Ok(_) => {
                                 }
@@ -155,28 +152,34 @@ impl ProcessStream {
             let buffers = buffers.clone();
             thread::spawn(move|| {
                 let r = BufReader::new(p_stdout);
-                let (ref cond, ref buffers) = *buffers;
+                enum Ret {
+                    RClosed,
+                    Written,
+                }
                 'LINE: for line in r.lines() {
                     let line = line.unwrap();
-                    let mut buffers = buffers.lock().unwrap();
-                    loop {
+                    let ret = buffers.await(|buffers| {
                         if buffers.stdout.rclosed {
                             println!("[backend stdout] got rclosed");
-                            break 'LINE;
+                            return (Some(Ret::RClosed), false);
                         }
                         if buffers.stdout.lines.len() < 1024 {
                             buffers.stdout.lines.push_back(Some(line));
-                            cond.notify_all();
-                            break;
+                            return (Some(Ret::Written), true);
                         }
-                        buffers = cond.wait(buffers).unwrap();
+                        return (None, false);
+                    });
+                    match ret {
+                        RClosed => {
+                            break 'LINE;
+                        }
+                        Written => {
+                        }
                     }
                 }
-                {
-                    let mut buffers = buffers.lock().unwrap();
+                buffers.write(|buffers| {
                     buffers.stdout.lines.push_back(None);
-                    cond.notify_all();
-                }
+                });
                 // return drops r
             });
         }
@@ -191,75 +194,120 @@ impl ProcessStream {
 
 impl Stream for ProcessStream {
     fn write_line(&mut self, line: String) {
-        let (ref cond, ref buffers) = *self.buffers;
-        let mut buffers = buffers.lock().unwrap();
         loop {
-            while let Some(maybe_line) = buffers.stdout.lines.pop_front() {
-                cond.notify_all();
-                match maybe_line {
-                    Some(line) => {
-                        println!("[line ferry] Output line: {}", line);
-                        self.os.write_line(line);
-                        if self.os.rclosed() {
-                            println!("[line ferry] got rclosed");
-                            buffers.stdout.rclosed = true;
-                            buffers.stdout.lines.clear();
+            enum Ret {
+                MaybeLines(Vec<Option<String>>),
+                RClosed,
+                Written,
+            }
+            let ret = self.buffers.await(|buffers| {
+                if buffers.stdout.lines.len() > 0 {
+                    let ret = Vec::new();
+                    while let Some(maybe_line) = buffers.stdout.lines.pop_front() {
+                        ret.push(maybe_line);
+                    }
+                    return (Some(Ret::MaybeLines(ret)), true);
+                }
+
+                if buffers.stdin.rclosed {
+                    println!("[frontend] input dropped");
+                    return (Some(Ret::RClosed), false);
+                }
+
+                if buffers.stdin.lines.len() < 1024 {
+                    println!("[frontend] input ready");
+                    buffers.stdin.lines.push_back(Some(line));
+                    return (Some(Ret::Written), true);
+                }
+
+                return (None, false);
+            });
+            match ret {
+                Ret::MaybeLines(maybe_lines) => {
+                    for maybe_line in maybe_lines {
+                        match maybe_line {
+                            Some(line) => {
+                                println!("[line ferry] Output line: {}", line);
+                                self.os.write_line(line);
+                                if self.os.rclosed() {
+                                    println!("[line ferry] got rclosed");
+                                    self.buffers.write(|buffers| {
+                                        buffers.stdout.rclosed = true;
+                                        buffers.stdout.lines.clear();
+                                    });
+                                }
+                            }
+                            None => {
+                                self.os.close();
+                                self.buffers.write(|buffers| {
+                                    buffers.os_closed = true;
+                                });
+                            }
                         }
                     }
-                    None => {
-                        self.os.close();
-                        buffers.os_closed = true
-                    }
+                }
+                RClosed => {
+                    return;
+                }
+                Written => {
+                    return;
                 }
             }
-
-            if buffers.stdin.rclosed {
-                println!("[frontend] input dropped");
-                return;
-            }
-            if buffers.stdin.lines.len() < 1024 {
-                println!("[frontend] input ready");
-                buffers.stdin.lines.push_back(Some(line));
-                cond.notify_all();
-                return;
-            }
-
-            buffers = cond.wait(buffers).unwrap();
         }
     }
 
     fn rclosed(&mut self) -> bool {
-        let (_, ref buffers) = *self.buffers;
-        let buffers = buffers.lock().unwrap();
-        return buffers.stdin.rclosed;
+        return self.buffers.read(|buffers| {
+            return buffers.stdin.rclosed;
+        });
     }
 
     fn close(&mut self) {
-        let (ref cond, ref buffers) = *self.buffers;
-        let mut buffers = buffers.lock().unwrap();
-        buffers.stdin.lines.push_back(None);
+        self.buffers.write(|buffers| {
+            buffers.stdin.lines.push_back(None);
+        });
         loop {
-            while let Some(maybe_line) = buffers.stdout.lines.pop_front() {
-                cond.notify_all();
-                match maybe_line {
-                    Some(line) => {
-                        println!("[line ferry] Output line: {}", line);
-                        self.os.write_line(line);
+            enum Ret {
+                MaybeLines(Vec<Option<String>>),
+                Done,
+            }
+            let ret = self.buffers.await(|buffers| {
+                if buffers.stdout.lines.len() > 0 {
+                    let ret = Vec::new();
+                    while let Some(maybe_line) = buffers.stdout.lines.pop_front() {
+                        ret.push(maybe_line);
                     }
-                    None => {
-                        self.os.close();
-                        buffers.os_closed = true
+                    return (Some(Ret::MaybeLines(ret)), true);
+                }
+
+                if buffers.os_closed {
+                    return (Some(Ret::Done), false);
+                }
+
+                return (None, false);
+            });
+            match ret {
+                Ret::MaybeLines(maybe_lines) => {
+                    for maybe_line in maybe_lines {
+                        match maybe_line {
+                            Some(line) => {
+                                println!("[line ferry] Output line: {}", line);
+                                self.os.write_line(line);
+                            }
+                            None => {
+                                self.os.close();
+                                self.buffers.write(|buffers| {
+                                    buffers.os_closed = true
+                                });
+                            }
+                        }
                     }
                 }
+                Done => {
+                    self.p.wait().unwrap();
+                    return;
+                }
             }
-
-            if buffers.os_closed {
-                break;
-            }
-
-            buffers = cond.wait(buffers).unwrap();
         }
-
-        self.p.wait().unwrap();
     }
 }
