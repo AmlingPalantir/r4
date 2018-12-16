@@ -38,25 +38,36 @@ fn main() {
 }
 
 struct StdoutStream {
+    rclosed: bool,
 }
 
 impl StdoutStream {
     fn new() -> StdoutStream {
         return StdoutStream {
+            rclosed: false,
         };
     }
 }
 
 impl Stream for StdoutStream {
     fn write_line(&mut self, line: Arc<str>) {
-        println!("StdoutStream line: {}", line);
+        match writeln!(io::stdout(), "{}", line) {
+            Err(_) => {
+                self.rclosed = true;
+            }
+            Ok(_) => {
+            }
+        }
     }
 
     fn rclosed(&mut self) -> bool {
-        return false;
+        return self.rclosed;
     }
 
     fn close(&mut self) {
+        // This seems to be all we can do?  We hope/expect the process to be
+        // donezo soon anyway...
+        io::stdout().flush().unwrap();
     }
 }
 
