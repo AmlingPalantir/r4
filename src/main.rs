@@ -26,9 +26,10 @@ fn main() {
     let stdin = io::stdin();
     for line in stdin.lock().lines() {
         let line = line.unwrap();
-        println!("Input line: {}", line);
+        println!("[main] Input line: {}", line);
         os.write_line(line);
         if os.rclosed() {
+            println!("[main] got rclosed");
             break;
         }
     }
@@ -129,6 +130,7 @@ impl ProcessStream {
                             bytes.push(b'\n');
                             match r.write_all(&bytes) {
                                 Err(_) => {
+                                    println!("[backend stdin] got rclosed");
                                     let mut buffers = buffers.lock().unwrap();
                                     buffers.stdin.rclosed = true;
                                     buffers.stdin.lines.clear();
@@ -159,6 +161,7 @@ impl ProcessStream {
                     let mut buffers = buffers.lock().unwrap();
                     loop {
                         if buffers.stdout.rclosed {
+                            println!("[backend stdout] got rclosed");
                             buffers.stdout.lines.push_back(None);
                             cond.notify_all();
                             // drops r
@@ -200,6 +203,7 @@ impl Stream for ProcessStream {
                         println!("[line ferry] Output line: {}", line);
                         self.os.write_line(line);
                         if self.os.rclosed() {
+                            println!("[line ferry] got rclosed");
                             buffers.stdout.rclosed = true;
                             buffers.stdout.lines.clear();
                         }
