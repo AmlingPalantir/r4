@@ -1,8 +1,15 @@
 [[package]]
-name = "r4"
+name = "bgop"
 version = "1.0.0"
 dependencies = [
  "wns 1.0.0",
+]
+
+[[package]]
+name = "r4"
+version = "1.0.0"
+dependencies = [
+ "bgop 1.0.0",
 ]
 
 [[package]]

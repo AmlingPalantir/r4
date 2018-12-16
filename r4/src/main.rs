@@ -1,6 +1,5 @@
-extern crate wns;
+extern crate bgop;
 
-mod bgop;
 mod stream;
 
 use std::env;

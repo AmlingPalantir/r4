@@ -1,7 +1,7 @@
 [package]
-name = "r4"
+name = "bgop"
 version = "1.0.0"
 authors = ["Keith Amling <me@amling2.org>"]
 
 [dependencies]
-bgop = { path = "../bgop" }
+wns = { path = "../wns" }

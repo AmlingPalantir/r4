@@ -1,3 +1,5 @@
+extern crate wns;
+
 use std::collections::VecDeque;
 use wns::WaitNotifyState;
 
