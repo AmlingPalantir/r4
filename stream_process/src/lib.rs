@@ -88,8 +88,7 @@ impl ProcessStream {
 fn write_on_maybe_line(os: &mut Box<Stream>, bgop: &BackgroundOp<Line>, maybe_line: Option<Line>) {
     match maybe_line {
         Some(line) => {
-            os.write_line(line);
-            if os.rclosed() {
+            if !os.write_line(line) {
                 bgop.fe_rclose();
             }
         }
@@ -100,14 +99,11 @@ fn write_on_maybe_line(os: &mut Box<Stream>, bgop: &BackgroundOp<Line>, maybe_li
 }
 
 impl Stream for ProcessStream {
-    fn write_line(&mut self, line: Line) {
+    fn write_line(&mut self, line: Line) -> bool {
         let os = &mut self.os;
         let bgop = &self.bgop;
         self.bgop.fe_write_line(line, &mut |x| write_on_maybe_line(os, bgop, x));
-    }
-
-    fn rclosed(&mut self) -> bool {
-        return self.bgop.fe_rclosed();
+        return !self.bgop.fe_rclosed();
     }
 
     fn close(&mut self) {

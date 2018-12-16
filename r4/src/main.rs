@@ -17,8 +17,7 @@ fn main() {
     for line in stdin.lock().lines() {
         let line = line.unwrap();
         eprintln!("[main] Input line: {}", line);
-        os.write_line(Arc::from(line));
-        if os.rclosed() {
+        if !os.write_line(Arc::from(line)) {
             eprintln!("[main] got rclosed");
             break;
         }

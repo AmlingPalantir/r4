@@ -28,12 +28,9 @@ impl StdoutStream {
 }
 
 impl Stream for StdoutStream {
-    fn write_line(&mut self, line: Line) {
+    fn write_line(&mut self, line: Line) -> bool {
         self.maybe_rclosed(writeln!(io::stdout(), "{}", line));
-    }
-
-    fn rclosed(&mut self) -> bool {
-        return self.rclosed;
+        return !self.rclosed;
     }
 
     fn close(&mut self) {
