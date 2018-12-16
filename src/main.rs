@@ -154,29 +154,21 @@ impl ProcessStream {
             let buffers = buffers.clone();
             thread::spawn(move|| {
                 let r = BufReader::new(p_stdout);
-                enum Ret {
-                    RClosed(),
-                    Written(),
-                }
                 'LINE: for line in r.lines() {
                     let line = line.unwrap();
-                    let ret = buffers.await(|buffers| {
+                    let cont = buffers.await(|buffers| {
                         if buffers.stdout.rclosed {
                             println!("[backend stdout] got rclosed");
-                            return (Some(Ret::RClosed()), false);
+                            return (Some(false), false);
                         }
                         if buffers.stdout.lines.len() < 1024 {
                             buffers.stdout.lines.push_back(Some(Arc::from(line.clone())));
-                            return (Some(Ret::Written()), true);
+                            return (Some(true), true);
                         }
                         return (None, false);
                     });
-                    match ret {
-                        Ret::RClosed() => {
-                            break 'LINE;
-                        }
-                        Ret::Written() => {
-                        }
+                    if !cont {
+                        break 'LINE;
                     }
                 }
                 buffers.write(|buffers| {
@@ -197,35 +189,30 @@ impl ProcessStream {
 impl Stream for ProcessStream {
     fn write_line(&mut self, line: Arc<str>) {
         loop {
-            enum Ret {
-                MaybeLines(Vec<Option<Arc<str>>>),
-                RClosed(),
-                Written(),
-            }
             let ret = self.buffers.await(|buffers| {
                 if buffers.stdout.lines.len() > 0 {
                     let mut ret = Vec::new();
                     while let Some(maybe_line) = buffers.stdout.lines.pop_front() {
                         ret.push(maybe_line);
                     }
-                    return (Some(Ret::MaybeLines(ret)), true);
+                    return (Some(Some(ret)), true);
                 }
 
                 if buffers.stdin.rclosed {
                     println!("[frontend] input dropped");
-                    return (Some(Ret::RClosed()), false);
+                    return (Some(None), false);
                 }
 
                 if buffers.stdin.lines.len() < 1024 {
                     println!("[frontend] input ready");
                     buffers.stdin.lines.push_back(Some(line.clone()));
-                    return (Some(Ret::Written()), true);
+                    return (Some(None), true);
                 }
 
                 return (None, false);
             });
             match ret {
-                Ret::MaybeLines(maybe_lines) => {
+                Some(maybe_lines) => {
                     for maybe_line in maybe_lines {
                         match maybe_line {
                             Some(line) => {
@@ -248,10 +235,7 @@ impl Stream for ProcessStream {
                         }
                     }
                 }
-                Ret::RClosed() => {
-                    return;
-                }
-                Ret::Written() => {
+                None => {
                     return;
                 }
             }
@@ -269,27 +253,23 @@ impl Stream for ProcessStream {
             buffers.stdin.lines.push_back(None);
         });
         loop {
-            enum Ret {
-                MaybeLines(Vec<Option<Arc<str>>>),
-                Done(),
-            }
             let ret = self.buffers.await(|buffers| {
                 if buffers.stdout.lines.len() > 0 {
                     let mut ret = Vec::new();
                     while let Some(maybe_line) = buffers.stdout.lines.pop_front() {
                         ret.push(maybe_line);
                     }
-                    return (Some(Ret::MaybeLines(ret)), true);
+                    return (Some(Some(ret)), true);
                 }
 
                 if buffers.os_closed {
-                    return (Some(Ret::Done()), false);
+                    return (Some(None), false);
                 }
 
                 return (None, false);
             });
             match ret {
-                Ret::MaybeLines(maybe_lines) => {
+                Some(maybe_lines) => {
                     for maybe_line in maybe_lines {
                         match maybe_line {
                             Some(line) => {
@@ -305,7 +285,7 @@ impl Stream for ProcessStream {
                         }
                     }
                 }
-                Ret::Done() => {
+                None => {
                     self.p.wait().unwrap();
                     return;
                 }
