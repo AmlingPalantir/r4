@@ -1,6 +1,7 @@
 extern crate record;
 
 use record::Record;
+use std::str::FromStr;
 use std::sync::Arc;
 
 #[derive(Clone)]
@@ -14,6 +15,13 @@ impl Entry {
         return match self {
             Entry::Record(r) => Arc::from(r.to_string()),
             Entry::Line(s) => s.clone(),
+        }
+    }
+
+    pub fn to_record(&self) -> Record {
+        return match self {
+            Entry::Record(r) => r.clone(),
+            Entry::Line(s) => Record::from_str(s).unwrap(),
         }
     }
 }

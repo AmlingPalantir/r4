@@ -11,9 +11,19 @@ version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "operation"
+version = "1.0.0"
+dependencies = [
+ "record 1.0.0",
+ "serde_json 1.0.33 (registry+https://github.com/rust-lang/crates.io-index)",
+ "stream 1.0.0",
+]
+
+[[package]]
 name = "r4"
 version = "1.0.0"
 dependencies = [
+ "operation 1.0.0",
  "stream 1.0.0",
  "stream_process 1.0.0",
  "stream_stdout 1.0.0",

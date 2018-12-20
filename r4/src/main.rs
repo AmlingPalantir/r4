@@ -1,19 +1,20 @@
+extern crate operation;
 extern crate stream;
 extern crate stream_process;
 extern crate stream_stdout;
 
-use std::env;
+use operation::Operation;
+use operation::test::TestOperation;
 use std::io::BufRead;
 use std::io;
 use std::sync::Arc;
 use stream::Entry;
-use stream::Stream;
-use stream_process::ProcessStream;
 use stream_stdout::StdoutStream;
 
 fn main() {
-    let os = StdoutStream::new();
-    let mut os = ProcessStream::new(os, env::args().skip(1));
+    let os = Box::new(StdoutStream::new());
+    let op = TestOperation::new();
+    let mut os = op.wrap(os);
     let stdin = io::stdin();
     for line in stdin.lock().lines() {
         let line = line.unwrap();

@@ -1,0 +1,9 @@
+[package]
+name = "operation"
+version = "1.0.0"
+authors = ["Keith Amling <me@amling2.org>"]
+
+[dependencies]
+record = { path = "../record" }
+stream = { path = "../stream" }
+serde_json = "1.0"
