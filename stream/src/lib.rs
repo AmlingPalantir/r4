@@ -30,3 +30,25 @@ pub trait Stream {
     fn write(&mut self, Entry) -> bool;
     fn close(&mut self);
 }
+
+struct TransformStream {
+    os: Box<Stream>,
+    f: Box<FnMut(Entry) -> Entry>,
+}
+
+impl Stream for TransformStream {
+    fn write(&mut self, e: Entry) -> bool {
+        return self.os.write((*self.f)(e));
+    }
+
+    fn close(&mut self) {
+        self.os.close();
+    }
+}
+
+pub fn transform<F: FnMut(Entry) -> Entry + 'static>(os: Box<Stream>, f: F) -> Box<Stream> {
+    return Box::new(TransformStream {
+        os: os,
+        f: Box::new(f),
+    });
+}
