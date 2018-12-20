@@ -22,7 +22,14 @@ enum JsonPrimitive {
 }
 
 impl Record {
+    fn null() -> Self {
+        return Record(Arc::new(JsonPart::Primitive(JsonPrimitive::Null)));
+    }
+
     fn get_hash(&self, key: Arc<str>) -> Option<Record> {
+        if let JsonPart::Primitive(JsonPrimitive::Null) = *self.0 {
+            return None;
+        }
         if let JsonPart::Hash(ref map) = *self.0 {
             return match map.get(&key) {
                 Some(arc) => Some(Record(arc.clone())),
@@ -33,38 +40,36 @@ impl Record {
     }
 
     fn get_array(&self, key: usize) -> Option<Record> {
+        if let JsonPart::Primitive(JsonPrimitive::Null) = *self.0 {
+            return None;
+        }
         if let JsonPart::Array(ref arr) = *self.0 {
-            return match arr.get(key) {
-                Some(arc) => Some(Record(arc.clone())),
-                None => None,
-            };
+            if key < 0 {
+                panic!();
+            }
+            if key >= arr.len() {
+                return None;
+            }
+            return Some(Record(arr[key].clone()));
         }
         panic!();
     }
 
-    fn get_path(&self, path: Arc<str>) -> Record {
-        let mut ret = self.clone();
-        let null = Record(Arc::new(JsonPart::Primitive(JsonPrimitive::Null)));
 
-        for part in path.split('/') {
-            let next;
-            if part.starts_with('#') {
-                next = ret.get_array(part[1..].parse().unwrap())
-            }
-            else {
-                next = ret.get_hash(Arc::from(part));
-            }
-            match next {
-                Some(next) => {
-                    ret = next;
+    fn get_path(&self, path: Arc<str>) -> Record {
+        return path.split('/').fold(Some(self.clone()), |r, part| {
+            match r {
+                Some(r) => {
+                    if part.starts_with('#') {
+                        return r.get_array(part[1..].parse().unwrap())
+                    }
+                    return r.get_hash(Arc::from(part));
                 }
                 None => {
-                    ret = null.clone();
+                    return None;
                 }
             }
-        }
-
-        return ret;
+        }).unwrap_or_else(Record::null);
     }
 
     fn get_path_mut(&mut self, path: Arc<str>) -> &mut JsonPart {
@@ -98,9 +103,7 @@ impl Record {
             if part.starts_with('#') {
                 return _get_array_mut(r, part[1..].parse().unwrap());
             }
-            else {
-                return _get_hash_mut(r, Arc::from(part));
-            }
+            return _get_hash_mut(r, Arc::from(part));
         });
     }
 }
