@@ -37,7 +37,7 @@ impl Record {
         return Record(Arc::new(JsonPart::String(Arc::from(&*s))));
     }
 
-    fn get_hash(&self, key: &str) -> Option<Record> {
+    pub fn get_hash(&self, key: &str) -> Option<Record> {
         if let JsonPart::Null = *self.0 {
             return None;
         }
@@ -50,7 +50,7 @@ impl Record {
         panic!();
     }
 
-    fn get_array(&self, key: usize) -> Option<Record> {
+    pub fn get_array(&self, key: usize) -> Option<Record> {
         if let JsonPart::Null = *self.0 {
             return None;
         }
@@ -64,7 +64,7 @@ impl Record {
     }
 
 
-    fn get_path(&self, path: &str) -> Record {
+    pub fn get_path(&self, path: &str) -> Record {
         return path.split('/').fold(Some(self.clone()), |r, part| {
             match r {
                 Some(r) => {
