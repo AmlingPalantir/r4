@@ -29,6 +29,12 @@ impl From<Arc<str>> for Record {
     }
 }
 
+impl<'a> From<&'a str> for Record {
+    fn from(s: &str) -> Self {
+        return Record::from(Arc::from(s));
+    }
+}
+
 impl Record {
     pub fn null() -> Self {
         return Record(Arc::new(JsonPart::Null));
@@ -220,10 +226,10 @@ mod tests {
     fn test_set_path() {
         let mut r = Record::from_str("{\"x\":[{\"y\":\"z\"}]}").unwrap();
         let r2 = r.clone();
-        r.set_path(Arc::from("x/#0/y"), Record::from(Arc::from("w")));
+        r.set_path(Arc::from("x/#0/y"), Record::from("w"));
         assert_eq!(r.to_string(), "{\"x\":[{\"y\":\"w\"}]}");
         assert_eq!(r2.to_string(), "{\"x\":[{\"y\":\"z\"}]}");
-        r.set_path(Arc::from("a/#2/b"), Record::from(Arc::from("c")));
+        r.set_path(Arc::from("a/#2/b"), Record::from("c"));
         assert_eq!(r.to_string(), "{\"a\":[null,null,{\"b\":\"c\"}],\"x\":[{\"y\":\"w\"}]}");
     }
 }
