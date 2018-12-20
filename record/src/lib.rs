@@ -2,6 +2,7 @@
 pub struct Record(Arc<JsonPart>);
 
 use std::collections::BTreeMap;
+use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::vec::Vec;
@@ -27,21 +28,13 @@ impl FromPrimitive<u32> for Record {
     }
 }
 
-impl FromPrimitive<Arc<str>> for Record {
-    fn from_primitive(s: Arc<str>) -> Self {
-        return Record(Arc::new(JsonPart::String(s)));
-    }
-}
-
-impl<'a> FromPrimitive<&'a str> for Record {
-    fn from_primitive(s: &str) -> Self {
-        return Record::from_primitive(Arc::from(s));
-    }
-}
-
 impl Record {
     pub fn null() -> Self {
         return Record(Arc::new(JsonPart::Null));
+    }
+
+    pub fn from_primitive_string<S: Deref<Target = str>>(s: S) -> Self {
+        return Record(Arc::new(JsonPart::String(Arc::from(&*s))));
     }
 
     fn get_hash(&self, key: Arc<str>) -> Option<Record> {
@@ -230,10 +223,10 @@ mod tests {
     fn test_set_path() {
         let mut r = Record::from_str("{\"x\":[{\"y\":\"z\"}]}").unwrap();
         let r2 = r.clone();
-        r.set_path(Arc::from("x/#0/y"), Record::from_primitive("w"));
+        r.set_path(Arc::from("x/#0/y"), Record::from_primitive_string("w"));
         assert_eq!(r.to_string(), "{\"x\":[{\"y\":\"w\"}]}");
         assert_eq!(r2.to_string(), "{\"x\":[{\"y\":\"z\"}]}");
-        r.set_path(Arc::from("a/#2/b"), Record::from_primitive("c"));
+        r.set_path(Arc::from("a/#2/b"), Record::from_primitive_string("c"));
         assert_eq!(r.to_string(), "{\"a\":[null,null,{\"b\":\"c\"}],\"x\":[{\"y\":\"w\"}]}");
     }
 }
