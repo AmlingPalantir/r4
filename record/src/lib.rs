@@ -17,21 +17,25 @@ enum JsonPart {
     Hash(BTreeMap<Arc<str>, Arc<JsonPart>>),
 }
 
-impl From<u32> for Record {
-    fn from(n: u32) -> Self {
+pub trait FromPrimitive<P> {
+    fn from_primitive(p: P) -> Self;
+}
+
+impl FromPrimitive<u32> for Record {
+    fn from_primitive(n: u32) -> Self {
         return Record(Arc::new(JsonPart::Number(serde_json::Number::from(n))));
     }
 }
 
-impl From<Arc<str>> for Record {
-    fn from(s: Arc<str>) -> Self {
+impl FromPrimitive<Arc<str>> for Record {
+    fn from_primitive(s: Arc<str>) -> Self {
         return Record(Arc::new(JsonPart::String(s)));
     }
 }
 
-impl<'a> From<&'a str> for Record {
-    fn from(s: &str) -> Self {
-        return Record::from(Arc::from(s));
+impl<'a> FromPrimitive<&'a str> for Record {
+    fn from_primitive(s: &str) -> Self {
+        return Record::from_primitive(Arc::from(s));
     }
 }
 
@@ -226,10 +230,10 @@ mod tests {
     fn test_set_path() {
         let mut r = Record::from_str("{\"x\":[{\"y\":\"z\"}]}").unwrap();
         let r2 = r.clone();
-        r.set_path(Arc::from("x/#0/y"), Record::from("w"));
+        r.set_path(Arc::from("x/#0/y"), Record::from_primitive("w"));
         assert_eq!(r.to_string(), "{\"x\":[{\"y\":\"w\"}]}");
         assert_eq!(r2.to_string(), "{\"x\":[{\"y\":\"z\"}]}");
-        r.set_path(Arc::from("a/#2/b"), Record::from("c"));
+        r.set_path(Arc::from("a/#2/b"), Record::from_primitive("c"));
         assert_eq!(r.to_string(), "{\"a\":[null,null,{\"b\":\"c\"}],\"x\":[{\"y\":\"w\"}]}");
     }
 }
