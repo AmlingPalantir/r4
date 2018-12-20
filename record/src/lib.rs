@@ -37,12 +37,12 @@ impl Record {
         return Record(Arc::new(JsonPart::String(Arc::from(&*s))));
     }
 
-    fn get_hash(&self, key: Arc<str>) -> Option<Record> {
+    fn get_hash(&self, key: &str) -> Option<Record> {
         if let JsonPart::Null = *self.0 {
             return None;
         }
         if let JsonPart::Hash(ref map) = *self.0 {
-            return match map.get(&key) {
+            return match map.get(key) {
                 Some(arc) => Some(Record(arc.clone())),
                 None => None,
             };
@@ -64,14 +64,14 @@ impl Record {
     }
 
 
-    fn get_path(&self, path: Arc<str>) -> Record {
+    fn get_path(&self, path: &str) -> Record {
         return path.split('/').fold(Some(self.clone()), |r, part| {
             match r {
                 Some(r) => {
                     if part.starts_with('#') {
                         return r.get_array(part[1..].parse().unwrap())
                     }
-                    return r.get_hash(Arc::from(part));
+                    return r.get_hash(part);
                 }
                 None => {
                     return None;
@@ -80,13 +80,13 @@ impl Record {
         }).unwrap_or_else(Record::null);
     }
 
-    fn get_path_mut(&mut self, path: Arc<str>) -> &mut JsonPart {
-        fn _get_hash_mut(r: &mut JsonPart, key: Arc<str>) -> &mut JsonPart {
+    fn get_path_mut(&mut self, path: &str) -> &mut JsonPart {
+        fn _get_hash_mut<'a>(r: &'a mut JsonPart, key: &str) -> &'a mut JsonPart {
             if let JsonPart::Null = *r {
                 *r = JsonPart::Hash(BTreeMap::new());
             }
             if let JsonPart::Hash(ref mut map) = *r {
-                return Arc::make_mut(map.entry(key).or_insert(Arc::new(JsonPart::Null)));
+                return Arc::make_mut(map.entry(Arc::from(key)).or_insert(Arc::new(JsonPart::Null)));
             }
             panic!();
         }
@@ -108,11 +108,11 @@ impl Record {
             if part.starts_with('#') {
                 return _get_array_mut(r, part[1..].parse().unwrap());
             }
-            return _get_hash_mut(r, Arc::from(part));
+            return _get_hash_mut(r, part);
         });
     }
 
-    pub fn set_path(&mut self, path: Arc<str>, r: Record) {
+    pub fn set_path(&mut self, path: &str, r: Record) {
         *self.get_path_mut(path) = (*r.0).clone();
     }
 }
@@ -211,22 +211,22 @@ mod tests {
     #[test]
     fn test_get_path() {
         let r = Record::from_str("{\"x\":[{\"y\":\"z\"}]}").unwrap();
-        assert_eq!(r.get_path(Arc::from("x")).to_string(), "[{\"y\":\"z\"}]");
-        assert_eq!(r.get_path(Arc::from("y")).to_string(), "null");
-        assert_eq!(r.get_path(Arc::from("y/z")).to_string(), "null");
-        assert_eq!(r.get_path(Arc::from("x/#0")).to_string(), "{\"y\":\"z\"}");
-        assert_eq!(r.get_path(Arc::from("x/#1")).to_string(), "null");
-        assert_eq!(r.get_path(Arc::from("x/#0/y")).to_string(), "\"z\"");
+        assert_eq!(r.get_path("x").to_string(), "[{\"y\":\"z\"}]");
+        assert_eq!(r.get_path("y").to_string(), "null");
+        assert_eq!(r.get_path("y/z").to_string(), "null");
+        assert_eq!(r.get_path("x/#0").to_string(), "{\"y\":\"z\"}");
+        assert_eq!(r.get_path("x/#1").to_string(), "null");
+        assert_eq!(r.get_path("x/#0/y").to_string(), "\"z\"");
     }
 
     #[test]
     fn test_set_path() {
         let mut r = Record::from_str("{\"x\":[{\"y\":\"z\"}]}").unwrap();
         let r2 = r.clone();
-        r.set_path(Arc::from("x/#0/y"), Record::from_primitive_string("w"));
+        r.set_path("x/#0/y", Record::from_primitive_string("w"));
         assert_eq!(r.to_string(), "{\"x\":[{\"y\":\"w\"}]}");
         assert_eq!(r2.to_string(), "{\"x\":[{\"y\":\"z\"}]}");
-        r.set_path(Arc::from("a/#2/b"), Record::from_primitive_string("c"));
+        r.set_path("a/#2/b", Record::from_primitive_string("c"));
         assert_eq!(r.to_string(), "{\"a\":[null,null,{\"b\":\"c\"}],\"x\":[{\"y\":\"w\"}]}");
     }
 }

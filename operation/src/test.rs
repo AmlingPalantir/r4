@@ -3,7 +3,6 @@ use stream::Stream;
 use Operation;
 use record::FromPrimitive;
 use record::Record;
-use std::sync::Arc;
 use stream::Entry;
 
 pub struct TestOperation {
@@ -26,7 +25,7 @@ impl Stream for TestOperationStream {
         let mut r = e.to_record();
 
         self.n += 1;
-        r.set_path(Arc::from("n"), Record::from_primitive(self.n));
+        r.set_path("n", Record::from_primitive(self.n));
 
         return self.os.write(e);
     }
