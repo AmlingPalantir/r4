@@ -27,7 +27,7 @@ impl Stream for TestOperationStream {
         self.n += 1;
         r.set_path("n", Record::from_primitive(self.n));
 
-        return self.os.write(e);
+        return self.os.write(Entry::Record(r));
     }
 
     fn close(&mut self) {
