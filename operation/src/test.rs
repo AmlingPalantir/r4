@@ -31,8 +31,8 @@ impl Stream for MyOperationStream {
     }
 }
 
-pub(crate) fn name() -> &'static str {
-    return "test";
+pub(crate) fn names() -> Vec<&'static str> {
+    return vec!["test"];
 }
 
 #[derive(Default)]

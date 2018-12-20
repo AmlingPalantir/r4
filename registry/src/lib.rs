@@ -7,8 +7,10 @@ macro_rules! registry {
 
         pub fn find(name: &str) -> Box<$r> {
             $(
-                if name == $id::name() {
-                    return Box::new($id::Impl::default());
+                for name2 in $id::names() {
+                    if name == name2 {
+                        return Box::new($id::Impl::default());
+                    }
                 }
             )*
             panic!();
