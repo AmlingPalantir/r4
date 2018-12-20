@@ -37,6 +37,13 @@ impl Stream {
     pub fn new<F: StreamTrait + 'static>(f: F) -> Self {
         return Stream(Box::new(f));
     }
+
+    pub fn transform_entries<F: FnMut(Entry) -> Entry + 'static>(self, f: F) -> Stream {
+        return Stream::new(TransformStream {
+            os: self,
+            f: Box::new(f),
+        });
+    }
 }
 
 impl StreamTrait for Stream {
@@ -62,11 +69,4 @@ impl StreamTrait for TransformStream {
     fn close(&mut self) {
         self.os.close();
     }
-}
-
-pub fn transform<F: FnMut(Entry) -> Entry + 'static>(os: Stream, f: F) -> Stream {
-    return Stream::new(TransformStream {
-        os: os,
-        f: Box::new(f),
-    });
 }

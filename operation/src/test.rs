@@ -22,7 +22,7 @@ impl Operation for Impl {
             let mut n = 0;
             let msg = msg.clone();
 
-            return stream::transform(os, move |e| {
+            return os.transform_entries(move |e| {
                 let mut r = e.to_record();
 
                 n += 1;
