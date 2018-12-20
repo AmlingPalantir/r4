@@ -9,7 +9,6 @@ use std::vec::Vec;
 enum JsonPart {
     Primitive(JsonPrimitive),
     // TODO: less crummy Vec (better splice?)
-    Array(Vec<Arc<JsonPart>>),
     Hash(BTreeMap<Arc<str>, Arc<JsonPart>>),
 }
 
@@ -32,28 +31,13 @@ impl Record {
         panic!();
     }
 
-    fn get_array(&self, key: usize) -> Option<Record> {
-        if let JsonPart::Array(ref arr) = *self.0 {
-            return match arr.get(key) {
-                Some(arc) => Some(Record(arc.clone())),
-                None => None,
-            };
-        }
-        panic!();
-    }
-
     fn get_path(&self, path: Arc<str>) -> Record {
         let mut ret = self.clone();
         let null = Record(Arc::new(JsonPart::Primitive(JsonPrimitive::Null)));
 
         for part in path.split('/') {
             let next;
-            if part.starts_with('#') {
-                next = ret.get_array(part[1..].parse().unwrap())
-            }
-            else {
-                next = ret.get_hash(Arc::from(part));
-            }
+            next = ret.get_hash(Arc::from(part));
             match next {
                 Some(next) => {
                     ret = next;
@@ -78,32 +62,10 @@ impl Record {
             panic!();
         }
 
-        fn _get_array_mut(r: &mut JsonPart, key: usize) -> &mut JsonPart {
-            if let JsonPart::Primitive(JsonPrimitive::Null) = *r {
-                *r = JsonPart::Array(Vec::new());
-            }
-            if let JsonPart::Array(ref mut arr) = *r {
-                if key < 0 {
-                    panic!();
-                }
-                while key >= arr.len() {
-                    arr.push(Arc::new(JsonPart::Primitive(JsonPrimitive::Null)));
-                }
-                return &mut arr[key];
-            }
-            panic!();
-        }
-
         let mut ret: &mut JsonPart = Arc::make_mut(&mut self.0);
 
         for part in path.split('/') {
-            let next;
-            if part.starts_with('#') {
-                next = _get_array_mut(ret, part[1..].parse().unwrap())
-            }
-            else {
-                next = _get_hash_mut(ret, Arc::from(part));
-            }
+            let next = _get_hash_mut(ret, Arc::from(part));
             ret = next;
         }
 
