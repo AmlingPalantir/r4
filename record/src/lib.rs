@@ -107,3 +107,11 @@ impl Record {
         });
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test1() {
+        assert!(true);
+    }
+}
