@@ -1,4 +1,3 @@
-use ClosureStreamWrapper;
 use Operation;
 use StreamWrapper;
 use record::FromPrimitive;
@@ -16,10 +15,10 @@ pub struct Impl {
 }
 
 impl Operation for Impl {
-    fn validate(&self, args: &mut VecDeque<String>) -> Box<StreamWrapper> {
+    fn validate(&self, args: &mut VecDeque<String>) -> StreamWrapper {
         let msg: Arc<str> = Arc::from(args.pop_front().unwrap());
 
-        return ClosureStreamWrapper::new(move |os| {
+        return StreamWrapper::new(move |os| {
             let mut n = 0;
             let msg = msg.clone();
 

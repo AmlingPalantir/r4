@@ -13,23 +13,17 @@ use std::collections::VecDeque;
 use stream::Stream;
 
 pub trait Operation {
-    fn validate(&self, &mut VecDeque<String>) -> Box<StreamWrapper>;
+    fn validate(&self, &mut VecDeque<String>) -> StreamWrapper;
 }
 
-pub trait StreamWrapper {
-    fn wrap(&self, Stream) -> Stream;
-}
+pub struct StreamWrapper(Box<Fn(Stream) -> Stream>);
 
-struct ClosureStreamWrapper(Box<Fn(Stream) -> Stream>);
-
-impl ClosureStreamWrapper {
-    fn new<F: Fn(Stream) -> Stream + 'static>(f: F) -> Box<StreamWrapper> {
-        return Box::new(ClosureStreamWrapper(Box::new(f)));
+impl StreamWrapper {
+    pub fn new<F: Fn(Stream) -> Stream + 'static>(f: F) -> Self {
+        return StreamWrapper(Box::new(f));
     }
-}
 
-impl StreamWrapper for ClosureStreamWrapper {
-    fn wrap(&self, os: Stream) -> Stream {
+    pub fn wrap(&self, os: Stream) -> Stream {
         return self.0(os);
     }
 }
