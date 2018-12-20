@@ -214,4 +214,15 @@ mod tests {
         assert_eq!(r.get_path(Arc::from("x/#1")).to_string(), "null");
         assert_eq!(r.get_path(Arc::from("x/#0/y")).to_string(), "\"z\"");
     }
+
+    #[test]
+    fn test_set_path() {
+        let mut r = Record::from_str("{\"x\":[{\"y\":\"z\"}]}").unwrap();
+        let r2 = r.clone();
+        *r.get_path_mut(Arc::from("x/#0/y")) = JsonPart::Primitive(JsonPrimitive::String(Arc::from("w")));
+        assert_eq!(r.to_string(), "{\"x\":[{\"y\":\"w\"}]}");
+        assert_eq!(r2.to_string(), "{\"x\":[{\"y\":\"z\"}]}");
+        *r.get_path_mut(Arc::from("a/#2/b")) = JsonPart::Primitive(JsonPrimitive::String(Arc::from("c")));
+        assert_eq!(r.to_string(), "{\"a\":[null,null,{\"b\":\"c\"}],\"x\":[{\"y\":\"w\"}]}");
+    }
 }
