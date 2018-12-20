@@ -73,6 +73,6 @@ impl Record {
             }
         }
 
-        return _get_path_mut(Arc::make_mut(&mut self.0), path.split('/').into_iter());
+        return _get_path_mut(Arc::make_mut(&mut self.0), path.split('/'));
     }
 }
