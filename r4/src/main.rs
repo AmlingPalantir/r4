@@ -13,7 +13,7 @@ use stream_stdout::StdoutStream;
 fn main() {
     let mut args = env::args();
     args.next().unwrap();
-    let mut op = operation::find_operation(&args.next().unwrap());
+    let mut op = operation::find(&args.next().unwrap());
     let args = op.configure(args.collect());
     assert!(args.is_empty());
     let op = op.validate();

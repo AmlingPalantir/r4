@@ -1,27 +1,11 @@
 extern crate record;
 extern crate stream;
 
-macro_rules! registry {
-    {$($id:ident),*} => {
-        $(
-            pub mod $id;
-        )*
-
-        pub fn find_operation(name: &str) -> Box<Operation> {
-            $(
-                if name == $id::name() {
-                    return $id::new();
-                }
-            )*
-            panic!();
-        }
-    };
-    {$($id:ident),*,} => {
-        registry! {$($id),*}
-    };
-}
+#[macro_use]
+extern crate registry;
 
 registry! {
+    Operation:
     test,
 }
 
