@@ -62,17 +62,6 @@ impl Record {
             panic!();
         }
 
-        fn _get_path_mut<'a, I: Iterator<Item = &'a str>>(r: &mut JsonPart, mut parts: I) -> &mut JsonPart {
-            match parts.next() {
-                Some(part) => {
-                    return _get_path_mut(_get_hash_mut(r, Arc::from(part)), parts);
-                }
-                None => {
-                    return r;
-                }
-            }
-        }
-
-        return _get_path_mut(Arc::make_mut(&mut self.0), path.split('/'));
+        return path.split('/').fold(Arc::make_mut(&mut self.0), |r, part| _get_hash_mut(r, Arc::from(part)));
     }
 }
