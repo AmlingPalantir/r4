@@ -1,5 +1,6 @@
 use stream::Stream;
 
+use ClosureStreamWrapper;
 use Operation;
 use StreamWrapper;
 use record::FromPrimitive;
@@ -26,18 +27,6 @@ impl Stream for MyOperationStream {
     }
 }
 
-pub struct MyOperationWrapper {
-}
-
-impl StreamWrapper for MyOperationWrapper {
-    fn wrap(&self, os: Box<Stream>) -> Box<Stream> {
-        return Box::new(MyOperationStream {
-            os: os,
-            n: 0,
-        });
-    }
-}
-
 pub(crate) fn name() -> &'static str {
     return "test";
 }
@@ -56,7 +45,11 @@ impl Operation for MyOperation {
     }
 
     fn validate(&self) -> Box<StreamWrapper> {
-        return Box::new(MyOperationWrapper {
+        return ClosureStreamWrapper::new(|os| {
+            return Box::new(MyOperationStream {
+                os: os,
+                n: 0,
+            });
         });
     }
 }
