@@ -18,8 +18,16 @@ enum JsonPart {
 }
 
 impl Record {
-    fn null() -> Self {
+    pub fn null() -> Self {
         return Record(Arc::new(JsonPart::Null));
+    }
+
+    pub fn new_str(s: Arc<str>) -> Self {
+        return Record(Arc::new(JsonPart::String(s)));
+    }
+
+    pub fn new_u32(n: u32) -> Self {
+        return Record(Arc::new(JsonPart::Number(serde_json::Number::from(n))));
     }
 
     fn get_hash(&self, key: Arc<str>) -> Option<Record> {
@@ -95,6 +103,10 @@ impl Record {
             }
             return _get_hash_mut(r, Arc::from(part));
         });
+    }
+
+    pub fn set_path(&mut self, path: Arc<str>, r: Record) {
+        *self.get_path_mut(path) = (*r.0).clone();
     }
 }
 
@@ -204,10 +216,10 @@ mod tests {
     fn test_set_path() {
         let mut r = Record::from_str("{\"x\":[{\"y\":\"z\"}]}").unwrap();
         let r2 = r.clone();
-        *r.get_path_mut(Arc::from("x/#0/y")) = JsonPart::String(Arc::from("w"));
+        r.set_path(Arc::from("x/#0/y"), Record::new_str(Arc::from("w")));
         assert_eq!(r.to_string(), "{\"x\":[{\"y\":\"w\"}]}");
         assert_eq!(r2.to_string(), "{\"x\":[{\"y\":\"z\"}]}");
-        *r.get_path_mut(Arc::from("a/#2/b")) = JsonPart::String(Arc::from("c"));
+        r.set_path(Arc::from("a/#2/b"), Record::new_str(Arc::from("c")));
         assert_eq!(r.to_string(), "{\"a\":[null,null,{\"b\":\"c\"}],\"x\":[{\"y\":\"w\"}]}");
     }
 }
