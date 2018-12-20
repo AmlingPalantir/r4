@@ -128,6 +128,61 @@ impl FromStr for Record {
     }
 }
 
+impl ToString for Record {
+    fn to_string(&self) -> String {
+        fn _to_string_aux(p: &JsonPart, acc: &mut String) {
+            match p {
+                JsonPart::Primitive(p) => {
+                    match p {
+                        JsonPrimitive::Null => {
+                            acc.push_str("null");
+                        }
+                        JsonPrimitive::Bool(b) => {
+                            acc.push_str(if *b { "true" } else { "false" });
+                        }
+                        JsonPrimitive::Number(n) => {
+                            acc.push_str(&serde_json::to_string(&n).unwrap());
+                        }
+                        JsonPrimitive::String(s) => {
+                            let sr: &str = &*s;
+                            acc.push_str(&serde_json::to_string(sr).unwrap());
+                        }
+                    }
+                }
+                JsonPart::Array(arr) => {
+                    acc.push_str("[");
+                    for e in arr.iter().enumerate() {
+                        let (i, v) = e;
+                        if i > 0 {
+                            acc.push_str(",");
+                        }
+                        _to_string_aux(v, acc);
+                    }
+                    acc.push_str("]");
+                }
+                JsonPart::Hash(map) => {
+                    acc.push_str("{");
+                    for e in map.iter().enumerate() {
+                        let (i, (k, v)) = e;
+                        if i > 0 {
+                            acc.push_str(",");
+                        }
+                        let kr: &str = &*k;
+                        acc.push_str(&serde_json::to_string(kr).unwrap());
+                        acc.push_str(":");
+                        _to_string_aux(v, acc);
+                    }
+                    acc.push_str("}");
+                }
+            }
+        }
+
+        let mut ret = String::new();
+        _to_string_aux(&self.0, &mut ret);
+        return ret;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -135,6 +190,17 @@ mod tests {
     #[test]
     fn test1() {
         assert!(Record::from_str("x").is_err());
+    }
+
+    #[test]
+    fn test2() {
         assert!(!Record::from_str("{}").is_err());
+    }
+
+    #[test]
+    fn test_serde() {
+        let s = "{\"x\":[{\"y\":\"z\"}]}";
+        let r = Record::from_str(s).unwrap();
+        assert_eq!(r.to_string(), s);
     }
 }
