@@ -39,7 +39,7 @@ pub struct BgopBe<E: Clone> {
 }
 
 impl<E: Clone> BgopBe<E> {
-    pub fn read_line(&self) -> Option<E> {
+    pub fn read(&self) -> Option<E> {
         return self.state.await(&mut |buffers| {
             if let Some(maybe) = buffers.fe_to_be.buf.pop_front() {
                 return (Some(maybe), true);

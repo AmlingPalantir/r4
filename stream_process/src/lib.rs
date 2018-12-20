@@ -48,7 +48,7 @@ impl ProcessStream {
             thread::spawn(move|| {
                 let mut r = LineWriter::new(p_stdin);
                 loop {
-                    match bgop.read_line() {
+                    match bgop.read() {
                         Some(line) => {
                             match writeln!(r, "{}", line) {
                                 Err(_) => {
