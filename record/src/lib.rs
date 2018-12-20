@@ -17,17 +17,21 @@ enum JsonPart {
     Hash(BTreeMap<Arc<str>, Arc<JsonPart>>),
 }
 
+impl From<u32> for Record {
+    fn from(n: u32) -> Self {
+        return Record(Arc::new(JsonPart::Number(serde_json::Number::from(n))));
+    }
+}
+
+impl From<Arc<str>> for Record {
+    fn from(s: Arc<str>) -> Self {
+        return Record(Arc::new(JsonPart::String(s)));
+    }
+}
+
 impl Record {
     pub fn null() -> Self {
         return Record(Arc::new(JsonPart::Null));
-    }
-
-    pub fn new_str(s: Arc<str>) -> Self {
-        return Record(Arc::new(JsonPart::String(s)));
-    }
-
-    pub fn new_u32(n: u32) -> Self {
-        return Record(Arc::new(JsonPart::Number(serde_json::Number::from(n))));
     }
 
     fn get_hash(&self, key: Arc<str>) -> Option<Record> {
@@ -216,10 +220,10 @@ mod tests {
     fn test_set_path() {
         let mut r = Record::from_str("{\"x\":[{\"y\":\"z\"}]}").unwrap();
         let r2 = r.clone();
-        r.set_path(Arc::from("x/#0/y"), Record::new_str(Arc::from("w")));
+        r.set_path(Arc::from("x/#0/y"), Record::from(Arc::from("w")));
         assert_eq!(r.to_string(), "{\"x\":[{\"y\":\"w\"}]}");
         assert_eq!(r2.to_string(), "{\"x\":[{\"y\":\"z\"}]}");
-        r.set_path(Arc::from("a/#2/b"), Record::new_str(Arc::from("c")));
+        r.set_path(Arc::from("a/#2/b"), Record::from(Arc::from("c")));
         assert_eq!(r.to_string(), "{\"a\":[null,null,{\"b\":\"c\"}],\"x\":[{\"y\":\"w\"}]}");
     }
 }
