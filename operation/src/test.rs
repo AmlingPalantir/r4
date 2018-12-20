@@ -35,9 +35,9 @@ pub(crate) fn name() -> &'static str {
     return "test";
 }
 
-pub(crate) fn new() -> Box<Operation> {
-    return Box::new(MyOperation {
-    });
+pub(crate) fn new() -> MyOperation {
+    return MyOperation {
+    };
 }
 
 pub struct MyOperation {

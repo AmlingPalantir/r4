@@ -8,7 +8,7 @@ macro_rules! registry {
         pub fn find(name: &str) -> Box<$r> {
             $(
                 if name == $id::name() {
-                    return $id::new();
+                    return Box::new($id::new());
                 }
             )*
             panic!();
