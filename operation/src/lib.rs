@@ -1,13 +1,28 @@
 extern crate record;
 extern crate stream;
 
-pub mod test;
+macro_rules! registry {
+    {$($id:ident),*} => {
+        $(
+            pub mod $id;
+        )*
 
-pub fn find_operation(name: &str) -> Box<Operation> {
-    if name == test::name() {
-        return test::new();
-    }
-    panic!();
+        pub fn find_operation(name: &str) -> Box<Operation> {
+            $(
+                if name == $id::name() {
+                    return $id::new();
+                }
+            )*
+            panic!();
+        }
+    };
+    {$($id:ident),*,} => {
+        registry! {$($id),*}
+    };
+}
+
+registry! {
+    test,
 }
 
 use stream::Stream;
