@@ -203,4 +203,15 @@ mod tests {
         let r = Record::from_str(s).unwrap();
         assert_eq!(r.to_string(), s);
     }
+
+    #[test]
+    fn test_get_path() {
+        let r = Record::from_str("{\"x\":[{\"y\":\"z\"}]}").unwrap();
+        assert_eq!(r.get_path(Arc::from("x")).to_string(), "[{\"y\":\"z\"}]");
+        assert_eq!(r.get_path(Arc::from("y")).to_string(), "null");
+        assert_eq!(r.get_path(Arc::from("y/z")).to_string(), "null");
+        assert_eq!(r.get_path(Arc::from("x/#0")).to_string(), "{\"y\":\"z\"}");
+        assert_eq!(r.get_path(Arc::from("x/#1")).to_string(), "null");
+        assert_eq!(r.get_path(Arc::from("x/#0/y")).to_string(), "\"z\"");
+    }
 }
