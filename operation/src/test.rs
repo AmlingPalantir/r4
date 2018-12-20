@@ -35,15 +35,11 @@ pub(crate) fn name() -> &'static str {
     return "test";
 }
 
-pub(crate) fn new() -> MyOperation {
-    return MyOperation {
-    };
+#[derive(Default)]
+pub struct Impl {
 }
 
-pub struct MyOperation {
-}
-
-impl Operation for MyOperation {
+impl Operation for Impl {
     fn validate(&self, args: &mut VecDeque<String>) -> Box<StreamWrapper> {
         let msg: Arc<str> = Arc::from(args.pop_front().unwrap());
 
