@@ -68,7 +68,7 @@ impl Record {
     }
 
     fn get_path_mut(&mut self, path: Arc<str>) -> &mut JsonPart {
-        fn _get_hash_mut<'a>(r: &'a mut JsonPart, key: Arc<str>) -> &'a mut JsonPart {
+        fn _get_hash_mut(r: &mut JsonPart, key: Arc<str>) -> &mut JsonPart {
             if let JsonPart::Primitive(JsonPrimitive::Null) = *r {
                 *r = JsonPart::Hash(BTreeMap::new());
             }
@@ -78,7 +78,7 @@ impl Record {
             panic!();
         }
 
-        fn _get_array_mut<'a>(r: &'a mut JsonPart, key: usize) -> &'a mut JsonPart {
+        fn _get_array_mut(r: &mut JsonPart, key: usize) -> &mut JsonPart {
             if let JsonPart::Primitive(JsonPrimitive::Null) = *r {
                 *r = JsonPart::Array(Vec::new());
             }
