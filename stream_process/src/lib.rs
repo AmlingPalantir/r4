@@ -53,10 +53,8 @@ impl ProcessStream {
                 loop {
                     match bgop.read_line() {
                         Some(line) => {
-                            eprintln!("[backend stdin] got line {}", line);
                             match writeln!(r, "{}", line) {
                                 Err(_) => {
-                                    eprintln!("[backend stdin] got rclosed");
                                     bgop.rclose();
                                 }
                                 Ok(_) => {
@@ -64,7 +62,6 @@ impl ProcessStream {
                             }
                         }
                         None => {
-                            eprintln!("[backend stdin] got eof");
                             // drops r
                             return;
                         }
@@ -81,7 +78,6 @@ impl ProcessStream {
                 for line in r.lines() {
                     let line = line.unwrap();
                     if !bgop.write_line(Arc::from(line)) {
-                        eprintln!("[backend stdout] got rclosed");
                         break;
                     }
                 }
