@@ -40,9 +40,6 @@ impl Record {
             return None;
         }
         if let JsonPart::Array(ref arr) = *self.0 {
-            if key < 0 {
-                panic!();
-            }
             if key >= arr.len() {
                 return None;
             }
@@ -84,9 +81,6 @@ impl Record {
                 *r = JsonPart::Array(Vec::new());
             }
             if let JsonPart::Array(ref mut arr) = *r {
-                if key < 0 {
-                    panic!();
-                }
                 while key >= arr.len() {
                     arr.push(Arc::new(JsonPart::Null));
                 }
