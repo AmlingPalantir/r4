@@ -1,26 +1,17 @@
 use stream::Stream;
 
 use Operation;
+use StreamWrapper;
 use record::FromPrimitive;
 use record::Record;
 use stream::Entry;
 
-pub struct TestOperation {
-}
-
-impl TestOperation {
-    pub fn new() -> Self {
-        return TestOperation {
-        };
-    }
-}
-
-struct TestOperationStream {
+struct MyOperationStream {
     os: Box<Stream>,
     n: u32,
 }
 
-impl Stream for TestOperationStream {
+impl Stream for MyOperationStream {
     fn write(&mut self, e: Entry) -> bool {
         let mut r = e.to_record();
 
@@ -35,11 +26,37 @@ impl Stream for TestOperationStream {
     }
 }
 
-impl Operation for TestOperation {
+pub struct MyOperationWrapper {
+}
+
+impl StreamWrapper for MyOperationWrapper {
     fn wrap(&self, os: Box<Stream>) -> Box<Stream> {
-        return Box::new(TestOperationStream {
+        return Box::new(MyOperationStream {
             os: os,
             n: 0,
+        });
+    }
+}
+
+pub(crate) fn name() -> &'static str {
+    return "test";
+}
+
+pub(crate) fn new() -> Box<Operation> {
+    return Box::new(MyOperation {
+    });
+}
+
+pub struct MyOperation {
+}
+
+impl Operation for MyOperation {
+    fn configure(&mut self, args: Vec<String>) -> Vec<String> {
+        return args;
+    }
+
+    fn validate(&self) -> Box<StreamWrapper> {
+        return Box::new(MyOperationWrapper {
         });
     }
 }
