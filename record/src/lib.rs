@@ -2,6 +2,7 @@
 struct Record(Arc<JsonPart>);
 
 use std::collections::BTreeMap;
+use std::str::FromStr;
 use std::sync::Arc;
 use std::vec::Vec;
 
@@ -17,8 +18,9 @@ enum JsonPart {
 enum JsonPrimitive {
     // TODO: real versions, presumably from underlying json library?
     Null,
+    Bool(bool),
+    Number(serde_json::Number),
     String(Arc<str>),
-    Number(f32),
 }
 
 impl Record {
@@ -108,10 +110,32 @@ impl Record {
     }
 }
 
+impl FromStr for Record {
+    type Err = serde_json::error::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        fn convert_part(p: &serde_json::value::Value) -> JsonPart {
+            return match p {
+                serde_json::value::Value::Null => JsonPart::Primitive(JsonPrimitive::Null),
+                serde_json::value::Value::Bool(b) => JsonPart::Primitive(JsonPrimitive::Bool(*b)),
+                serde_json::value::Value::Number(n) => JsonPart::Primitive(JsonPrimitive::Number(n.clone())),
+                serde_json::value::Value::String(s) => JsonPart::Primitive(JsonPrimitive::String(Arc::from(s.clone()))),
+                serde_json::value::Value::Array(arr) => JsonPart::Array(arr.iter().map(|v| Arc::new(convert_part(v))).collect()),
+                serde_json::value::Value::Object(map) => JsonPart::Hash(map.iter().map(|(k, v)| (Arc::from(k.clone()), Arc::new(convert_part(v)))).collect()),
+            }
+        }
+
+        return serde_json::from_str(s).map(|j| Record(Arc::new(convert_part(&j))));
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
     fn test1() {
-        assert!(true);
+        assert!(Record::from_str("x").is_err());
+        assert!(!Record::from_str("{}").is_err());
     }
 }
