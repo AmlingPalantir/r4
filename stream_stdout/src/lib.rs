@@ -3,7 +3,7 @@ extern crate stream;
 use std::io::Write;
 use std::io;
 use stream::Entry;
-use stream::Stream;
+use stream::StreamTrait;
 
 pub struct StdoutStream {
     rclosed: bool,
@@ -27,7 +27,7 @@ impl StdoutStream {
     }
 }
 
-impl Stream for StdoutStream {
+impl StreamTrait for StdoutStream {
     fn write(&mut self, e: Entry) -> bool {
         self.maybe_rclosed(writeln!(io::stdout(), "{}", e.to_line()));
         return !self.rclosed;

@@ -14,6 +14,7 @@ use std::sync::Arc;
 use std::thread;
 use stream::Entry;
 use stream::Stream;
+use stream::StreamTrait;
 
 pub struct ProcessStream {
     p: Child,
@@ -21,11 +22,7 @@ pub struct ProcessStream {
 }
 
 impl ProcessStream {
-    pub fn new<OS: Stream + 'static, I: IntoIterator<Item = S>, S: AsRef<OsStr>>(os: OS, args: I) -> Self {
-        return Self::new_box(Box::new(os), args);
-    }
-
-    pub fn new_box<I: IntoIterator<Item = S>, S: AsRef<OsStr>>(mut os: Box<Stream>, args: I) -> Self {
+    pub fn new<I: IntoIterator<Item = S>, S: AsRef<OsStr>>(mut os: Stream, args: I) -> Self {
         let mut args = args.into_iter();
         let mut p = Command::new(args.next().unwrap())
             .args(args)
@@ -93,7 +90,7 @@ impl ProcessStream {
     }
 }
 
-impl Stream for ProcessStream {
+impl StreamTrait for ProcessStream {
     fn write(&mut self, e: Entry) -> bool {
         return self.bgop.write(e.to_line());
     }

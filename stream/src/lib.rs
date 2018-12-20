@@ -26,17 +26,35 @@ impl Entry {
     }
 }
 
-pub trait Stream {
+pub trait StreamTrait {
     fn write(&mut self, Entry) -> bool;
     fn close(&mut self);
 }
 
+pub struct Stream(Box<StreamTrait>);
+
+impl Stream {
+    pub fn new<F: StreamTrait + 'static>(f: F) -> Self {
+        return Stream(Box::new(f));
+    }
+}
+
+impl StreamTrait for Stream {
+    fn write(&mut self, e: Entry) -> bool {
+        return self.0.write(e);
+    }
+
+    fn close(&mut self) {
+        self.0.close();
+    }
+}
+
 struct TransformStream {
-    os: Box<Stream>,
+    os: Stream,
     f: Box<FnMut(Entry) -> Entry>,
 }
 
-impl Stream for TransformStream {
+impl StreamTrait for TransformStream {
     fn write(&mut self, e: Entry) -> bool {
         return self.os.write((*self.f)(e));
     }
@@ -46,8 +64,8 @@ impl Stream for TransformStream {
     }
 }
 
-pub fn transform<F: FnMut(Entry) -> Entry + 'static>(os: Box<Stream>, f: F) -> Box<Stream> {
-    return Box::new(TransformStream {
+pub fn transform<F: FnMut(Entry) -> Entry + 'static>(os: Stream, f: F) -> Stream {
+    return Stream::new(TransformStream {
         os: os,
         f: Box::new(f),
     });

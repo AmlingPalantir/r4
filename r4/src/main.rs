@@ -8,6 +8,8 @@ use std::io::BufRead;
 use std::io;
 use std::sync::Arc;
 use stream::Entry;
+use stream::Stream;
+use stream::StreamTrait;
 use stream_stdout::StdoutStream;
 
 fn main() {
@@ -18,7 +20,7 @@ fn main() {
     let op = op.validate(&mut args);
     assert!(args.is_empty());
 
-    let os = Box::new(StdoutStream::new());
+    let os = Stream::new(StdoutStream::new());
     let mut os = op.wrap(os);
 
     let stdin = io::stdin();
