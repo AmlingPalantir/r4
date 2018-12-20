@@ -16,7 +16,6 @@ enum JsonPart {
 
 #[derive(Clone)]
 enum JsonPrimitive {
-    // TODO: real versions, presumably from underlying json library?
     Null,
     Bool(bool),
     Number(serde_json::Number),
