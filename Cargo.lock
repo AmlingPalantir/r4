@@ -15,6 +15,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "record"
+version = "1.0.0"
+
+[[package]]
 name = "stream"
 version = "1.0.0"
 
