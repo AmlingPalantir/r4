@@ -8,27 +8,22 @@ use std::vec::Vec;
 
 #[derive(Clone)]
 enum JsonPart {
-    Primitive(JsonPrimitive),
+    Null,
+    Bool(bool),
+    Number(serde_json::Number),
+    String(Arc<str>),
     // TODO: less crummy Vec (better splice?)
     Array(Vec<Arc<JsonPart>>),
     Hash(BTreeMap<Arc<str>, Arc<JsonPart>>),
 }
 
-#[derive(Clone)]
-enum JsonPrimitive {
-    Null,
-    Bool(bool),
-    Number(serde_json::Number),
-    String(Arc<str>),
-}
-
 impl Record {
     fn null() -> Self {
-        return Record(Arc::new(JsonPart::Primitive(JsonPrimitive::Null)));
+        return Record(Arc::new(JsonPart::Null));
     }
 
     fn get_hash(&self, key: Arc<str>) -> Option<Record> {
-        if let JsonPart::Primitive(JsonPrimitive::Null) = *self.0 {
+        if let JsonPart::Null = *self.0 {
             return None;
         }
         if let JsonPart::Hash(ref map) = *self.0 {
@@ -41,7 +36,7 @@ impl Record {
     }
 
     fn get_array(&self, key: usize) -> Option<Record> {
-        if let JsonPart::Primitive(JsonPrimitive::Null) = *self.0 {
+        if let JsonPart::Null = *self.0 {
             return None;
         }
         if let JsonPart::Array(ref arr) = *self.0 {
@@ -75,17 +70,17 @@ impl Record {
 
     fn get_path_mut(&mut self, path: Arc<str>) -> &mut JsonPart {
         fn _get_hash_mut(r: &mut JsonPart, key: Arc<str>) -> &mut JsonPart {
-            if let JsonPart::Primitive(JsonPrimitive::Null) = *r {
+            if let JsonPart::Null = *r {
                 *r = JsonPart::Hash(BTreeMap::new());
             }
             if let JsonPart::Hash(ref mut map) = *r {
-                return Arc::make_mut(map.entry(key).or_insert(Arc::new(JsonPart::Primitive(JsonPrimitive::Null))));
+                return Arc::make_mut(map.entry(key).or_insert(Arc::new(JsonPart::Null)));
             }
             panic!();
         }
 
         fn _get_array_mut(r: &mut JsonPart, key: usize) -> &mut JsonPart {
-            if let JsonPart::Primitive(JsonPrimitive::Null) = *r {
+            if let JsonPart::Null = *r {
                 *r = JsonPart::Array(Vec::new());
             }
             if let JsonPart::Array(ref mut arr) = *r {
@@ -93,7 +88,7 @@ impl Record {
                     panic!();
                 }
                 while key >= arr.len() {
-                    arr.push(Arc::new(JsonPart::Primitive(JsonPrimitive::Null)));
+                    arr.push(Arc::new(JsonPart::Null));
                 }
                 return Arc::make_mut(&mut arr[key]);
             }
@@ -115,10 +110,10 @@ impl FromStr for Record {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         fn convert_part(p: &serde_json::value::Value) -> JsonPart {
             return match p {
-                serde_json::value::Value::Null => JsonPart::Primitive(JsonPrimitive::Null),
-                serde_json::value::Value::Bool(b) => JsonPart::Primitive(JsonPrimitive::Bool(*b)),
-                serde_json::value::Value::Number(n) => JsonPart::Primitive(JsonPrimitive::Number(n.clone())),
-                serde_json::value::Value::String(s) => JsonPart::Primitive(JsonPrimitive::String(Arc::from(s.clone()))),
+                serde_json::value::Value::Null => JsonPart::Null,
+                serde_json::value::Value::Bool(b) => JsonPart::Bool(*b),
+                serde_json::value::Value::Number(n) => JsonPart::Number(n.clone()),
+                serde_json::value::Value::String(s) => JsonPart::String(Arc::from(s.clone())),
                 serde_json::value::Value::Array(arr) => JsonPart::Array(arr.iter().map(|v| Arc::new(convert_part(v))).collect()),
                 serde_json::value::Value::Object(map) => JsonPart::Hash(map.iter().map(|(k, v)| (Arc::from(k.clone()), Arc::new(convert_part(v)))).collect()),
             }
@@ -132,22 +127,18 @@ impl ToString for Record {
     fn to_string(&self) -> String {
         fn _to_string_aux(p: &JsonPart, acc: &mut String) {
             match p {
-                JsonPart::Primitive(p) => {
-                    match p {
-                        JsonPrimitive::Null => {
-                            acc.push_str("null");
-                        }
-                        JsonPrimitive::Bool(b) => {
-                            acc.push_str(if *b { "true" } else { "false" });
-                        }
-                        JsonPrimitive::Number(n) => {
-                            acc.push_str(&serde_json::to_string(&n).unwrap());
-                        }
-                        JsonPrimitive::String(s) => {
-                            let sr: &str = &*s;
-                            acc.push_str(&serde_json::to_string(sr).unwrap());
-                        }
-                    }
+                JsonPart::Null => {
+                    acc.push_str("null");
+                }
+                JsonPart::Bool(b) => {
+                    acc.push_str(if *b { "true" } else { "false" });
+                }
+                JsonPart::Number(n) => {
+                    acc.push_str(&serde_json::to_string(&n).unwrap());
+                }
+                JsonPart::String(s) => {
+                    let sr: &str = &*s;
+                    acc.push_str(&serde_json::to_string(sr).unwrap());
                 }
                 JsonPart::Array(arr) => {
                     acc.push_str("[");
@@ -219,10 +210,10 @@ mod tests {
     fn test_set_path() {
         let mut r = Record::from_str("{\"x\":[{\"y\":\"z\"}]}").unwrap();
         let r2 = r.clone();
-        *r.get_path_mut(Arc::from("x/#0/y")) = JsonPart::Primitive(JsonPrimitive::String(Arc::from("w")));
+        *r.get_path_mut(Arc::from("x/#0/y")) = JsonPart::String(Arc::from("w"));
         assert_eq!(r.to_string(), "{\"x\":[{\"y\":\"w\"}]}");
         assert_eq!(r2.to_string(), "{\"x\":[{\"y\":\"z\"}]}");
-        *r.get_path_mut(Arc::from("a/#2/b")) = JsonPart::Primitive(JsonPrimitive::String(Arc::from("c")));
+        *r.get_path_mut(Arc::from("a/#2/b")) = JsonPart::String(Arc::from("c"));
         assert_eq!(r.to_string(), "{\"a\":[null,null,{\"b\":\"c\"}],\"x\":[{\"y\":\"w\"}]}");
     }
 }
