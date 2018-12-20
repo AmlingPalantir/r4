@@ -57,18 +57,22 @@ impl Record {
                 *r = JsonPart::Hash(BTreeMap::new());
             }
             if let JsonPart::Hash(ref mut map) = *r {
-                return map.entry(key).or_insert(Arc::new(JsonPart::Primitive(JsonPrimitive::Null)));
+                return Arc::make_mut(map.entry(key).or_insert(Arc::new(JsonPart::Primitive(JsonPrimitive::Null))));
             }
             panic!();
         }
 
-        let mut ret: &mut JsonPart = Arc::make_mut(&mut self.0);
-
-        for part in path.split('/') {
-            let next = _get_hash_mut(ret, Arc::from(part));
-            ret = next;
+        fn _get_path_mut<'a, I: Iterator<Item = &'a str>>(r: &mut JsonPart, mut parts: I) -> &mut JsonPart {
+            match parts.next() {
+                Some(part) => {
+                    return _get_path_mut(_get_hash_mut(r, Arc::from(part)), parts);
+                }
+                None => {
+                    return r;
+                }
+            }
         }
 
-        return ret;
+        return _get_path_mut(Arc::make_mut(&mut self.0), path.split('/').into_iter());
     }
 }
