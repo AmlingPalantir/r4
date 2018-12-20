@@ -13,10 +13,10 @@ use stream_stdout::StdoutStream;
 fn main() {
     let mut args = env::args();
     args.next().unwrap();
-    let mut op = operation::find(&args.next().unwrap());
-    let args = op.configure(args.collect());
+    let op = operation::find(&args.next().unwrap());
+    let mut args = args.collect();
+    let op = op.validate(&mut args);
     assert!(args.is_empty());
-    let op = op.validate();
 
     let os = Box::new(StdoutStream::new());
     let mut os = op.wrap(os);

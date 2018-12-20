@@ -9,11 +9,11 @@ registry! {
     test,
 }
 
+use std::collections::VecDeque;
 use stream::Stream;
 
 pub trait Operation {
-    fn configure(&mut self, Vec<String>) -> Vec<String>;
-    fn validate(&self) -> Box<StreamWrapper>;
+    fn validate(&self, &mut VecDeque<String>) -> Box<StreamWrapper>;
 }
 
 pub trait StreamWrapper {
