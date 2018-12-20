@@ -6,6 +6,7 @@ extern crate registry;
 
 registry! {
     Operation:
+    bg,
     test,
 }
 
