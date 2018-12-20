@@ -55,7 +55,7 @@ impl<E: Clone> BgopBe<E> {
         });
     }
 
-    pub fn write_line(&self, e: E) -> bool {
+    pub fn write(&self, e: E) -> bool {
         return self.state.await(&mut |buffers| {
             if buffers.be_to_fe.rclosed {
                 return (Some(false), false);
@@ -141,7 +141,7 @@ impl<E: Clone> BgopFe<E> {
         }
     }
 
-    pub fn write_line(&mut self, e: E) -> bool {
+    pub fn write(&mut self, e: E) -> bool {
         return self.ferry(&mut |buffers| {
             if buffers.fe_to_be.rclosed {
                 return Some(false);

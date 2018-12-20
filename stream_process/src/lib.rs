@@ -12,12 +12,12 @@ use std::process::Command;
 use std::process::Stdio;
 use std::sync::Arc;
 use std::thread;
-use stream::Line;
+use stream::Entry;
 use stream::Stream;
 
 pub struct ProcessStream {
     p: Child,
-    bgop: BgopFe<Line>,
+    bgop: BgopFe<Arc<str>>,
 }
 
 impl ProcessStream {
@@ -34,10 +34,10 @@ impl ProcessStream {
             .spawn()
             .unwrap();
 
-        let bgop = BgopFe::new(move |maybe_line| {
+        let bgop = BgopFe::<Arc<str>>::new(move |maybe_line| {
             match maybe_line {
                 Some(line) => {
-                    return os.write_line(line);
+                    return os.write(Entry::Line(line));
                 }
                 None => {
                     os.close();
@@ -77,7 +77,7 @@ impl ProcessStream {
                 let r = BufReader::new(p_stdout);
                 for line in r.lines() {
                     let line = line.unwrap();
-                    if !bgop.write_line(Arc::from(line)) {
+                    if !bgop.write(Arc::from(line)) {
                         break;
                     }
                 }
@@ -94,8 +94,8 @@ impl ProcessStream {
 }
 
 impl Stream for ProcessStream {
-    fn write_line(&mut self, line: Line) -> bool {
-        return self.bgop.write_line(line);
+    fn write(&mut self, e: Entry) -> bool {
+        return self.bgop.write(e.to_line());
     }
 
     fn close(&mut self) {

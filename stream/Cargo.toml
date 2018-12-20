@@ -2,3 +2,6 @@
 name = "stream"
 version = "1.0.0"
 authors = ["Keith Amling <me@amling2.org>"]
+
+[dependencies]
+record = { path = "../record" }

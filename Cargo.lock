@@ -49,6 +49,9 @@ dependencies = [
 [[package]]
 name = "stream"
 version = "1.0.0"
+dependencies = [
+ "record 1.0.0",
+]
 
 [[package]]
 name = "stream_process"
