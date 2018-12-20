@@ -89,7 +89,7 @@ impl Record {
                 while key >= arr.len() {
                     arr.push(Arc::new(JsonPart::Primitive(JsonPrimitive::Null)));
                 }
-                return &mut arr[key];
+                return Arc::make_mut(&mut arr[key]);
             }
             panic!();
         }
