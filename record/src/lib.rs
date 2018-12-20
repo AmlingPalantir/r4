@@ -1,5 +1,5 @@
 #[derive(Clone)]
-struct Record(Arc<JsonPart>);
+pub struct Record(Arc<JsonPart>);
 
 use std::collections::BTreeMap;
 use std::str::FromStr;
