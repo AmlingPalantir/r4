@@ -9,7 +9,7 @@ registry! {
     AggregatorFe:
     //array,
     count,
-    //records,
+    records,
 }
 
 pub trait AggregatorFe {
