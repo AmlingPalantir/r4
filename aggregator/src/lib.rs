@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 registry! {
     AggregatorFe:
-    //array,
+    array,
     count,
     records,
 }
@@ -88,5 +88,23 @@ impl AggregatorArgs for ZeroArgs {
     fn parse(args: &[String]) -> () {
         debug_assert_eq!(0, args.len());
         return ();
+    }
+}
+
+
+
+pub enum OneStringArgs {
+}
+
+impl AggregatorArgs for OneStringArgs {
+    type Val = Arc<str>;
+
+    fn argct() -> usize {
+        return 1;
+    }
+
+    fn parse(args: &[String]) -> Arc<str> {
+        debug_assert_eq!(1, args.len());
+        return Arc::from(&*args[0]);
     }
 }

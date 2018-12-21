@@ -1,6 +1,7 @@
-use AggregatorState0;
-use ZeroArgImpl;
+use AggregatorBe;
+use OneStringArgs;
 use record::Record;
+use std::sync::Arc;
 
 pub(crate) fn names() -> Vec<&'static str> {
     return vec!["arr", "array"];
@@ -10,20 +11,15 @@ pub(crate) fn names() -> Vec<&'static str> {
 pub struct Impl {
 }
 
-impl OneKeyImpl for Impl {
-    type State = State;
-}
+impl AggregatorBe for Impl {
+    type Args = OneStringArgs;
+    type State = Vec<Record>;
 
-#[derive(Clone)]
-#[derive(Default)]
-pub struct State(Vec<Record>);
-
-impl OneKeyAggregatorState for State {
-    fn add(&mut self, v: Record, _r: Record) {
-        self.0.push(v);
+    fn add(state: &mut Vec<Record>, a: &Arc<str>, r: Record) {
+        state.push(r.get_path(a));
     }
 
-    fn finish(self) -> Record {
-        return Record::from_vec(self.0);
+    fn finish(state: Vec<Record>, _a: &Arc<str>) -> Record {
+        return Record::from_vec(state);
     }
 }
