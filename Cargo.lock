@@ -2,6 +2,7 @@
 name = "bgop"
 version = "1.0.0"
 dependencies = [
+ "stream 1.0.0",
  "wns 1.0.0",
 ]
 

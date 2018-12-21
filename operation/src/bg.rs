@@ -25,7 +25,7 @@ impl Operation for Impl {
         let op = Arc::from(op);
 
         return StreamWrapper::new(move |mut os| {
-            let bgop = BgopFe::<Entry>::new(move |maybe_e| {
+            let bgop = BgopFe::new(move |maybe_e| {
                 match maybe_e {
                     Some(e) => {
                         return os.write(e);
@@ -65,7 +65,7 @@ impl Operation for Impl {
     }
 }
 
-struct BgopBeStream(BgopBe<Entry>);
+struct BgopBeStream(BgopBe);
 
 impl StreamTrait for BgopBeStream {
     fn write(&mut self, e: Entry) -> bool {
@@ -77,7 +77,7 @@ impl StreamTrait for BgopBeStream {
     }
 }
 
-struct BgopFeStream(BgopFe<Entry>);
+struct BgopFeStream(BgopFe);
 
 impl StreamTrait for BgopFeStream {
     fn write(&mut self, e: Entry) -> bool {

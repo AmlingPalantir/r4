@@ -18,7 +18,7 @@ use stream::StreamTrait;
 
 pub struct ProcessStream {
     p: Child,
-    bgop: BgopFe<Arc<str>>,
+    bgop: BgopFe,
 }
 
 impl ProcessStream {
@@ -31,10 +31,10 @@ impl ProcessStream {
             .spawn()
             .unwrap();
 
-        let bgop = BgopFe::<Arc<str>>::new(move |maybe_line| {
-            match maybe_line {
-                Some(line) => {
-                    return os.write(Entry::Line(line));
+        let bgop = BgopFe::new(move |maybe_e| {
+            match maybe_e {
+                Some(e) => {
+                    return os.write(e);
                 }
                 None => {
                     os.close();
@@ -49,8 +49,8 @@ impl ProcessStream {
                 let mut r = LineWriter::new(p_stdin);
                 loop {
                     match bgop.read() {
-                        Some(line) => {
-                            match writeln!(r, "{}", line) {
+                        Some(e) => {
+                            match writeln!(r, "{}", e.to_line()) {
                                 Err(_) => {
                                     bgop.rclose();
                                 }
@@ -69,12 +69,12 @@ impl ProcessStream {
 
         {
             let p_stdout = p.stdout.take().unwrap();
-            let bgop = bgop.be();
+            let mut bgop = bgop.be();
             thread::spawn(move || {
                 let r = BufReader::new(p_stdout);
                 for line in r.lines() {
                     let line = line.unwrap();
-                    if !bgop.write(Arc::from(line)) {
+                    if !bgop.write(Entry::Line(Arc::from(line))) {
                         break;
                     }
                 }
@@ -92,7 +92,7 @@ impl ProcessStream {
 
 impl StreamTrait for ProcessStream {
     fn write(&mut self, e: Entry) -> bool {
-        return self.bgop.write(e.to_line());
+        return self.bgop.write(e);
     }
 
     fn close(&mut self) {
