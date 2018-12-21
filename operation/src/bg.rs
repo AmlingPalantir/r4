@@ -23,12 +23,8 @@ impl Operation for Impl {
         let op = op.validate(args);
         let op = Arc::from(op);
 
-        return StreamWrapper::new(move |mut os| {
-            let bgop = BgopFe::new(move |e| {
-                os.write(e);
-                return !os.rclosed();
-            });
-
+        return StreamWrapper::new(move |os| {
+            let bgop = BgopFe::new(os);
             {
                 let bgop = bgop.be();
                 let op = op.clone();

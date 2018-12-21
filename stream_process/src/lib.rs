@@ -22,7 +22,7 @@ pub struct ProcessStream {
 }
 
 impl ProcessStream {
-    pub fn new<I: IntoIterator<Item = S>, S: AsRef<OsStr>>(mut os: Stream, args: I) -> Self {
+    pub fn new<I: IntoIterator<Item = S>, S: AsRef<OsStr>>(os: Stream, args: I) -> Self {
         let mut args = args.into_iter();
         let mut p = Command::new(args.next().unwrap())
             .args(args)
@@ -31,10 +31,7 @@ impl ProcessStream {
             .spawn()
             .unwrap();
 
-        let bgop = BgopFe::new(move |e| {
-            os.write(e);
-            return !os.rclosed();
-        });
+        let bgop = BgopFe::new(os);
         {
             let p_stdin = p.stdin.take().unwrap();
             let bgop = bgop.be();

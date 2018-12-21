@@ -4,6 +4,7 @@ extern crate wns;
 use std::collections::VecDeque;
 use std::sync::Arc;
 use stream::Entry;
+use stream::Stream;
 use stream::StreamTrait;
 use wns::WaitNotifyState;
 
@@ -82,16 +83,12 @@ impl StreamTrait for BgopBe {
 }
 
 pub struct BgopFe {
-    os: Box<FnMut(Entry) -> bool>,
+    os: Stream,
     state: Arc<WaitNotifyState<BgopState>>,
 }
 
 impl BgopFe {
-    pub fn new<OS: FnMut(Entry) -> bool + 'static>(os: OS) -> Self {
-        return Self::new_box(Box::new(os));
-    }
-
-    pub fn new_box(os: Box<FnMut(Entry) -> bool>) -> Self {
+    pub fn new(os: Stream) -> Self {
         return BgopFe {
             os: os,
             state: Arc::new(WaitNotifyState::new(BgopState::new())),
@@ -131,7 +128,8 @@ impl BgopFe {
             match ret {
                 Ret::Ferry(es) => {
                     for e in es {
-                        if !(self.os)(e) {
+                        self.os.write(e);
+                        if self.os.rclosed() {
                             self.state.write(|buffers| {
                                 buffers.be_to_fe.rclosed = true;
                                 buffers.be_to_fe.buf.clear();
