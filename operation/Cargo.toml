@@ -4,6 +4,7 @@ version = "1.0.0"
 authors = ["Keith Amling <me@amling2.org>"]
 
 [dependencies]
+aggregator = { path = "../aggregator" }
 bgop = { path = "../bgop" }
 opts = { path = "../opts" }
 record = { path = "../record" }

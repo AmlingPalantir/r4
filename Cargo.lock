@@ -1,4 +1,12 @@
 [[package]]
+name = "aggregator"
+version = "1.0.0"
+dependencies = [
+ "record 1.0.0",
+ "registry 1.0.0",
+]
+
+[[package]]
 name = "bgop"
 version = "1.0.0"
 dependencies = [
@@ -15,6 +23,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "operation"
 version = "1.0.0"
 dependencies = [
+ "aggregator 1.0.0",
  "bgop 1.0.0",
  "opts 1.0.0",
  "record 1.0.0",
