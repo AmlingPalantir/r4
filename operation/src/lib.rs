@@ -1,4 +1,5 @@
 extern crate bgop;
+extern crate opts;
 extern crate record;
 extern crate stream;
 
@@ -11,11 +12,10 @@ registry! {
     test,
 }
 
-use std::collections::VecDeque;
 use stream::Stream;
 
 pub trait Operation {
-    fn validate(&self, &mut VecDeque<String>) -> StreamWrapper;
+    fn validate(&self, &mut Vec<String>) -> StreamWrapper;
 }
 
 pub struct StreamWrapper(Box<Fn(Stream) -> Stream + Send + Sync>);

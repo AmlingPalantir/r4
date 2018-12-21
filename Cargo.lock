@@ -16,11 +16,16 @@ name = "operation"
 version = "1.0.0"
 dependencies = [
  "bgop 1.0.0",
+ "opts 1.0.0",
  "record 1.0.0",
  "registry 1.0.0",
  "serde_json 1.0.33 (registry+https://github.com/rust-lang/crates.io-index)",
  "stream 1.0.0",
 ]
+
+[[package]]
+name = "opts"
+version = "1.0.0"
 
 [[package]]
 name = "r4"

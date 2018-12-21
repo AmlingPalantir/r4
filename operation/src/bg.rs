@@ -1,6 +1,5 @@
 use Operation;
 use StreamWrapper;
-use std::collections::VecDeque;
 use std::sync::Arc;
 use std::thread;
 use stream::Entry;
@@ -16,8 +15,8 @@ pub struct Impl {
 }
 
 impl Operation for Impl {
-    fn validate(&self, args: &mut VecDeque<String>) -> StreamWrapper {
-        let name = args.pop_front().unwrap();
+    fn validate(&self, args: &mut Vec<String>) -> StreamWrapper {
+        let name = args.remove(0);
         let op = super::find(&name);
         let op = op.validate(args);
         let op = Arc::from(op);

@@ -2,7 +2,6 @@ use Operation;
 use StreamWrapper;
 use record::FromPrimitive;
 use record::Record;
-use std::collections::VecDeque;
 use std::sync::Arc;
 
 pub(crate) fn names() -> Vec<&'static str> {
@@ -14,8 +13,18 @@ pub struct Impl {
 }
 
 impl Operation for Impl {
-    fn validate(&self, args: &mut VecDeque<String>) -> StreamWrapper {
-        let msg: Arc<str> = Arc::from(args.pop_front().unwrap());
+    fn validate(&self, args: &mut Vec<String>) -> StreamWrapper {
+        #[derive(Default)]
+        struct Pre {
+            msg: Option<String>,
+        }
+        let mut p = Pre::default();
+        opts::parse(args, &mut p, vec![
+            ("msg", 1, Box::new(|p: &mut Pre, a: &[String]| p.msg = Some(a[0].clone()))),
+        ]);
+        let msg = p.msg.unwrap();
+
+        let msg: Arc<str> = Arc::from(msg);
 
         return StreamWrapper::new(move |os| {
             let mut n = 0;
