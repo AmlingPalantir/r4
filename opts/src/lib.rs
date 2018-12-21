@@ -66,6 +66,9 @@ impl OptionTrait for StringOption {
     }
 
     fn set(p: &mut Option<String>, a: &[String]) {
+        if let Some(_) = *p {
+            panic!();
+        }
         *p = Some(a[0].clone());
     }
 
