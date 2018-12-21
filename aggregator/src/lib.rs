@@ -25,7 +25,10 @@ pub trait AggregatorState {
 
 pub trait AggregatorBe {
     type Args: AggregatorArgs;
-    type State: AggregatorBeState<<Self::Args as AggregatorArgs>::Val>;
+    type State: Clone + Default;
+
+    fn add(&mut Self::State, &<Self::Args as AggregatorArgs>::Val, Record);
+    fn finish(Self::State, &<Self::Args as AggregatorArgs>::Val) -> Record;
 }
 
 pub trait AggregatorArgs {
@@ -33,11 +36,6 @@ pub trait AggregatorArgs {
 
     fn argct() -> usize;
     fn parse(args: &[String]) -> Self::Val;
-}
-
-pub trait AggregatorBeState<A>: Clone + Default {
-    fn add(&mut self, &A, Record);
-    fn finish(self, &A) -> Record;
 }
 
 impl<B: AggregatorBe + 'static> AggregatorFe for B {
@@ -60,11 +58,11 @@ struct AggregatorStateImpl<B: AggregatorBe> {
 
 impl<B: AggregatorBe + 'static> AggregatorState for AggregatorStateImpl<B> {
     fn add(&mut self, r: Record) {
-        self.s.add(&self.a, r);
+        B::add(&mut self.s, &self.a, r);
     }
 
     fn finish(self) -> Record {
-        return self.s.finish(&self.a);
+        return B::finish(self.s, &self.a);
     }
 
     fn box_clone(&self) -> Box<AggregatorState> {

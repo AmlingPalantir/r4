@@ -1,5 +1,4 @@
 use AggregatorBe;
-use AggregatorBeState;
 use ZeroArgs;
 use record::FromPrimitive;
 use record::Record;
@@ -14,19 +13,13 @@ pub struct Impl {
 
 impl AggregatorBe for Impl {
     type Args = ZeroArgs;
-    type State = State;
-}
+    type State = u32;
 
-#[derive(Clone)]
-#[derive(Default)]
-pub struct State(u32);
-
-impl AggregatorBeState<()> for State {
-    fn add(&mut self, _a: &(), _r: Record) {
-        self.0 += 1;
+    fn add(state: &mut u32, _a: &(), _r: Record) {
+        *state += 1;
     }
 
-    fn finish(self, _a: &()) -> Record {
-        return Record::from_primitive(self.0);
+    fn finish(state: u32, _a: &()) -> Record {
+        return Record::from_primitive(state);
     }
 }
