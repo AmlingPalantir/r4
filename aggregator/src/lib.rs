@@ -75,7 +75,8 @@ impl<B: AggregatorBe + 'static> AggregatorState for AggregatorStateImpl<B> {
 
 
 
-pub struct ZeroArgs();
+pub enum ZeroArgs {
+}
 
 impl AggregatorArgs for ZeroArgs {
     type Val = ();
