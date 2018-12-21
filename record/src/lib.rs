@@ -36,6 +36,10 @@ impl Record {
         return Record(Arc::new(JsonPart::String(Arc::from(&*s))));
     }
 
+    pub fn from_vec(arr: Vec<Record>) -> Self {
+        return Record(Arc::new(JsonPart::Array(arr.into_iter().map(|r| r.0).collect())));
+    }
+
     pub fn get_hash(&self, key: &str) -> Option<Record> {
         if let JsonPart::Null = *self.0 {
             return None;
