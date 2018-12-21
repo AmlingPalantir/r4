@@ -1,5 +1,6 @@
-use AggregatorState0;
-use ZeroArgImpl;
+use AggregatorBe;
+use AggregatorBeState;
+use ZeroArgs;
 use record::FromPrimitive;
 use record::Record;
 
@@ -11,7 +12,8 @@ pub(crate) fn names() -> Vec<&'static str> {
 pub struct Impl {
 }
 
-impl ZeroArgImpl for Impl {
+impl AggregatorBe for Impl {
+    type Args = ZeroArgs;
     type State = State;
 }
 
@@ -19,12 +21,12 @@ impl ZeroArgImpl for Impl {
 #[derive(Default)]
 pub struct State(u32);
 
-impl AggregatorState0 for State {
-    fn add(&mut self, _r: Record) {
+impl AggregatorBeState<()> for State {
+    fn add(&mut self, _a: &(), _r: Record) {
         self.0 += 1;
     }
 
-    fn finish(self) -> Record {
+    fn finish(self, _a: &()) -> Record {
         return Record::from_primitive(self.0);
     }
 }

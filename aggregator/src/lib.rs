@@ -6,110 +6,88 @@ use record::Record;
 use std::sync::Arc;
 
 registry! {
-    Aggregator:
+    AggregatorFe:
+    //array,
     count,
-    records,
+    //records,
 }
 
-pub trait Aggregator {
+pub trait AggregatorFe {
     fn argct(&self) -> usize;
     fn state(&self, args: &[String]) -> Box<AggregatorState>;
 }
 
-pub trait AggregatorState0 {
+pub trait AggregatorState {
     fn add(&mut self, Record);
     fn finish(self) -> Record;
-}
-
-pub trait AggregatorState: AggregatorState0 {
     fn box_clone(&self) -> Box<AggregatorState>;
 }
 
-impl<S: AggregatorState0 + Clone + 'static> AggregatorState for S {
+pub trait AggregatorBe {
+    type Args: AggregatorArgs;
+    type State: AggregatorBeState<<Self::Args as AggregatorArgs>::Val>;
+}
+
+pub trait AggregatorArgs {
+    type Val;
+
+    fn argct() -> usize;
+    fn parse(args: &[String]) -> Self::Val;
+}
+
+pub trait AggregatorBeState<A>: Clone + Default {
+    fn add(&mut self, &A, Record);
+    fn finish(self, &A) -> Record;
+}
+
+impl<B: AggregatorBe + 'static> AggregatorFe for B {
+    fn argct(&self) -> usize {
+        return B::Args::argct();
+    }
+
+    fn state(&self, args: &[String]) -> Box<AggregatorState> {
+        return Box::new(AggregatorStateImpl::<B> {
+            a: Arc::from(B::Args::parse(args)),
+            s: B::State::default(),
+        });
+    }
+}
+
+struct AggregatorStateImpl<B: AggregatorBe> {
+    a: Arc<<<B as AggregatorBe>::Args as AggregatorArgs>::Val>,
+    s: B::State,
+}
+
+impl<B: AggregatorBe + 'static> AggregatorState for AggregatorStateImpl<B> {
+    fn add(&mut self, r: Record) {
+        self.s.add(&self.a, r);
+    }
+
+    fn finish(self) -> Record {
+        return self.s.finish(&self.a);
+    }
+
     fn box_clone(&self) -> Box<AggregatorState> {
-        return Box::new(self.clone());
-    }
-}
-
-impl Clone for Box<AggregatorState> {
-    fn clone(&self) -> Self {
-        return self.box_clone();
-    }
-}
-
-
-
-#[derive(Clone)]
-#[derive(Default)]
-struct ZeroArgAggregatorStateHolder<S: AggregatorState0> {
-    state: S,
-}
-
-impl<S: AggregatorState0> AggregatorState0 for ZeroArgAggregatorStateHolder<S> {
-    fn add(&mut self, r: Record) {
-        self.state.add(r);
-    }
-
-    fn finish(self) -> Record {
-        return self.state.finish();
-    }
-}
-
-pub trait ZeroArgImpl {
-    type State;
-}
-
-impl<S: AggregatorState0 + Clone + Default + 'static, T: ZeroArgImpl<State = S>> Aggregator for T {
-    fn argct(&self) -> usize {
-        return 1;
-    }
-
-    fn state(&self, args: &[String]) -> Box<AggregatorState> {
-        assert!(args.is_empty());
-        return Box::new(ZeroArgAggregatorStateHolder {
-            state: S::default(),
+        return Box::new(AggregatorStateImpl::<B> {
+            a: self.a.clone(),
+            s: self.s.clone(),
         });
     }
 }
 
 
 
-pub trait OneKeyAggregatorState {
-    fn add(&mut self, Record, Record);
-    fn finish(self) -> Record;
-}
+pub struct ZeroArgs();
 
-#[derive(Clone)]
-#[derive(Default)]
-struct OneKeyAggregatorStateHolder<S: OneKeyAggregatorState> {
-    path: Arc<str>,
-    state: S,
-}
+impl AggregatorArgs for ZeroArgs {
+    type Val = ();
 
-impl<S: OneKeyAggregatorState> AggregatorState0 for OneKeyAggregatorStateHolder<S> {
-    fn add(&mut self, r: Record) {
-        self.state.add(r.get_path(self.path), r);
+    fn argct() -> usize {
+        return 0;
     }
 
-    fn finish(self) -> Record {
-        return self.state.finish();
-    }
-}
-
-pub trait OneKeyImpl {
-    type State;
-}
-
-impl<S: OneKeyAggregatorState + Clone + Default + 'static, T: OneKeyImpl<State = S>> Aggregator for T {
-    fn argct(&self) -> usize {
-        return 1;
-    }
-
-    fn state(&self, args: &[String]) -> Box<AggregatorState> {
-        let path = Arc::from(args[0]);
-        return Box::new(OneKeyAggregatorStateHolder {
-            path: path,
-            state: S::default(),
-        });
+    fn parse(args: &[String]) -> () {
+        debug_assert_eq!(0, args.len());
+        return ();
     }
 }
