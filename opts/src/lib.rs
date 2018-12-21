@@ -44,3 +44,9 @@ pub fn parse<P>(args: &mut Vec<String>, p: &mut P, opts: Vec<(&str, usize, Box<F
         next_index += 1;
     }
 }
+
+pub fn opts_string<P, F: Fn(&mut P) -> &mut Option<String> + 'static>(f: F) -> Box<Fn(&mut P, &[String])> {
+    return Box::new(move |p: &mut P, a: &[String]| {
+        *f(p) = Some(a[0].clone());
+    });
+}
