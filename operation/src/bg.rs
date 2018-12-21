@@ -1,6 +1,5 @@
 use Operation;
 use StreamWrapper;
-use bgop::BgopFe;
 use std::collections::VecDeque;
 use std::sync::Arc;
 use std::thread;
@@ -24,32 +23,30 @@ impl Operation for Impl {
         let op = Arc::from(op);
 
         return StreamWrapper::new(move |os| {
-            let bgop = BgopFe::new(os);
-            {
-                let bgop = bgop.be();
-                let op = op.clone();
-                thread::spawn(move || {
-                    let os = Stream::new(bgop.clone());
-                    let mut os = op.wrap(os);
+            let (fe, rbe, wbe) = bgop::new(os);
 
-                    loop {
-                        match bgop.read() {
-                            Entry::Close() => {
-                                os.write(Entry::Close());
-                                return;
-                            }
-                            e => {
-                                os.write(e);
-                            }
+            let op = op.clone();
+            thread::spawn(move || {
+                let os = Stream::new(wbe);
+                let mut os = op.wrap(os);
+
+                loop {
+                    match rbe.read() {
+                        Entry::Close() => {
+                            os.write(Entry::Close());
+                            return;
                         }
-                        if os.rclosed() {
-                            bgop.rclose();
+                        e => {
+                            os.write(e);
                         }
                     }
-                });
-            }
+                    if os.rclosed() {
+                        rbe.rclose();
+                    }
+                }
+            });
 
-            return Stream::new(bgop);
+            return Stream::new(fe);
         });
     }
 }

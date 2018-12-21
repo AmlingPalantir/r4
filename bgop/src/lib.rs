@@ -38,12 +38,11 @@ impl BgopState {
     }
 }
 
-#[derive(Clone)]
-pub struct BgopBe {
+pub struct BgopRbe {
     state: Arc<WaitNotifyState<BgopState>>,
 }
 
-impl BgopBe {
+impl BgopRbe {
     pub fn read(&self) -> Entry {
         return self.state.await(&mut |buffers| {
             if let Some(e) = buffers.fe_to_be.buf.pop_front() {
@@ -61,7 +60,11 @@ impl BgopBe {
     }
 }
 
-impl StreamTrait for BgopBe {
+pub struct BgopWbe {
+    state: Arc<WaitNotifyState<BgopState>>,
+}
+
+impl StreamTrait for BgopWbe {
     fn write(&mut self, e: Entry) {
         return self.state.await(&mut |buffers| {
             if buffers.be_to_fe.rclosed {
@@ -88,19 +91,6 @@ pub struct BgopFe {
 }
 
 impl BgopFe {
-    pub fn new(os: Stream) -> Self {
-        return BgopFe {
-            os: os,
-            state: Arc::new(WaitNotifyState::new(BgopState::new())),
-        }
-    }
-
-    pub fn be(&self) -> BgopBe {
-        return BgopBe {
-            state: self.state.clone(),
-        };
-    }
-
     fn ferry<R, F: FnMut(&mut BgopState) -> Option<R>>(&mut self, f: &mut F) -> R {
         enum Ret<R> {
             Ferry(Vec<Entry>),
@@ -175,4 +165,23 @@ impl StreamTrait for BgopFe {
             return buffers.fe_to_be.rclosed;
         });
     }
+}
+
+pub fn new(os: Stream) -> (BgopFe, BgopRbe, BgopWbe) {
+    let state = Arc::new(WaitNotifyState::new(BgopState::new()));
+
+    let fe = BgopFe {
+        os: os,
+        state: state.clone(),
+    };
+
+    let rbe = BgopRbe {
+        state: state.clone(),
+    };
+
+    let wbe = BgopWbe {
+        state: state.clone(),
+    };
+
+    return (fe, rbe, wbe);
 }

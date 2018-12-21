@@ -1,7 +1,6 @@
 extern crate bgop;
 extern crate stream;
 
-use bgop::BgopFe;
 use std::ffi::OsStr;
 use std::io::BufRead;
 use std::io::BufReader;
@@ -17,8 +16,8 @@ use stream::Stream;
 use stream::StreamTrait;
 
 pub struct ProcessStream {
+    os: Stream,
     p: Child,
-    bgop: BgopFe,
 }
 
 impl ProcessStream {
@@ -31,56 +30,51 @@ impl ProcessStream {
             .spawn()
             .unwrap();
 
-        let bgop = BgopFe::new(os);
-        {
-            let p_stdin = p.stdin.take().unwrap();
-            let bgop = bgop.be();
-            thread::spawn(move || {
-                let mut lw = LineWriter::new(p_stdin);
-                loop {
-                    match bgop.read() {
-                        Entry::Bof(_file) => {
-                            continue;
-                        }
-                        Entry::Record(r) => {
-                            if let Err(_) = writeln!(lw, "{}", r.to_string()) {
-                                bgop.rclose();
-                            }
-                        }
-                        Entry::Line(line) => {
-                            if let Err(_) = writeln!(lw, "{}", line) {
-                                bgop.rclose();
-                            }
-                        }
-                        Entry::Close() => {
-                            // drops r
-                            return;
-                        }
-                    }
-                }
-            });
-        }
+        let (fe, rbe, mut wbe) = bgop::new(os);
+        let p_stdin = p.stdin.take().unwrap();
+        let p_stdout = p.stdout.take().unwrap();
 
-        {
-            let p_stdout = p.stdout.take().unwrap();
-            let mut bgop = bgop.be();
-            thread::spawn(move || {
-                let r = BufReader::new(p_stdout);
-                for line in r.lines() {
-                    let line = line.unwrap();
-                    bgop.write(Entry::Line(Arc::from(line)));
-                    if bgop.rclosed() {
-                        break;
+        thread::spawn(move || {
+            let mut lw = LineWriter::new(p_stdin);
+            loop {
+                match rbe.read() {
+                    Entry::Bof(_file) => {
+                        continue;
+                    }
+                    Entry::Record(r) => {
+                        if let Err(_) = writeln!(lw, "{}", r.to_string()) {
+                            rbe.rclose();
+                        }
+                    }
+                    Entry::Line(line) => {
+                        if let Err(_) = writeln!(lw, "{}", line) {
+                            rbe.rclose();
+                        }
+                    }
+                    Entry::Close() => {
+                        // drops r
+                        return;
                     }
                 }
-                bgop.write(Entry::Close());
-                // return drops r
-            });
-        }
+            }
+        });
+
+        thread::spawn(move || {
+            let r = BufReader::new(p_stdout);
+            for line in r.lines() {
+                let line = line.unwrap();
+                wbe.write(Entry::Line(Arc::from(line)));
+                if wbe.rclosed() {
+                    break;
+                }
+            }
+            wbe.write(Entry::Close());
+            // return drops r
+        });
 
         return ProcessStream {
+            os: Stream::new(fe),
             p: p,
-            bgop: bgop,
         };
     }
 }
@@ -88,13 +82,13 @@ impl ProcessStream {
 impl StreamTrait for ProcessStream {
     fn write(&mut self, e: Entry) {
         let close = e.is_close();
-        self.bgop.write(e);
+        self.os.write(e);
         if close {
             self.p.wait().unwrap();
         }
     }
 
     fn rclosed(&mut self) -> bool {
-        return self.bgop.rclosed();
+        return self.os.rclosed();
     }
 }
