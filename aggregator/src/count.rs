@@ -8,16 +8,14 @@ pub(crate) fn names() -> Vec<&'static str> {
 
 #[derive(Clone)]
 #[derive(Default)]
-pub struct Impl {
-    ct: u32,
-}
+pub struct Impl(u32);
 
 impl Aggregator0 for Impl {
     fn add(&mut self, _r: Record) {
-        self.ct += 1;
+        self.0 += 1;
     }
 
     fn finish(self) -> Record {
-        return Record::from_primitive(self.ct);
+        return Record::from_primitive(self.0);
     }
 }
