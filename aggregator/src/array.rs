@@ -3,14 +3,14 @@ use ZeroArgImpl;
 use record::Record;
 
 pub(crate) fn names() -> Vec<&'static str> {
-    return vec!["ct", "count"];
+    return vec!["arr", "array"];
 }
 
 #[derive(Default)]
 pub struct Impl {
 }
 
-impl ZeroArgImpl for Impl {
+impl OneKeyImpl for Impl {
     type State = State;
 }
 
@@ -18,9 +18,9 @@ impl ZeroArgImpl for Impl {
 #[derive(Default)]
 pub struct State(Vec<Record>);
 
-impl AggregatorState0 for State {
-    fn add(&mut self, r: Record) {
-        self.0.push(r);
+impl OneKeyAggregatorState for State {
+    fn add(&mut self, v: Record, _r: Record) {
+        self.0.push(v);
     }
 
     fn finish(self) -> Record {

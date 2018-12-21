@@ -3,6 +3,7 @@ extern crate record;
 extern crate registry;
 
 use record::Record;
+use std::sync::Arc;
 
 registry! {
     Aggregator:
@@ -40,11 +41,11 @@ impl Clone for Box<AggregatorState> {
 
 #[derive(Clone)]
 #[derive(Default)]
-struct ZeroArgAggregatorState<S: AggregatorState0> {
+struct ZeroArgAggregatorStateHolder<S: AggregatorState0> {
     state: S,
 }
 
-impl<S: AggregatorState0> AggregatorState0 for ZeroArgAggregatorState<S> {
+impl<S: AggregatorState0> AggregatorState0 for ZeroArgAggregatorStateHolder<S> {
     fn add(&mut self, r: Record) {
         self.state.add(r);
     }
@@ -54,18 +55,60 @@ impl<S: AggregatorState0> AggregatorState0 for ZeroArgAggregatorState<S> {
     }
 }
 
-pub trait ZeroArgImplTrait {
+pub trait ZeroArgImpl {
     type State;
 }
 
-impl<S: AggregatorState0 + Clone + Default + 'static, T: ZeroArgImplTrait<State = S>> Aggregator for T {
+impl<S: AggregatorState0 + Clone + Default + 'static, T: ZeroArgImpl<State = S>> Aggregator for T {
     fn argct(&self) -> usize {
         return 1;
     }
 
     fn state(&self, args: &[String]) -> Box<AggregatorState> {
         assert!(args.is_empty());
-        return Box::new(ZeroArgAggregatorState {
+        return Box::new(ZeroArgAggregatorStateHolder {
+            state: S::default(),
+        });
+    }
+}
+
+
+
+pub trait OneKeyAggregatorState {
+    fn add(&mut self, Record, Record);
+    fn finish(self) -> Record;
+}
+
+#[derive(Clone)]
+#[derive(Default)]
+struct OneKeyAggregatorStateHolder<S: OneKeyAggregatorState> {
+    path: Arc<str>,
+    state: S,
+}
+
+impl<S: OneKeyAggregatorState> AggregatorState0 for OneKeyAggregatorStateHolder<S> {
+    fn add(&mut self, r: Record) {
+        self.state.add(r.get_path(self.path), r);
+    }
+
+    fn finish(self) -> Record {
+        return self.state.finish();
+    }
+}
+
+pub trait OneKeyImpl {
+    type State;
+}
+
+impl<S: OneKeyAggregatorState + Clone + Default + 'static, T: OneKeyImpl<State = S>> Aggregator for T {
+    fn argct(&self) -> usize {
+        return 1;
+    }
+
+    fn state(&self, args: &[String]) -> Box<AggregatorState> {
+        let path = Arc::from(args[0]);
+        return Box::new(OneKeyAggregatorStateHolder {
+            path: path,
             state: S::default(),
         });
     }

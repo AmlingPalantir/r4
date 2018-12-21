@@ -1,5 +1,5 @@
 use AggregatorState0;
-use ZeroArgImplTrait;
+use ZeroArgImpl;
 use record::FromPrimitive;
 use record::Record;
 
@@ -11,7 +11,7 @@ pub(crate) fn names() -> Vec<&'static str> {
 pub struct Impl {
 }
 
-impl ZeroArgImplTrait for Impl {
+impl ZeroArgImpl for Impl {
     type State = State;
 }
 
