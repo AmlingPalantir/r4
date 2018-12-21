@@ -1,10 +1,10 @@
 extern crate bgop;
+#[macro_use]
 extern crate opts;
 extern crate record;
-extern crate stream;
-
 #[macro_use]
 extern crate registry;
+extern crate stream;
 
 registry! {
     Operation:

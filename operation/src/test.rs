@@ -20,7 +20,7 @@ impl Operation for Impl {
         }
         let mut p = Pre::default();
         opts::parse(args, &mut p, vec![
-            ("msg", 1, opts::opts_string(|p: &mut Pre| &mut p.msg)),
+            string_opt!("msg", Pre, msg),
         ]);
         let msg = p.msg.unwrap();
 
