@@ -1,3 +1,4 @@
+extern crate bgop;
 extern crate record;
 extern crate stream;
 
@@ -17,10 +18,10 @@ pub trait Operation {
     fn validate(&self, &mut VecDeque<String>) -> StreamWrapper;
 }
 
-pub struct StreamWrapper(Box<Fn(Stream) -> Stream>);
+pub struct StreamWrapper(Box<Fn(Stream) -> Stream + Send + Sync>);
 
 impl StreamWrapper {
-    pub fn new<F: Fn(Stream) -> Stream + 'static>(f: F) -> Self {
+    pub fn new<F: Fn(Stream) -> Stream + 'static + Send + Sync>(f: F) -> Self {
         return StreamWrapper(Box::new(f));
     }
 

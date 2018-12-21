@@ -4,6 +4,7 @@ version = "1.0.0"
 authors = ["Keith Amling <me@amling2.org>"]
 
 [dependencies]
+bgop = { path = "../bgop" }
 record = { path = "../record" }
 registry = { path = "../registry" }
 stream = { path = "../stream" }

@@ -34,6 +34,7 @@ impl<E> BgopState<E> {
     }
 }
 
+#[derive(Clone)]
 pub struct BgopBe<E: Clone> {
     state: Arc<WaitNotifyState<BgopState<E>>>,
 }
