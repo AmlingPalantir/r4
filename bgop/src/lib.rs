@@ -61,16 +61,22 @@ impl BgopBe {
 }
 
 impl StreamTrait for BgopBe {
-    fn write(&mut self, e: Entry) -> bool {
+    fn write(&mut self, e: Entry) {
         return self.state.await(&mut |buffers| {
             if buffers.be_to_fe.rclosed {
-                return (Some(false), false);
+                return (Some(()), false);
             }
             if buffers.be_to_fe.buf.len() < 1024 {
                 buffers.be_to_fe.buf.push_back(Some(e.clone()));
-                return (Some(true), true);
+                return (Some(()), true);
             }
             return (None, false);
+        });
+    }
+
+    fn rclosed(&mut self) -> bool {
+        return self.state.read(|buffers| {
+            return buffers.be_to_fe.rclosed;
         });
     }
 
@@ -149,18 +155,24 @@ impl BgopFe {
 }
 
 impl StreamTrait for BgopFe {
-    fn write(&mut self, e: Entry) -> bool {
+    fn write(&mut self, e: Entry) {
         return self.ferry(&mut |buffers| {
             if buffers.fe_to_be.rclosed {
-                return Some(false);
+                return Some(());
             }
 
             if buffers.fe_to_be.buf.len() < 1024 {
                 buffers.fe_to_be.buf.push_back(Some(e.clone()));
-                return Some(true);
+                return Some(());
             }
 
             return None;
+        });
+    }
+
+    fn rclosed(&mut self) -> bool {
+        return self.state.read(|buffers| {
+            return buffers.fe_to_be.rclosed;
         });
     }
 

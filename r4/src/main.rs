@@ -26,7 +26,8 @@ fn main() {
     let stdin = io::stdin();
     for line in stdin.lock().lines() {
         let line = line.unwrap();
-        if !os.write(Entry::Line(Arc::from(line))) {
+        os.write(Entry::Line(Arc::from(line)));
+        if os.rclosed() {
             break;
         }
     }

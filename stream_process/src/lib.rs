@@ -34,7 +34,8 @@ impl ProcessStream {
         let bgop = BgopFe::new(move |maybe_e| {
             match maybe_e {
                 Some(e) => {
-                    return os.write(e);
+                    os.write(e);
+                    return !os.rclosed();
                 }
                 None => {
                     os.close();
@@ -74,7 +75,8 @@ impl ProcessStream {
                 let r = BufReader::new(p_stdout);
                 for line in r.lines() {
                     let line = line.unwrap();
-                    if !bgop.write(Entry::Line(Arc::from(line))) {
+                    bgop.write(Entry::Line(Arc::from(line)));
+                    if bgop.rclosed() {
                         break;
                     }
                 }
@@ -91,8 +93,12 @@ impl ProcessStream {
 }
 
 impl StreamTrait for ProcessStream {
-    fn write(&mut self, e: Entry) -> bool {
-        return self.bgop.write(e);
+    fn write(&mut self, e: Entry) {
+        self.bgop.write(e);
+    }
+
+    fn rclosed(&mut self) -> bool {
+        return self.bgop.rclosed();
     }
 
     fn close(&mut self) {

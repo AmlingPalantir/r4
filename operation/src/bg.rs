@@ -1,11 +1,9 @@
 use Operation;
 use StreamWrapper;
-use bgop::BgopBe;
 use bgop::BgopFe;
 use std::collections::VecDeque;
 use std::sync::Arc;
 use std::thread;
-use stream::Entry;
 use stream::Stream;
 use stream::StreamTrait;
 
@@ -28,7 +26,8 @@ impl Operation for Impl {
             let bgop = BgopFe::new(move |maybe_e| {
                 match maybe_e {
                     Some(e) => {
-                        return os.write(e);
+                        os.write(e);
+                        return !os.rclosed();
                     }
                     None => {
                         os.close();
@@ -41,13 +40,14 @@ impl Operation for Impl {
                 let bgop = bgop.be();
                 let op = op.clone();
                 thread::spawn(move || {
-                    let os = Stream::new(BgopBeStream(bgop.clone()));
+                    let os = Stream::new(bgop.clone());
                     let mut os = op.wrap(os);
 
                     loop {
                         match bgop.read() {
                             Some(e) => {
-                                if !os.write(e) {
+                                os.write(e);
+                                if os.rclosed() {
                                     bgop.rclose();
                                 }
                             }
@@ -60,31 +60,7 @@ impl Operation for Impl {
                 });
             }
 
-            return Stream::new(BgopFeStream(bgop));
+            return Stream::new(bgop);
         });
-    }
-}
-
-struct BgopBeStream(BgopBe);
-
-impl StreamTrait for BgopBeStream {
-    fn write(&mut self, e: Entry) -> bool {
-        return self.0.write(e);
-    }
-
-    fn close(&mut self) {
-        self.0.close();
-    }
-}
-
-struct BgopFeStream(BgopFe);
-
-impl StreamTrait for BgopFeStream {
-    fn write(&mut self, e: Entry) -> bool {
-        return self.0.write(e);
-    }
-
-    fn close(&mut self) {
-        self.0.close();
     }
 }
