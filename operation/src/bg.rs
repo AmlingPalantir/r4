@@ -1,10 +1,10 @@
 use Operation;
 use StreamWrapper;
 use bgop::BgopFe;
-use bgop::BofOrWrite;
 use std::collections::VecDeque;
 use std::sync::Arc;
 use std::thread;
+use stream::Entry;
 use stream::Stream;
 use stream::StreamTrait;
 
@@ -24,21 +24,9 @@ impl Operation for Impl {
         let op = Arc::from(op);
 
         return StreamWrapper::new(move |mut os| {
-            let bgop = BgopFe::new(move |maybe_e| {
-                match maybe_e {
-                    Some(BofOrWrite::Bof(file)) => {
-                        os.bof(&file);
-                        return !os.rclosed();
-                    }
-                    Some(BofOrWrite::Write(e)) => {
-                        os.write(e);
-                        return !os.rclosed();
-                    }
-                    None => {
-                        os.close();
-                        return false;
-                    }
-                }
+            let bgop = BgopFe::new(move |e| {
+                os.write(e);
+                return !os.rclosed();
             });
 
             {
@@ -50,15 +38,12 @@ impl Operation for Impl {
 
                     loop {
                         match bgop.read() {
-                            Some(BofOrWrite::Bof(file)) => {
-                                os.bof(&file);
-                            }
-                            Some(BofOrWrite::Write(e)) => {
-                                os.write(e);
-                            }
-                            None => {
-                                os.close();
+                            Entry::Close() => {
+                                os.write(Entry::Close());
                                 return;
+                            }
+                            e => {
+                                os.write(e);
                             }
                         }
                         if os.rclosed() {

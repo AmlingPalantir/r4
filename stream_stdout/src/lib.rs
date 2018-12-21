@@ -28,20 +28,25 @@ impl StdoutStream {
 }
 
 impl StreamTrait for StdoutStream {
-    fn bof(&mut self, _file: &str) {
-    }
-
     fn write(&mut self, e: Entry) {
-        self.maybe_rclosed(writeln!(io::stdout(), "{}", e.to_line()));
+        match e {
+            Entry::Bof(_file) => {
+            }
+            Entry::Record(r) => {
+                self.maybe_rclosed(writeln!(io::stdout(), "{}", r.to_string()));
+            }
+            Entry::Line(line) => {
+                self.maybe_rclosed(writeln!(io::stdout(), "{}", line));
+            }
+            Entry::Close() => {
+                // This seems to be all we can do?  We hope/expect the process
+                // to be donezo soon anyway...
+                self.maybe_rclosed(io::stdout().flush());
+            }
+        }
     }
 
     fn rclosed(&mut self) -> bool {
         return self.rclosed;
-    }
-
-    fn close(&mut self) {
-        // This seems to be all we can do?  We hope/expect the process to be
-        // donezo soon anyway...
-        self.maybe_rclosed(io::stdout().flush());
     }
 }

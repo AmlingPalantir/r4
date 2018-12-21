@@ -25,7 +25,7 @@ fn main() {
     let mut os = op.wrap(os);
 
     if args.is_empty() {
-        os.bof("-");
+        os.write(Entry::Bof(Arc::from("-")));
         let stdin = io::stdin();
         for line in stdin.lock().lines() {
             let line = line.unwrap();
@@ -37,7 +37,7 @@ fn main() {
     }
     else {
         'arg: for arg in args {
-            os.bof(&arg);
+            os.write(Entry::Bof(Arc::from(&*arg)));
             for line in BufReader::new(File::open(arg).unwrap()).lines() {
                 os.write(Entry::Line(Arc::from(line.unwrap())));
                 if os.rclosed() {
@@ -47,5 +47,5 @@ fn main() {
         }
     }
 
-    os.close();
+    os.write(Entry::Close());
 }
