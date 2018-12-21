@@ -16,7 +16,7 @@ impl Operation for Impl {
     fn validate(&self, args: &mut Vec<String>) -> StreamWrapper {
         parse_opt! {
             args,
-            string_opt!("msg", msg),
+            ("msg", opts::StringOption, msg),
         }
 
         let msg: Arc<str> = Arc::from(msg);

@@ -45,33 +45,58 @@ pub fn parse<P>(args: &mut Vec<String>, p: &mut P, opts: Vec<(&str, usize, Box<F
     }
 }
 
-#[macro_export]
-macro_rules! string_opt {
-    ($alias:expr, $f:ident) => (
-        ($alias, $f, Option<String>, 1, p, a, *p = Some(a[0].clone()), p.unwrap())
-    )
+pub trait OptionTrait {
+    type PreType;
+    type ValType;
+
+    fn argct() -> usize;
+    fn set(&mut Self::PreType, &[String]);
+    fn val(Self::PreType) -> Self::ValType;
+}
+
+pub enum StringOption {
+}
+
+impl OptionTrait for StringOption {
+    type PreType = Option<String>;
+    type ValType = String;
+
+    fn argct() -> usize {
+        return 1;
+    }
+
+    fn set(p: &mut Option<String>, a: &[String]) {
+        *p = Some(a[0].clone());
+    }
+
+    fn val(p: Option<String>) -> String {
+        return p.unwrap();
+    }
 }
 
 #[macro_export]
 macro_rules! parse_opt {
-    {$args:ident, $(($alias:expr, $f:ident, $type:ty, $argct:expr, $p:ident, $a:ident, $set:expr, $val:expr)),*,} => {
+    {$args:ident, $(($alias:expr, $type:ty, $f:ident)),*,} => {
         #[derive(Default)]
         struct Pre {
             $(
-                $f: $type,
-            ),*
+                $f: <$type as $crate::OptionTrait>::PreType,
+            )*
         }
         let mut p = Pre::default();
         opts::parse($args, &mut p, vec![
             $(
-                ($alias, $argct, Box::new(|p: &mut Pre, $a: &[String]| {
-                    let $p = &mut p.$f;
-                    return $set;
-                })),
+                (
+                    $alias,
+                    <$type as $crate::OptionTrait>::argct(),
+                    Box::new(|p: &mut Pre, a: &[String]| {
+                        <$type as $crate::OptionTrait>::set(&mut p.$f, a)
+                    }),
+                ),
             ),*
         ]);
         $(
-            let $f = { let $p = p.$f; $val };
+            let $f = <$type as $crate::OptionTrait>::val(p.$f);
         );*
     }
 }
