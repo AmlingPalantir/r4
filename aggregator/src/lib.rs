@@ -7,6 +7,7 @@ use record::Record;
 registry! {
     Aggregator:
     count,
+    records,
 }
 
 pub trait Aggregator0 {
