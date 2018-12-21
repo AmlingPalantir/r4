@@ -45,7 +45,7 @@ impl ProcessStream {
         {
             let p_stdin = p.stdin.take().unwrap();
             let bgop = bgop.be();
-            thread::spawn(move|| {
+            thread::spawn(move || {
                 let mut r = LineWriter::new(p_stdin);
                 loop {
                     match bgop.read() {
@@ -70,7 +70,7 @@ impl ProcessStream {
         {
             let p_stdout = p.stdout.take().unwrap();
             let bgop = bgop.be();
-            thread::spawn(move|| {
+            thread::spawn(move || {
                 let r = BufReader::new(p_stdout);
                 for line in r.lines() {
                     let line = line.unwrap();
