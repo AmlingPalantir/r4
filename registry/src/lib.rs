@@ -1,6 +1,6 @@
 #[macro_export]
 macro_rules! registry {
-    {$r:ty: $($id:ident),*} => {
+    {$r:ty: $($id:ident),*,} => {
         $(
             pub mod $id;
         )*
@@ -15,8 +15,5 @@ macro_rules! registry {
             )*
             panic!();
         }
-    };
-    {$r:ty: $($id:ident),*,} => {
-        registry! {$r: $($id),*}
-    };
+    }
 }
