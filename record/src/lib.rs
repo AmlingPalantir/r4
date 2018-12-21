@@ -13,8 +13,8 @@ enum JsonPart {
     Bool(bool),
     Number(serde_json::Number),
     String(Arc<str>),
-    Array(Vec<Arc<JsonPart>>),
-    Hash(BTreeMap<Arc<str>, Arc<JsonPart>>),
+    Array(Vec<Record>),
+    Hash(BTreeMap<Arc<str>, Record>),
 }
 
 pub trait FromPrimitive<P> {
@@ -37,7 +37,7 @@ impl Record {
     }
 
     pub fn from_vec(arr: Vec<Record>) -> Self {
-        return Record(Arc::new(JsonPart::Array(arr.into_iter().map(|r| r.0).collect())));
+        return Record(Arc::new(JsonPart::Array(arr)));
     }
 
     pub fn get_hash(&self, key: &str) -> Option<Record> {
@@ -46,7 +46,7 @@ impl Record {
         }
         if let JsonPart::Hash(ref map) = *self.0 {
             return match map.get(key) {
-                Some(arc) => Some(Record(arc.clone())),
+                Some(r) => Some(r.clone()),
                 None => None,
             };
         }
@@ -61,7 +61,7 @@ impl Record {
             if key >= arr.len() {
                 return None;
             }
-            return Some(Record(arr[key].clone()));
+            return Some(arr[key].clone());
         }
         panic!();
     }
@@ -89,7 +89,7 @@ impl Record {
                 *r = JsonPart::Hash(BTreeMap::new());
             }
             if let JsonPart::Hash(ref mut map) = *r {
-                return Arc::make_mut(map.entry(Arc::from(key)).or_insert(Arc::new(JsonPart::Null)));
+                return Arc::make_mut(&mut map.entry(Arc::from(key)).or_insert(Record(Arc::new(JsonPart::Null))).0);
             }
             panic!();
         }
@@ -100,9 +100,9 @@ impl Record {
             }
             if let JsonPart::Array(ref mut arr) = *r {
                 while key >= arr.len() {
-                    arr.push(Arc::new(JsonPart::Null));
+                    arr.push(Record(Arc::new(JsonPart::Null)));
                 }
-                return Arc::make_mut(&mut arr[key]);
+                return Arc::make_mut(&mut arr[key].0);
             }
             panic!();
         }
@@ -124,25 +124,25 @@ impl FromStr for Record {
     type Err = serde_json::error::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        fn convert_part(p: &serde_json::value::Value) -> JsonPart {
-            return match p {
+        fn convert_part(p: &serde_json::value::Value) -> Record {
+            return Record(Arc::new(match p {
                 serde_json::value::Value::Null => JsonPart::Null,
                 serde_json::value::Value::Bool(b) => JsonPart::Bool(*b),
                 serde_json::value::Value::Number(n) => JsonPart::Number(n.clone()),
                 serde_json::value::Value::String(s) => JsonPart::String(Arc::from(s.clone())),
-                serde_json::value::Value::Array(arr) => JsonPart::Array(arr.iter().map(|v| Arc::new(convert_part(v))).collect()),
-                serde_json::value::Value::Object(map) => JsonPart::Hash(map.iter().map(|(k, v)| (Arc::from(k.clone()), Arc::new(convert_part(v)))).collect()),
-            }
+                serde_json::value::Value::Array(arr) => JsonPart::Array(arr.iter().map(|v| convert_part(v)).collect()),
+                serde_json::value::Value::Object(map) => JsonPart::Hash(map.iter().map(|(k, v)| (Arc::from(k.clone()), convert_part(v))).collect()),
+            }));
         }
 
-        return serde_json::from_str(s).map(|j| Record(Arc::new(convert_part(&j))));
+        return serde_json::from_str(s).map(|j| convert_part(&j));
     }
 }
 
 impl ToString for Record {
     fn to_string(&self) -> String {
-        fn _to_string_aux(p: &JsonPart, acc: &mut String) {
-            match p {
+        fn _to_string_aux(p: &Record, acc: &mut String) {
+            match &*p.0 {
                 JsonPart::Null => {
                     acc.push_str("null");
                 }
@@ -185,7 +185,7 @@ impl ToString for Record {
         }
 
         let mut ret = String::new();
-        _to_string_aux(&self.0, &mut ret);
+        _to_string_aux(self, &mut ret);
         return ret;
     }
 }
