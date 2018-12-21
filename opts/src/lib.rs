@@ -46,6 +46,13 @@ pub fn parse<P>(args: &mut Vec<String>, p: &mut P, opts: Vec<(&str, usize, Box<F
 }
 
 #[macro_export]
+macro_rules! string_opt {
+    ($alias:expr, $f:ident) => (
+        ($alias, $f, Option<String>, 1, p, a, *p = Some(a[0].clone()), p.unwrap())
+    )
+}
+
+#[macro_export]
 macro_rules! parse_opt {
     {$args:ident, $(($alias:expr, $f:ident, $type:ty, $argct:expr, $p:ident, $a:ident, $set:expr, $val:expr)),*,} => {
         #[derive(Default)]
@@ -68,4 +75,3 @@ macro_rules! parse_opt {
         );*
     }
 }
-
