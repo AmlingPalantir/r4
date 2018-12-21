@@ -13,7 +13,6 @@ enum JsonPart {
     Bool(bool),
     Number(serde_json::Number),
     String(Arc<str>),
-    // TODO: less crummy Vec (better splice?)
     Array(Vec<Arc<JsonPart>>),
     Hash(BTreeMap<Arc<str>, Arc<JsonPart>>),
 }
