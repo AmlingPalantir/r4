@@ -2,6 +2,7 @@ extern crate bgop;
 extern crate stream;
 
 use bgop::BgopFe;
+use bgop::BofOrWrite;
 use std::ffi::OsStr;
 use std::io::BufRead;
 use std::io::BufReader;
@@ -33,7 +34,11 @@ impl ProcessStream {
 
         let bgop = BgopFe::new(move |maybe_e| {
             match maybe_e {
-                Some(e) => {
+                Some(BofOrWrite::Bof(file)) => {
+                    os.bof(&file);
+                    return !os.rclosed();
+                }
+                Some(BofOrWrite::Write(e)) => {
                     os.write(e);
                     return !os.rclosed();
                 }
@@ -50,7 +55,9 @@ impl ProcessStream {
                 let mut r = LineWriter::new(p_stdin);
                 loop {
                     match bgop.read() {
-                        Some(e) => {
+                        Some(BofOrWrite::Bof(_file)) => {
+                        }
+                        Some(BofOrWrite::Write(e)) => {
                             match writeln!(r, "{}", e.to_line()) {
                                 Err(_) => {
                                     bgop.rclose();
@@ -93,6 +100,10 @@ impl ProcessStream {
 }
 
 impl StreamTrait for ProcessStream {
+    fn bof(&mut self, file: &str) {
+        self.bgop.bof(file);
+    }
+
     fn write(&mut self, e: Entry) {
         self.bgop.write(e);
     }

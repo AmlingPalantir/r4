@@ -28,6 +28,9 @@ impl StdoutStream {
 }
 
 impl StreamTrait for StdoutStream {
+    fn bof(&mut self, _file: &str) {
+    }
+
     fn write(&mut self, e: Entry) {
         self.maybe_rclosed(writeln!(io::stdout(), "{}", e.to_line()));
     }

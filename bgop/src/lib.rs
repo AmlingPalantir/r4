@@ -7,8 +7,14 @@ use stream::Entry;
 use stream::StreamTrait;
 use wns::WaitNotifyState;
 
+#[derive(Clone)]
+pub enum BofOrWrite {
+    Bof(Arc<str>),
+    Write(Entry),
+}
+
 struct OneBuffer {
-    buf: VecDeque<Option<Entry>>,
+    buf: VecDeque<Option<BofOrWrite>>,
     rclosed: bool,
 }
 
@@ -43,7 +49,7 @@ pub struct BgopBe {
 }
 
 impl BgopBe {
-    pub fn read(&self) -> Option<Entry> {
+    pub fn read(&self) -> Option<BofOrWrite> {
         return self.state.await(&mut |buffers| {
             if let Some(maybe) = buffers.fe_to_be.buf.pop_front() {
                 return (Some(maybe), true);
@@ -58,10 +64,8 @@ impl BgopBe {
             buffers.fe_to_be.buf.clear();
         });
     }
-}
 
-impl StreamTrait for BgopBe {
-    fn write(&mut self, e: Entry) {
+    fn enqueue(&mut self, e: BofOrWrite) {
         return self.state.await(&mut |buffers| {
             if buffers.be_to_fe.rclosed {
                 return (Some(()), false);
@@ -72,6 +76,16 @@ impl StreamTrait for BgopBe {
             }
             return (None, false);
         });
+    }
+}
+
+impl StreamTrait for BgopBe {
+    fn bof(&mut self, file: &str) {
+        self.enqueue(BofOrWrite::Bof(Arc::from(file)));
+    }
+
+    fn write(&mut self, e: Entry) {
+        self.enqueue(BofOrWrite::Write(e));
     }
 
     fn rclosed(&mut self) -> bool {
@@ -88,16 +102,16 @@ impl StreamTrait for BgopBe {
 }
 
 pub struct BgopFe {
-    os: Box<FnMut(Option<Entry>) -> bool>,
+    os: Box<FnMut(Option<BofOrWrite>) -> bool>,
     state: Arc<WaitNotifyState<BgopState>>,
 }
 
 impl BgopFe {
-    pub fn new<OS: FnMut(Option<Entry>) -> bool + 'static>(os: OS) -> Self {
+    pub fn new<OS: FnMut(Option<BofOrWrite>) -> bool + 'static>(os: OS) -> Self {
         return Self::new_box(Box::new(os));
     }
 
-    pub fn new_box(os: Box<FnMut(Option<Entry>) -> bool>) -> Self {
+    pub fn new_box(os: Box<FnMut(Option<BofOrWrite>) -> bool>) -> Self {
         return BgopFe {
             os: os,
             state: Arc::new(WaitNotifyState::new(BgopState::new())),
@@ -112,7 +126,7 @@ impl BgopFe {
 
     fn ferry<R, F: FnMut(&mut BgopState) -> Option<R>>(&mut self, f: &mut F) -> R {
         enum Ret<R> {
-            Ferry(Vec<Option<Entry>>),
+            Ferry(Vec<Option<BofOrWrite>>),
             Return(R),
         }
         loop {
@@ -152,10 +166,8 @@ impl BgopFe {
             }
         }
     }
-}
 
-impl StreamTrait for BgopFe {
-    fn write(&mut self, e: Entry) {
+    fn enqueue(&mut self, e: BofOrWrite) {
         return self.ferry(&mut |buffers| {
             if buffers.fe_to_be.rclosed {
                 return Some(());
@@ -168,6 +180,16 @@ impl StreamTrait for BgopFe {
 
             return None;
         });
+    }
+}
+
+impl StreamTrait for BgopFe {
+    fn bof(&mut self, file: &str) {
+        self.enqueue(BofOrWrite::Bof(Arc::from(file)));
+    }
+
+    fn write(&mut self, e: Entry) {
+        self.enqueue(BofOrWrite::Write(e));
     }
 
     fn rclosed(&mut self) -> bool {

@@ -1,6 +1,7 @@
 use Operation;
 use StreamWrapper;
 use bgop::BgopFe;
+use bgop::BofOrWrite;
 use std::collections::VecDeque;
 use std::sync::Arc;
 use std::thread;
@@ -25,7 +26,11 @@ impl Operation for Impl {
         return StreamWrapper::new(move |mut os| {
             let bgop = BgopFe::new(move |maybe_e| {
                 match maybe_e {
-                    Some(e) => {
+                    Some(BofOrWrite::Bof(file)) => {
+                        os.bof(&file);
+                        return !os.rclosed();
+                    }
+                    Some(BofOrWrite::Write(e)) => {
                         os.write(e);
                         return !os.rclosed();
                     }
@@ -45,16 +50,19 @@ impl Operation for Impl {
 
                     loop {
                         match bgop.read() {
-                            Some(e) => {
+                            Some(BofOrWrite::Bof(file)) => {
+                                os.bof(&file);
+                            }
+                            Some(BofOrWrite::Write(e)) => {
                                 os.write(e);
-                                if os.rclosed() {
-                                    bgop.rclose();
-                                }
                             }
                             None => {
                                 os.close();
                                 return;
                             }
+                        }
+                        if os.rclosed() {
+                            bgop.rclose();
                         }
                     }
                 });

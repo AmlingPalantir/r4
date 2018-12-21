@@ -27,6 +27,7 @@ impl Entry {
 }
 
 pub trait StreamTrait {
+    fn bof(&mut self, &str);
     fn write(&mut self, Entry);
     fn rclosed(&mut self) -> bool;
     fn close(&mut self);
@@ -48,6 +49,10 @@ impl Stream {
 }
 
 impl StreamTrait for Stream {
+    fn bof(&mut self, file: &str) {
+        self.0.bof(file);
+    }
+
     fn write(&mut self, e: Entry) {
         self.0.write(e);
     }
@@ -67,6 +72,10 @@ struct TransformStream {
 }
 
 impl StreamTrait for TransformStream {
+    fn bof(&mut self, file: &str) {
+        self.os.bof(file);
+    }
+
     fn write(&mut self, e: Entry) {
         self.os.write((*self.f)(e));
     }
