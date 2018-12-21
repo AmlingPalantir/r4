@@ -44,15 +44,17 @@ impl Operation for Impl {
                     let os = Stream::new(BgopBeStream(bgop.clone()));
                     let mut os = op.wrap(os);
 
-                    match bgop.read() {
-                        Some(e) => {
-                            if !os.write(e) {
-                                bgop.rclose();
+                    loop {
+                        match bgop.read() {
+                            Some(e) => {
+                                if !os.write(e) {
+                                    bgop.rclose();
+                                }
                             }
-                        }
-                        None => {
-                            os.close();
-                            return;
+                            None => {
+                                os.close();
+                                return;
+                            }
                         }
                     }
                 });
