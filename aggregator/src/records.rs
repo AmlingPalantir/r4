@@ -1,6 +1,5 @@
-use Aggregator;
 use AggregatorState0;
-use AggregatorState;
+use ZeroArgImplTrait;
 use record::Record;
 
 pub(crate) fn names() -> Vec<&'static str> {
@@ -11,15 +10,8 @@ pub(crate) fn names() -> Vec<&'static str> {
 pub struct Impl {
 }
 
-impl Aggregator for Impl {
-    fn argct(&self) -> usize {
-        return 0;
-    }
-
-    fn state(&self, args: &[String]) -> Box<AggregatorState> {
-        assert!(args.is_empty());
-        return Box::new(State::default());
-    }
+impl ZeroArgImplTrait for Impl {
+    type State = State;
 }
 
 #[derive(Clone)]
