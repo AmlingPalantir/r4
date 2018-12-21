@@ -16,7 +16,7 @@ impl Operation for Impl {
     fn validate(&self, args: &mut Vec<String>) -> StreamWrapper {
         parse_opt! {
             args,
-            ("msg", msg, Option<String>, 1, p, a, *p = Some(a[0].clone())),
+            ("msg", msg, Option<String>, 1, p, a, *p = Some(a[0].clone()), p.unwrap()),
         }
 
         let msg: Arc<str> = Arc::from(msg);

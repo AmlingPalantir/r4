@@ -47,7 +47,7 @@ pub fn parse<P>(args: &mut Vec<String>, p: &mut P, opts: Vec<(&str, usize, Box<F
 
 #[macro_export]
 macro_rules! parse_opt {
-    {$args:ident, $(($alias:expr, $f:ident, $type:ty, $argct:expr, $p:ident, $a:ident, $set:expr)),*,} => {
+    {$args:ident, $(($alias:expr, $f:ident, $type:ty, $argct:expr, $p:ident, $a:ident, $set:expr, $val:expr)),*,} => {
         #[derive(Default)]
         struct Pre {
             $(
@@ -64,7 +64,7 @@ macro_rules! parse_opt {
             ),*
         ]);
         $(
-            let $f = p.$f.unwrap();
+            let $f = { let $p = p.$f; $val };
         );*
     }
 }
