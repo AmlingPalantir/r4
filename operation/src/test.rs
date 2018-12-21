@@ -14,15 +14,10 @@ pub struct Impl {
 
 impl Operation for Impl {
     fn validate(&self, args: &mut Vec<String>) -> StreamWrapper {
-        #[derive(Default)]
-        struct Pre {
-            msg: Option<String>,
+        parse_opt! {
+            args,
+            ("msg", msg, Option<String>, 1, p, a, *p = Some(a[0].clone())),
         }
-        let mut p = Pre::default();
-        opts::parse(args, &mut p, vec![
-            string_opt!("msg", Pre, msg),
-        ]);
-        let msg = p.msg.unwrap();
 
         let msg: Arc<str> = Arc::from(msg);
 

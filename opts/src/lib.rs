@@ -45,19 +45,27 @@ pub fn parse<P>(args: &mut Vec<String>, p: &mut P, opts: Vec<(&str, usize, Box<F
     }
 }
 
-pub fn opts_string<P, F: Fn(&mut P) -> &mut Option<String> + 'static>(f: F) -> Box<Fn(&mut P, &[String])> {
-    return Box::new(move |p: &mut P, a: &[String]| {
-        let r = f(p);
-        if let Some(_) = *r {
-            panic!();
+#[macro_export]
+macro_rules! parse_opt {
+    {$args:ident, $(($alias:expr, $f:ident, $type:ty, $argct:expr, $p:ident, $a:ident, $set:expr)),*,} => {
+        #[derive(Default)]
+        struct Pre {
+            $(
+                $f: $type,
+            ),*
         }
-        *r = Some(a[0].clone());
-    });
+        let mut p = Pre::default();
+        opts::parse($args, &mut p, vec![
+            $(
+                ($alias, $argct, Box::new(|p: &mut Pre, $a: &[String]| {
+                    let $p = &mut p.$f;
+                    return $set;
+                })),
+            ),*
+        ]);
+        $(
+            let $f = p.$f.unwrap();
+        );*
+    }
 }
 
-#[macro_export]
-macro_rules! string_opt {
-    ($alias:expr, $s:ty, $f:ident) => (
-        ($alias, 1, opts::opts_string(|s: &mut $s| &mut s.$f))
-    )
-}
