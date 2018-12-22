@@ -1,3 +1,4 @@
+extern crate aggregator;
 extern crate bgop;
 #[macro_use]
 extern crate opts;
@@ -8,6 +9,7 @@ extern crate stream;
 
 registry! {
     Operation:
+    aggregate,
     bg,
     test,
 }

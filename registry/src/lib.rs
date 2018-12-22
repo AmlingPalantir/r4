@@ -23,10 +23,10 @@ macro_rules! registry {
 
 
 pub trait RegistryArgs {
-    type Val;
+    type Val: Send + Sync;
 
     fn argct() -> usize;
-    fn parse(args: &[String]) -> Self::Val;
+    fn parse(args: &[&str]) -> Self::Val;
 }
 
 
@@ -41,7 +41,7 @@ impl RegistryArgs for ZeroArgs {
         return 0;
     }
 
-    fn parse(args: &[String]) -> () {
+    fn parse(args: &[&str]) -> () {
         debug_assert_eq!(0, args.len());
         return ();
     }
@@ -59,7 +59,7 @@ impl RegistryArgs for OneStringArgs {
         return 1;
     }
 
-    fn parse(args: &[String]) -> Arc<str> {
+    fn parse(args: &[&str]) -> Arc<str> {
         debug_assert_eq!(1, args.len());
         return Arc::from(&*args[0]);
     }

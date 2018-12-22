@@ -15,10 +15,10 @@ registry! {
 
 pub trait AggregatorFe {
     fn argct(&self) -> usize;
-    fn state(&self, args: &[String]) -> Box<AggregatorState>;
+    fn state(&self, args: &[&str]) -> Box<AggregatorState>;
 }
 
-pub trait AggregatorState {
+pub trait AggregatorState: Send + Sync {
     fn add(&mut self, Record);
     fn finish(self) -> Record;
     fn box_clone(&self) -> Box<AggregatorState>;
@@ -26,7 +26,7 @@ pub trait AggregatorState {
 
 pub trait AggregatorBe {
     type Args: RegistryArgs;
-    type State: Clone + Default;
+    type State: Clone + Default + Send + Sync;
 
     fn add(&mut Self::State, &<Self::Args as RegistryArgs>::Val, Record);
     fn finish(Self::State, &<Self::Args as RegistryArgs>::Val) -> Record;
@@ -37,7 +37,7 @@ impl<B: AggregatorBe + 'static> AggregatorFe for B {
         return B::Args::argct();
     }
 
-    fn state(&self, args: &[String]) -> Box<AggregatorState> {
+    fn state(&self, args: &[&str]) -> Box<AggregatorState> {
         return Box::new(AggregatorStateImpl::<B> {
             a: Arc::from(B::Args::parse(args)),
             s: B::State::default(),
@@ -64,5 +64,11 @@ impl<B: AggregatorBe + 'static> AggregatorState for AggregatorStateImpl<B> {
             a: self.a.clone(),
             s: self.s.clone(),
         });
+    }
+}
+
+impl Clone for Box<AggregatorState> {
+    fn clone(&self) -> Box<AggregatorState> {
+        return self.box_clone();
     }
 }
