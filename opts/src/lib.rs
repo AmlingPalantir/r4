@@ -79,7 +79,7 @@ impl OptionTrait for StringOption {
 
 #[macro_export]
 macro_rules! parse_opt {
-    {$args:ident, $(($alias:expr, $type:ty, $f:ident)),*,} => {
+    {$args:ident, $((($($alias:expr),*), $type:ty, $f:ident)),*,} => {
         #[derive(Default)]
         struct Pre {
             $(
@@ -89,6 +89,7 @@ macro_rules! parse_opt {
         let mut p = Pre::default();
         opts::parse($args, &mut p, vec![
             $(
+                $(
                 (
                     $alias,
                     <$type as $crate::OptionTrait>::argct(),
@@ -96,7 +97,8 @@ macro_rules! parse_opt {
                         <$type as $crate::OptionTrait>::set(&mut p.$f, a)
                     }),
                 ),
-            ),*
+                )*
+            )*
         ]);
         $(
             let $f = <$type as $crate::OptionTrait>::val(p.$f);
