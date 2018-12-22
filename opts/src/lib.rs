@@ -1,4 +1,20 @@
 use std::collections::HashMap;
+use std::rc::Rc;
+
+enum ExtraHandler<P> {
+    Soft(Rc<Fn(&mut P, &String) -> bool>),
+    Hard(Rc<Fn(&mut P, &[String])>),
+}
+
+pub struct OptParser<P> {
+    named: HashMap<String, (usize, Rc<Fn(&mut P, &[String])>)>,
+    extra: Vec<ExtraHandler<P>>,
+}
+
+pub struct OptParserView<'a, P: 'a, P2> {
+    op: &'a mut OptParser<P>,
+    f: Rc<Fn(&mut P) -> &mut P2>,
+}
 
 fn name_from_arg(name: &str) -> Option<&str> {
     if name.starts_with("--") {
@@ -10,98 +26,109 @@ fn name_from_arg(name: &str) -> Option<&str> {
     return None;
 }
 
-pub fn parse<P>(args: &mut Vec<String>, p: &mut P, opts: Vec<(&str, usize, Box<Fn(&mut P, &[String])>)>) {
-    let m: HashMap<&str, _> = opts.iter().map(|(alias, argct, f)| (*alias, (*argct, f))).collect();
+impl<P: Default> OptParser<P> {
+    pub fn parse(&self, args: &mut Vec<String>) {
+        let mut p = P::default();
 
-    let mut save_index = 0;
-    let mut next_index = 0;
-    loop {
-        if next_index == args.len() {
-            args.truncate(save_index);
-            return;
-        }
+        let mut save_index = 0;
+        let mut next_index = 0;
+        let mut refuse_opt = false;
+        'arg: loop {
+            if next_index == args.len() {
+                args.truncate(save_index);
+                return;
+            }
 
-        if let Some(name) = name_from_arg(&args[next_index]) {
-            match m.get(name) {
-                Some((argct, f)) => {
-                    let start = next_index + 1;
-                    let end = start + argct;
-                    if end > args.len() {
-                        panic!();
-                    }
-                    f(p, &args[start..end]);
-                    next_index = end;
-                    continue;
+            if !refuse_opt {
+                if &args[next_index] == "--" {
+                    refuse_opt = true;
+                    next_index += 1;
+                    continue 'arg;
                 }
-                None => {
-                    panic!();
+
+                if let Some(name) = name_from_arg(&args[next_index]) {
+                    match self.named.get(name) {
+                        Some((argct, f)) => {
+                            let start = next_index + 1;
+                            let end = start + argct;
+                            if end > args.len() {
+                                panic!();
+                            }
+                            f(&mut p, &args[start..end]);
+                            next_index = end;
+                            continue;
+                        }
+                        None => {
+                            panic!();
+                        }
+                    }
                 }
             }
+
+            for extra in &self.extra {
+                match extra {
+                    ExtraHandler::Soft(f) => {
+                        if f(&mut p, &args[next_index]) {
+                            next_index += 1;
+                            continue 'arg;
+                        }
+                    }
+                    ExtraHandler::Hard(f) => {
+                        f(&mut p, &args[next_index..]);
+                        next_index = args.len();
+                        continue 'arg;
+                    }
+                }
+            }
+
+            args.swap(save_index, next_index);
+            save_index += 1;
+            next_index += 1;
         }
-
-        args.swap(save_index, next_index);
-        save_index += 1;
-        next_index += 1;
     }
 }
 
-pub trait OptionTrait {
-    type PreType;
-    type ValType;
-
-    fn argct() -> usize;
-    fn set(&mut Self::PreType, &[String]);
-    fn val(Self::PreType) -> Self::ValType;
-}
-
-pub enum StringOption {
-}
-
-impl OptionTrait for StringOption {
-    type PreType = Option<String>;
-    type ValType = String;
-
-    fn argct() -> usize {
-        return 1;
+impl<P> OptParser<P> {
+    pub fn view<'a>(&'a mut self) -> OptParserView<'a, P, P> {
+        return OptParserView {
+            op: self,
+            f: Rc::new(|p| p),
+        };
     }
+}
 
-    fn set(p: &mut Option<String>, a: &[String]) {
-        if let Some(_) = *p {
-            panic!();
+impl<'a, P: 'static, P2: 'static> OptParserView<'a, P, P2> {
+    pub fn sub<P3, F: Fn(&mut P2) -> &mut P3 + 'static>(&'a mut self, f: F) -> OptParserView<'a, P, P3> {
+        let f1 = self.f.clone();
+        return OptParserView::<'a, P, P3> {
+            op: self.op,
+            f: Rc::new(move |p| f(f1(p))),
         }
-        *p = Some(a[0].clone());
     }
 
-    fn val(p: Option<String>) -> String {
-        return p.unwrap();
+    pub fn match_single<F: Fn(&mut P, &String) + 'static>(&mut self, aliases: &[String], f: F) {
+        self.match_n(aliases, 1, move |p, a| f(p, &a[0]));
     }
-}
 
-#[macro_export]
-macro_rules! parse_opt {
-    {$args:ident, $((($($alias:expr),*), $type:ty, $f:ident)),*,} => {
-        #[derive(Default)]
-        struct Pre {
-            $(
-                $f: <$type as $crate::OptionTrait>::PreType,
-            )*
+    pub fn match_zero<F: Fn(&mut P) + 'static>(&mut self, aliases: &[String], f: F) {
+        self.match_n(aliases, 0, move |p, _a| f(p));
+    }
+
+    pub fn match_n<F: Fn(&mut P, &[String]) + 'static>(&mut self, aliases: &[String], argct: usize, f: F) {
+        let f = Rc::new(f);
+        for alias in aliases {
+            let prev = self.op.named.insert(alias.clone(), (argct, f.clone()));
+            if prev.is_some() {
+                panic!();
+            }
         }
-        let mut p = Pre::default();
-        opts::parse($args, &mut p, vec![
-            $(
-                $(
-                (
-                    $alias,
-                    <$type as $crate::OptionTrait>::argct(),
-                    Box::new(|p: &mut Pre, a: &[String]| {
-                        <$type as $crate::OptionTrait>::set(&mut p.$f, a)
-                    }),
-                ),
-                )*
-            )*
-        ]);
-        $(
-            let $f = <$type as $crate::OptionTrait>::val(p.$f);
-        );*
+    }
+
+    pub fn match_extra_soft<F: Fn(&mut P, &String) -> bool + 'static>(&mut self, f: F) {
+        self.op.extra.push(ExtraHandler::Soft(Rc::new(f)));
+    }
+
+    pub fn match_extra_hard<F: Fn(&mut P, &[String]) + 'static>(&mut self, f: F) {
+        self.op.extra.push(ExtraHandler::Hard(Rc::new(f)));
     }
 }
