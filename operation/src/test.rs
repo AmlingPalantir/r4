@@ -1,8 +1,11 @@
-use Operation;
-use StreamWrapper;
+use OperationBe;
+use opts::OneOption;
+use opts::OptParserView;
+use opts::RequiredStringOption;
 use record::FromPrimitive;
 use record::Record;
 use std::sync::Arc;
+use stream::Stream;
 
 pub(crate) fn names() -> Vec<&'static str> {
     return vec!["test"];
@@ -12,26 +15,28 @@ pub(crate) fn names() -> Vec<&'static str> {
 pub struct Impl {
 }
 
-impl Operation for Impl {
-    fn validate(&self, args: &mut Vec<String>) -> StreamWrapper {
-        parse_opt! {
-            args,
-            (("msg", "m"), opts::StringOption, msg),
-        }
+declare_opts! {
+    msg: RequiredStringOption,
+}
 
-        let msg: Arc<str> = Arc::from(msg);
+impl OperationBe for Impl {
+    type PreOptions = PreOptions;
+    type PostOptions = PostOptions;
 
-        return StreamWrapper::new(move |os| {
-            let mut n = 0;
-            let msg = msg.clone();
+    fn options<'a>(opt: &'a mut OptParserView<'a, PreOptions, PreOptions>) {
+        opt.sub(|p| &mut p.msg).match_single(&["m", "msg"], OneOption::set_string_option);
+    }
 
-            return os.transform_records(move |mut r| {
-                n += 1;
-                r.set_path("n", Record::from_primitive(n));
-                r.set_path("msg", Record::from_primitive_string(msg.clone()));
+    fn wrap_stream(o: &PostOptions, os: Stream) -> Stream {
+        let msg: Arc<str> = Arc::from(&*o.msg);
+        let mut n = 0;
 
-                return r;
-            }).parse();
-        });
+        return os.transform_records(move |mut r| {
+            n += 1;
+            r.set_path("n", Record::from_primitive(n));
+            r.set_path("msg", Record::from_primitive_string(msg.clone()));
+
+            return r;
+        }).parse();
     }
 }

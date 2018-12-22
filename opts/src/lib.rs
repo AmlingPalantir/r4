@@ -27,6 +27,13 @@ fn name_from_arg(name: &str) -> Option<&str> {
 }
 
 impl<P: Default> OptParser<P> {
+    pub fn new() -> OptParser<P> {
+        return OptParser {
+            named: HashMap::new(),
+            extra: Vec::new(),
+        };
+    }
+
     pub fn parse(&self, args: &mut Vec<String>) {
         let mut p = P::default();
 
@@ -106,30 +113,35 @@ impl<'a, P: 'static, P2: 'static> OptParserView<'a, P, P2> {
         }
     }
 
-    pub fn match_single<F: Fn(&mut P, &String) + 'static>(&mut self, aliases: &[String], f: F) {
+    pub fn match_single<F: Fn(&mut P2, &String) + 'static>(&mut self, aliases: &[&str], f: F) {
         self.match_n(aliases, 1, move |p, a| f(p, &a[0]));
     }
 
-    pub fn match_zero<F: Fn(&mut P) + 'static>(&mut self, aliases: &[String], f: F) {
+    pub fn match_zero<F: Fn(&mut P2) + 'static>(&mut self, aliases: &[&str], f: F) {
         self.match_n(aliases, 0, move |p, _a| f(p));
     }
 
-    pub fn match_n<F: Fn(&mut P, &[String]) + 'static>(&mut self, aliases: &[String], argct: usize, f: F) {
-        let f = Rc::new(f);
+    pub fn match_n<F: Fn(&mut P2, &[String]) + 'static>(&mut self, aliases: &[&str], argct: usize, f: F) {
+        let f1 = self.f.clone();
+        let f: Rc<Fn(&mut P, &[String])> = Rc::new(move |p, a| f(f1(p), a));
         for alias in aliases {
-            let prev = self.op.named.insert(alias.clone(), (argct, f.clone()));
+            let prev = self.op.named.insert(alias.to_string(), (argct, f.clone()));
             if prev.is_some() {
                 panic!();
             }
         }
     }
 
-    pub fn match_extra_soft<F: Fn(&mut P, &String) -> bool + 'static>(&mut self, f: F) {
-        self.op.extra.push(ExtraHandler::Soft(Rc::new(f)));
+    pub fn match_extra_soft<F: Fn(&mut P2, &String) -> bool + 'static>(&mut self, f: F) {
+        let f1 = self.f.clone();
+        let f: Rc<Fn(&mut P, &String) -> bool> = Rc::new(move |p, a| f(f1(p), a));
+        self.op.extra.push(ExtraHandler::Soft(f.clone()));
     }
 
-    pub fn match_extra_hard<F: Fn(&mut P, &[String]) + 'static>(&mut self, f: F) {
-        self.op.extra.push(ExtraHandler::Hard(Rc::new(f)));
+    pub fn match_extra_hard<F: Fn(&mut P2, &[String]) + 'static>(&mut self, f: F) {
+        let f1 = self.f.clone();
+        let f: Rc<Fn(&mut P, &[String])> = Rc::new(move |p, a| f(f1(p), a));
+        self.op.extra.push(ExtraHandler::Hard(f.clone()));
     }
 }
 
@@ -147,28 +159,37 @@ impl OneOption {
 
 
 
+pub trait Validates {
+    type To;
+
+    fn validate(self) -> Self::To;
+}
+
 #[macro_export]
 macro_rules! declare_opts {
     {$($name:ident: $type:ty,)*} => {
-        struct PreOptions {
+        #[derive(Default)]
+        pub struct PreOptions {
             $(
-                $name:ident: $type::PreType,
+                $name: <$type as $crate::OptionTrait>::PreType,
             )*
         }
 
-        impl PreOptions {
-            pub fn validate(self) -> PostOptions {
+        impl $crate::Validates for PreOptions {
+            type To = PostOptions;
+
+            fn validate(self) -> PostOptions {
                 return PostOptions {
                     $(
-                        $name: $type::validate(self.$name),
+                        $name: <$type as $crate::OptionTrait>::validate(self.$name),
                     )*
                 };
             }
         }
 
-        struct PostOptions {
+        pub struct PostOptions {
             $(
-                $name:ident: $type::ValType,
+                $name: <$type as $crate::OptionTrait>::ValType,
             )*
         }
     }

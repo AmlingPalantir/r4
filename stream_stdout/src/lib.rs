@@ -41,10 +41,10 @@ impl StreamTrait for StdoutStream {
         }
     }
 
-    fn close(self: Box<StdoutStream>) {
+    fn close(mut self: Box<StdoutStream>) {
         // This seems to be all we can do?  We hope/expect the process
         // to be donezo soon anyway...
-        io::stdout().flush();
+        self.maybe_rclosed(io::stdout().flush());
     }
 
     fn rclosed(&mut self) -> bool {
