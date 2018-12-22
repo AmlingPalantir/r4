@@ -38,20 +38,20 @@ impl ProcessStream {
             let mut lw = LineWriter::new(p_stdin);
             loop {
                 match rbe.read() {
-                    Entry::Bof(_file) => {
+                    Some(Entry::Bof(_file)) => {
                         continue;
                     }
-                    Entry::Record(r) => {
+                    Some(Entry::Record(r)) => {
                         if let Err(_) = writeln!(lw, "{}", r.to_string()) {
                             rbe.rclose();
                         }
                     }
-                    Entry::Line(line) => {
+                    Some(Entry::Line(line)) => {
                         if let Err(_) = writeln!(lw, "{}", line) {
                             rbe.rclose();
                         }
                     }
-                    Entry::Close() => {
+                    None => {
                         // drops r
                         return;
                     }
@@ -68,7 +68,7 @@ impl ProcessStream {
                     break;
                 }
             }
-            wbe.write(Entry::Close());
+            Box::new(wbe).close();
             // return drops r
         });
 
@@ -81,11 +81,13 @@ impl ProcessStream {
 
 impl StreamTrait for ProcessStream {
     fn write(&mut self, e: Entry) {
-        let close = e.is_close();
         self.os.write(e);
-        if close {
-            self.p.wait().unwrap();
-        }
+    }
+
+    fn close(self: Box<ProcessStream>) {
+        let mut s = *self;
+        s.os.close();
+        s.p.wait().unwrap();
     }
 
     fn rclosed(&mut self) -> bool {

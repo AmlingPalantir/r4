@@ -38,12 +38,13 @@ impl StreamTrait for StdoutStream {
             Entry::Line(line) => {
                 self.maybe_rclosed(writeln!(io::stdout(), "{}", line));
             }
-            Entry::Close() => {
-                // This seems to be all we can do?  We hope/expect the process
-                // to be donezo soon anyway...
-                self.maybe_rclosed(io::stdout().flush());
-            }
         }
+    }
+
+    fn close(self: Box<StdoutStream>) {
+        // This seems to be all we can do?  We hope/expect the process
+        // to be donezo soon anyway...
+        io::stdout().flush();
     }
 
     fn rclosed(&mut self) -> bool {

@@ -72,22 +72,24 @@ impl StreamTrait for AggregateStream {
             Entry::Bof(_file) => {
             }
             Entry::Record(r) => {
-                for (_, state) in &mut self.aggs {
+                for (_, ref mut state) in self.aggs.iter_mut() {
                     state.add(r.clone());
                 }
             }
             Entry::Line(_line) => {
                 panic!();
             }
-            Entry::Close() => {
-                let mut r = Record::empty_hash();
-                for (label, state) in self.aggs.clone() {
-                    r.set_path(&label, state.finish());
-                }
-                self.os.write(Entry::Record(r));
-                self.os.write(Entry::Close());
-            }
         }
+    }
+
+    fn close(self: Box<AggregateStream>) {
+        let mut s = *self;
+        let mut r = Record::empty_hash();
+        for (label, state) in s.aggs.into_iter() {
+            r.set_path(&label, state.finish());
+        }
+        s.os.write(Entry::Record(r));
+        s.os.close();
     }
 
     fn rclosed(&mut self) -> bool {

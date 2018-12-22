@@ -9,20 +9,11 @@ pub enum Entry {
     Bof(Arc<str>),
     Record(Record),
     Line(Arc<str>),
-    Close(),
-}
-
-impl Entry {
-    pub fn is_close(&self) -> bool {
-        return match *self {
-            Entry::Close() => true,
-            _ => false,
-        };
-    }
 }
 
 pub trait StreamTrait {
     fn write(&mut self, Entry);
+    fn close(self: Box<Self>);
     fn rclosed(&mut self) -> bool;
 }
 
@@ -45,12 +36,16 @@ impl Stream {
     }
 }
 
-impl StreamTrait for Stream {
-    fn write(&mut self, e: Entry) {
+impl Stream {
+    pub fn write(&mut self, e: Entry) {
         self.0.write(e);
     }
 
-    fn rclosed(&mut self) -> bool {
+    pub fn close(self) {
+        self.0.close();
+    }
+
+    pub fn rclosed(&mut self) -> bool {
         return self.0.rclosed();
     }
 }
@@ -67,6 +62,10 @@ impl StreamTrait for ParseStream {
                 self.0.write(e);
             }
         }
+    }
+
+    fn close(self: Box<ParseStream>) {
+        self.0.close();
     }
 
     fn rclosed(&mut self) -> bool {
@@ -89,6 +88,10 @@ impl StreamTrait for TransformRecordsStream {
                 self.os.write(e);
             }
         }
+    }
+
+    fn close(self: Box<TransformRecordsStream>) {
+        self.os.close();
     }
 
     fn rclosed(&mut self) -> bool {

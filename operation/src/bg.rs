@@ -2,9 +2,7 @@ use Operation;
 use StreamWrapper;
 use std::sync::Arc;
 use std::thread;
-use stream::Entry;
 use stream::Stream;
-use stream::StreamTrait;
 
 pub(crate) fn names() -> Vec<&'static str> {
     return vec!["bg"];
@@ -31,12 +29,12 @@ impl Operation for Impl {
 
                 loop {
                     match rbe.read() {
-                        Entry::Close() => {
-                            os.write(Entry::Close());
-                            return;
-                        }
-                        e => {
+                        Some(e) => {
                             os.write(e);
+                        }
+                        None => {
+                            os.close();
+                            return;
                         }
                     }
                     if os.rclosed() {

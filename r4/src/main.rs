@@ -11,7 +11,6 @@ use std::io;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
-use stream::StreamTrait;
 use stream_stdout::StdoutStream;
 
 fn main() {
@@ -47,5 +46,5 @@ fn main() {
         }
     }
 
-    os.write(Entry::Close());
+    os.close();
 }
