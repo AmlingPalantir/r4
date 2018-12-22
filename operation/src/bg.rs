@@ -1,8 +1,7 @@
-use OperationBe2;
+use OperationBe;
 use StreamWrapper;
 use opts::OptParserView;
 use opts::OptionTrait;
-use opts::StringVecOption;
 use opts::VarOption;
 use std::sync::Arc;
 use std::thread;
@@ -20,12 +19,16 @@ declare_opts! {
     op: SubOperationOption,
 }
 
-impl OperationBe2 for Impl {
+impl OperationBe for Impl {
     type PreOptions = PreOptions;
     type PostOptions = PostOptions;
 
     fn options<'a, X: 'static>(opt: &'a mut OptParserView<'a, X, PreOptions>) {
         opt.sub(|p| &mut p.op).match_extra_hard(VarOption::push_string_vec);
+    }
+
+    fn get_extra(o: &PostOptions) -> &Vec<String> {
+        return &o.op.0;
     }
 
     fn wrap_stream(o: &PostOptions, os: Stream) -> Stream {
@@ -34,7 +37,7 @@ impl OperationBe2 for Impl {
         let op = o.op.clone();
         thread::spawn(move || {
             let os = Stream::new(wbe);
-            let mut os = op.wrap(os);
+            let mut os = op.1.wrap(os);
 
             loop {
                 match rbe.read() {
@@ -61,11 +64,12 @@ enum SubOperationOption {
 
 impl OptionTrait for SubOperationOption {
     type PreType = Vec<String>;
-    type ValType = Arc<StreamWrapper>;
+    type ValType = Arc<(Vec<String>, StreamWrapper)>;
 
-    fn validate(p: Vec<String>) -> Arc<StreamWrapper> {
+    fn validate(mut p: Vec<String>) -> Arc<(Vec<String>, StreamWrapper)> {
         let name = p.remove(0);
         let op = super::find(&name);
-        return Arc::from(op.validate(p));
+        let w = op.validate(&mut p);
+        return Arc::from((p, w));
     }
 }
