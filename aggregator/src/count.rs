@@ -19,7 +19,7 @@ impl AggregatorBe for Impl {
         *state += 1;
     }
 
-    fn finish(state: u32, _a: &()) -> Record {
-        return Record::from_primitive(state);
+    fn finish(state: Box<u32>, _a: &()) -> Record {
+        return Record::from_primitive(*state);
     }
 }

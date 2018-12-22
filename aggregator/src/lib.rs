@@ -20,7 +20,7 @@ pub trait AggregatorFe {
 
 pub trait AggregatorState: Send + Sync {
     fn add(&mut self, Record);
-    fn finish(self) -> Record;
+    fn finish(self: Box<Self>) -> Record;
     fn box_clone(&self) -> Box<AggregatorState>;
 }
 
@@ -29,7 +29,7 @@ pub trait AggregatorBe {
     type State: Clone + Default + Send + Sync;
 
     fn add(&mut Self::State, &<Self::Args as RegistryArgs>::Val, Record);
-    fn finish(Self::State, &<Self::Args as RegistryArgs>::Val) -> Record;
+    fn finish(Box<Self::State>, &<Self::Args as RegistryArgs>::Val) -> Record;
 }
 
 impl<B: AggregatorBe + 'static> AggregatorFe for B {
@@ -55,8 +55,9 @@ impl<B: AggregatorBe + 'static> AggregatorState for AggregatorStateImpl<B> {
         B::add(&mut self.s, &self.a, r);
     }
 
-    fn finish(self) -> Record {
-        return B::finish(self.s, &self.a);
+    fn finish(self: Box<Self>) -> Record {
+        let a = self.a.clone();
+        return B::finish(Box::new(self.s), &a);
     }
 
     fn box_clone(&self) -> Box<AggregatorState> {
