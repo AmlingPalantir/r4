@@ -84,6 +84,7 @@ impl StreamTrait for AggregateStream {
                 for (label, state) in self.aggs.clone() {
                     r.set_path(&label, state.finish());
                 }
+                self.os.write(Entry::Record(r));
                 self.os.write(Entry::Close());
             }
         }
