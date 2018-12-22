@@ -24,7 +24,7 @@ impl OperationBe for Impl {
     type PreOptions = PreOptions;
     type PostOptions = PostOptions;
 
-    fn options<'a>(opt: &'a mut OptParserView<'a, PreOptions, PreOptions>) {
+    fn options<'a, X: 'static>(opt: &'a mut OptParserView<'a, X, PreOptions>) {
         opt.sub(|p| &mut p.aggs).match_single(&["a", "agg", "aggregator"], OneOption::push_string_vec);
     }
 

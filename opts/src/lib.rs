@@ -34,15 +34,13 @@ impl<P: Default> OptParser<P> {
         };
     }
 
-    pub fn parse(&self, args: &mut Vec<String>) -> P {
+    pub fn parse(&self, args: &Vec<String>) -> P {
         let mut p = P::default();
 
-        let mut save_index = 0;
         let mut next_index = 0;
         let mut refuse_opt = false;
         'arg: loop {
             if next_index == args.len() {
-                args.truncate(save_index);
                 return p;
             }
 
@@ -88,9 +86,7 @@ impl<P: Default> OptParser<P> {
                 }
             }
 
-            args.swap(save_index, next_index);
-            save_index += 1;
-            next_index += 1;
+            panic!();
         }
     }
 }

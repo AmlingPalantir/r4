@@ -24,18 +24,30 @@ pub trait OperationFe {
 }
 
 pub trait OperationBe {
-    type PreOptions: Default + Validates<To = Self::PostOptions>;
+    type PreOptions: Default + Validates<To = Self::PostOptions> + 'static;
     type PostOptions: Send + Sync + 'static;
 
-    fn options<'a>(&'a mut OptParserView<'a, Self::PreOptions, Self::PreOptions>);
+    fn options<'a, X: 'static>(&'a mut OptParserView<'a, X, Self::PreOptions>);
     fn wrap_stream(&Self::PostOptions, Stream) -> Stream;
+}
+
+#[derive(Default)]
+struct FeOptions<P> {
+    p: P,
+    args: Vec<String>,
 }
 
 impl<B: OperationBe> OperationFe for B {
     fn validate(&self, args: &mut Vec<String>) -> StreamWrapper {
-        let mut opt = OptParser::new();
-        B::options(&mut opt.view());
-        let o = opt.parse(args).validate();
+        let mut opt = OptParser::<FeOptions<B::PreOptions>>::new();
+        B::options(&mut opt.view().sub(|p| &mut p.p));
+        opt.view().sub(|p| &mut p.args).match_extra_soft(|p, a| {
+            p.push(a.clone());
+            return true;
+        });
+        let p = opt.parse(args);
+        *args = p.args;
+        let o = p.p.validate();
 
         return StreamWrapper::new(move |os| B::wrap_stream(&o, os));
     }
