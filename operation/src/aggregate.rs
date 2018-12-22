@@ -1,4 +1,4 @@
-use OperationBe;
+use OperationBe2;
 use aggregator::AggregatorState;
 use opts::OneOption;
 use opts::OptParserView;
@@ -20,7 +20,7 @@ declare_opts! {
     aggs: AggregatorsOption,
 }
 
-impl OperationBe for Impl {
+impl OperationBe2 for Impl {
     type PreOptions = PreOptions;
     type PostOptions = PostOptions;
 

@@ -1,4 +1,4 @@
-use OperationBe;
+use OperationBe2;
 use StreamWrapper;
 use opts::OptParserView;
 use opts::OptionTrait;
@@ -20,7 +20,7 @@ declare_opts! {
     op: SubOperationOption,
 }
 
-impl OperationBe for Impl {
+impl OperationBe2 for Impl {
     type PreOptions = PreOptions;
     type PostOptions = PostOptions;
 

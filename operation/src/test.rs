@@ -1,4 +1,4 @@
-use OperationBe;
+use OperationBe2;
 use opts::OneOption;
 use opts::OptParserView;
 use opts::RequiredStringOption;
@@ -19,7 +19,7 @@ declare_opts! {
     msg: RequiredStringOption,
 }
 
-impl OperationBe for Impl {
+impl OperationBe2 for Impl {
     type PreOptions = PreOptions;
     type PostOptions = PostOptions;
 
