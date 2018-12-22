@@ -34,7 +34,7 @@ impl<P: Default> OptParser<P> {
         };
     }
 
-    pub fn parse(&self, args: &mut Vec<String>) {
+    pub fn parse(&self, args: &mut Vec<String>) -> P {
         let mut p = P::default();
 
         let mut save_index = 0;
@@ -43,7 +43,7 @@ impl<P: Default> OptParser<P> {
         'arg: loop {
             if next_index == args.len() {
                 args.truncate(save_index);
-                return;
+                return p;
             }
 
             if !refuse_opt {

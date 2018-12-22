@@ -33,11 +33,9 @@ pub trait OperationBe {
 
 impl<B: OperationBe> OperationFe for B {
     fn validate(&self, args: &mut Vec<String>) -> StreamWrapper {
-        let o = B::PreOptions::default();
         let mut opt = OptParser::new();
         B::options(&mut opt.view());
-        opt.parse(args);
-        let o = o.validate();
+        let o = opt.parse(args).validate();
 
         return StreamWrapper::new(move |os| B::wrap_stream(&o, os));
     }
