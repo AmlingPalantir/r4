@@ -132,3 +132,63 @@ impl<'a, P: 'static, P2: 'static> OptParserView<'a, P, P2> {
         self.op.extra.push(ExtraHandler::Hard(Rc::new(f)));
     }
 }
+
+pub enum OneOption {
+}
+
+impl OneOption {
+    pub fn set_string_option(p: &mut Option<String>, a: &String) {
+        if let Some(_) = *p {
+            panic!();
+        }
+        *p = Some(a.clone());
+    }
+}
+
+
+
+#[macro_export]
+macro_rules! declare_opts {
+    {$($name:ident: $type:ty,)*} => {
+        struct PreOptions {
+            $(
+                $name:ident: $type::PreType,
+            )*
+        }
+
+        impl PreOptions {
+            pub fn validate(self) -> PostOptions {
+                return PostOptions {
+                    $(
+                        $name: $type::validate(self.$name),
+                    )*
+                };
+            }
+        }
+
+        struct PostOptions {
+            $(
+                $name:ident: $type::ValType,
+            )*
+        }
+    }
+}
+
+pub trait OptionTrait {
+    type PreType;
+    type ValType;
+
+    fn validate(Self::PreType) -> Self::ValType;
+}
+
+pub enum RequiredStringOption {
+}
+
+impl OptionTrait for RequiredStringOption {
+    type PreType = Option<String>;
+    type ValType = String;
+
+    fn validate(p: Option<String>) -> String {
+        return p.unwrap();
+    }
+}
