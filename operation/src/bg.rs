@@ -1,5 +1,9 @@
-use Operation;
+use OperationBe;
 use StreamWrapper;
+use opts::OptParserView;
+use opts::OptionTrait;
+use opts::StringVecOption;
+use opts::VarOption;
 use std::sync::Arc;
 use std::thread;
 use stream::Stream;
@@ -12,38 +16,56 @@ pub(crate) fn names() -> Vec<&'static str> {
 pub struct Impl {
 }
 
-impl Operation for Impl {
-    fn validate(&self, args: &mut Vec<String>) -> StreamWrapper {
-        let name = args.remove(0);
-        let op = super::find(&name);
-        let op = op.validate(args);
-        let op = Arc::from(op);
+declare_opts! {
+    op: SubOperationOption,
+}
 
-        return StreamWrapper::new(move |os| {
-            let (fe, rbe, wbe) = bgop::new(os);
+impl OperationBe for Impl {
+    type PreOptions = PreOptions;
+    type PostOptions = PostOptions;
 
-            let op = op.clone();
-            thread::spawn(move || {
-                let os = Stream::new(wbe);
-                let mut os = op.wrap(os);
+    fn options<'a, X: 'static>(opt: &'a mut OptParserView<'a, X, PreOptions>) {
+        opt.sub(|p| &mut p.op).match_extra_hard(VarOption::push_string_vec);
+    }
 
-                loop {
-                    match rbe.read() {
-                        Some(e) => {
-                            os.write(e);
-                        }
-                        None => {
-                            os.close();
-                            return;
-                        }
+    fn wrap_stream(o: &PostOptions, os: Stream) -> Stream {
+        let (fe, rbe, wbe) = bgop::new(os);
+
+        let op = o.op.clone();
+        thread::spawn(move || {
+            let os = Stream::new(wbe);
+            let mut os = op.wrap(os);
+
+            loop {
+                match rbe.read() {
+                    Some(e) => {
+                        os.write(e);
                     }
-                    if os.rclosed() {
-                        rbe.rclose();
+                    None => {
+                        os.close();
+                        return;
                     }
                 }
-            });
-
-            return Stream::new(fe);
+                if os.rclosed() {
+                    rbe.rclose();
+                }
+            }
         });
+
+        return Stream::new(fe);
+    }
+}
+
+enum SubOperationOption {
+}
+
+impl OptionTrait for SubOperationOption {
+    type PreType = Vec<String>;
+    type ValType = Arc<StreamWrapper>;
+
+    fn validate(p: Vec<String>) -> Arc<StreamWrapper> {
+        let name = p.remove(0);
+        let op = super::find(&name);
+        return Arc::from(op.validate(p));
     }
 }

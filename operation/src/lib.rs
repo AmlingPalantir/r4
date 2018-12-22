@@ -10,7 +10,7 @@ extern crate stream;
 registry! {
     OperationFe:
     aggregate,
-    //bg,
+    bg,
     test,
 }
 

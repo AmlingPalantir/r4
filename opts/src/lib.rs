@@ -157,6 +157,15 @@ impl OneOption {
     }
 }
 
+pub enum VarOption {
+}
+
+impl VarOption {
+    pub fn push_string_vec(p: &mut Vec<String>, a: &[String]) {
+        p.extend_from_slice(a);
+    }
+}
+
 
 
 pub trait Validates {
@@ -211,5 +220,17 @@ impl OptionTrait for RequiredStringOption {
 
     fn validate(p: Option<String>) -> String {
         return p.unwrap();
+    }
+}
+
+pub enum StringVecOption {
+}
+
+impl OptionTrait for StringVecOption {
+    type PreType = Vec<String>;
+    type ValType = Vec<String>;
+
+    fn validate(p: Vec<String>) -> Vec<String> {
+        return p;
     }
 }
