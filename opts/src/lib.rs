@@ -155,6 +155,10 @@ impl OneOption {
         }
         *p = Some(a.clone());
     }
+
+    pub fn push_string_vec(p: &mut Vec<String>, a: &String) {
+        p.push(a.clone());
+    }
 }
 
 

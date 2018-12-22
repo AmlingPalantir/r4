@@ -1,6 +1,7 @@
-use Operation;
-use StreamWrapper;
+use OperationBe;
 use aggregator::AggregatorState;
+use opts::OneOption;
+use opts::OptParserView;
 use opts::OptionTrait;
 use record::Record;
 use stream::Entry;
@@ -15,19 +16,23 @@ pub(crate) fn names() -> Vec<&'static str> {
 pub struct Impl {
 }
 
-impl Operation for Impl {
-    fn validate(&self, args: &mut Vec<String>) -> StreamWrapper {
-        parse_opt! {
-            args,
-            (("a", "agg", "aggregator"), AggregatorsOption, aggs),
-        }
+declare_opts! {
+    aggs: AggregatorsOption,
+}
 
-        return StreamWrapper::new(move |os| {
-            return Stream::new(AggregateStream {
-                os: os,
-                aggs: aggs.clone(),
-            }).parse();
-        });
+impl OperationBe for Impl {
+    type PreOptions = PreOptions;
+    type PostOptions = PostOptions;
+
+    fn options<'a>(opt: &'a mut OptParserView<'a, PreOptions, PreOptions>) {
+        opt.sub(|p| &mut p.aggs).match_single(&["a", "agg", "aggregator"], OneOption::push_string_vec);
+    }
+
+    fn wrap_stream(o: &PostOptions, os: Stream) -> Stream {
+        return Stream::new(AggregateStream {
+            os: os,
+            aggs: o.aggs.clone(),
+        }).parse();
     }
 }
 
@@ -38,15 +43,7 @@ impl OptionTrait for AggregatorsOption {
     type PreType = Vec<String>;
     type ValType = Vec<(String, Box<AggregatorState>)>;
 
-    fn argct() -> usize {
-        return 1;
-    }
-
-    fn set(p: &mut Vec<String>, a: &[String]) {
-        p.push(a[0].clone());
-    }
-
-    fn val(p: Vec<String>) -> Vec<(String, Box<AggregatorState>)> {
+    fn validate(p: Vec<String>) -> Vec<(String, Box<AggregatorState>)> {
         return p.iter().map(|a| {
             let (label, a) = match a.find('=') {
                 Some(i) => (a[0..i].to_string(), &a[(i + 1)..]),
