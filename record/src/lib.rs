@@ -32,6 +32,10 @@ impl Record {
         return Record(Arc::new(JsonPart::Null));
     }
 
+    pub fn empty_hash() -> Self {
+        return Record(Arc::new(JsonPart::Hash(BTreeMap::new())));
+    }
+
     pub fn from_primitive_string<S: Deref<Target = str>>(s: S) -> Self {
         return Record(Arc::new(JsonPart::String(Arc::from(&*s))));
     }

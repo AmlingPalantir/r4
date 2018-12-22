@@ -2,6 +2,10 @@ use Operation;
 use StreamWrapper;
 use aggregator::AggregatorState;
 use opts::OptionTrait;
+use record::Record;
+use stream::Entry;
+use stream::Stream;
+use stream::StreamTrait;
 
 pub(crate) fn names() -> Vec<&'static str> {
     return vec!["aggregate"];
@@ -19,13 +23,9 @@ impl Operation for Impl {
         }
 
         return StreamWrapper::new(move |os| {
-            let mut aggs = aggs.clone();
-
-            return os.transform_records(move |r| {
-                for (_, state) in aggs.iter_mut() {
-                    state.add(r.clone());
-                }
-                return r;
+            return Stream::new(AggregateStream {
+                os: os,
+                aggs: aggs.clone(),
             }).parse();
         });
     }
@@ -58,5 +58,38 @@ impl OptionTrait for AggregatorsOption {
             let state = agg.state(&args);
             return (label, state);
         }).collect();
+    }
+}
+
+struct AggregateStream {
+    os: Stream,
+    aggs: Vec<(String, Box<AggregatorState>)>,
+}
+
+impl StreamTrait for AggregateStream {
+    fn write(&mut self, e: Entry) {
+        match e {
+            Entry::Bof(_file) => {
+            }
+            Entry::Record(r) => {
+                for (_, state) in &mut self.aggs {
+                    state.add(r.clone());
+                }
+            }
+            Entry::Line(_line) => {
+                panic!();
+            }
+            Entry::Close() => {
+                let mut r = Record::empty_hash();
+                for (label, state) in self.aggs.clone() {
+                    r.set_path(&label, state.finish());
+                }
+                self.os.write(Entry::Close());
+            }
+        }
+    }
+
+    fn rclosed(&mut self) -> bool {
+        return self.os.rclosed();
     }
 }
