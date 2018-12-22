@@ -101,9 +101,9 @@ impl<P> OptParser<P> {
 }
 
 impl<'a, P: 'static, P2: 'static> OptParserView<'a, P, P2> {
-    pub fn sub<P3, F: Fn(&mut P2) -> &mut P3 + 'static>(&'a mut self, f: F) -> OptParserView<'a, P, P3> {
+    pub fn sub<'b, P3, F: Fn(&mut P2) -> &mut P3 + 'static>(&'b mut self, f: F) -> OptParserView<'b, P, P3> {
         let f1 = self.f.clone();
-        return OptParserView::<'a, P, P3> {
+        return OptParserView::<'b, P, P3> {
             op: self.op,
             f: Rc::new(move |p| f(f1(p))),
         }
