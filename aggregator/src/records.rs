@@ -1,6 +1,6 @@
 use AggregatorBe;
-use ZeroArgs;
 use record::Record;
+use registry::ZeroArgs;
 
 pub(crate) fn names() -> Vec<&'static str> {
     return vec!["recs", "records"];

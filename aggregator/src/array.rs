@@ -1,6 +1,6 @@
 use AggregatorBe;
-use OneStringArgs;
 use record::Record;
+use registry::OneStringArgs;
 use std::sync::Arc;
 
 pub(crate) fn names() -> Vec<&'static str> {

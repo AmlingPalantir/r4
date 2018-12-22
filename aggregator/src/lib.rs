@@ -3,6 +3,7 @@ extern crate record;
 extern crate registry;
 
 use record::Record;
+use registry::RegistryArgs;
 use std::sync::Arc;
 
 registry! {
@@ -24,18 +25,11 @@ pub trait AggregatorState {
 }
 
 pub trait AggregatorBe {
-    type Args: AggregatorArgs;
+    type Args: RegistryArgs;
     type State: Clone + Default;
 
-    fn add(&mut Self::State, &<Self::Args as AggregatorArgs>::Val, Record);
-    fn finish(Self::State, &<Self::Args as AggregatorArgs>::Val) -> Record;
-}
-
-pub trait AggregatorArgs {
-    type Val;
-
-    fn argct() -> usize;
-    fn parse(args: &[String]) -> Self::Val;
+    fn add(&mut Self::State, &<Self::Args as RegistryArgs>::Val, Record);
+    fn finish(Self::State, &<Self::Args as RegistryArgs>::Val) -> Record;
 }
 
 impl<B: AggregatorBe + 'static> AggregatorFe for B {
@@ -52,7 +46,7 @@ impl<B: AggregatorBe + 'static> AggregatorFe for B {
 }
 
 struct AggregatorStateImpl<B: AggregatorBe> {
-    a: Arc<<<B as AggregatorBe>::Args as AggregatorArgs>::Val>,
+    a: Arc<<<B as AggregatorBe>::Args as RegistryArgs>::Val>,
     s: B::State,
 }
 
@@ -70,41 +64,5 @@ impl<B: AggregatorBe + 'static> AggregatorState for AggregatorStateImpl<B> {
             a: self.a.clone(),
             s: self.s.clone(),
         });
-    }
-}
-
-
-
-pub enum ZeroArgs {
-}
-
-impl AggregatorArgs for ZeroArgs {
-    type Val = ();
-
-    fn argct() -> usize {
-        return 0;
-    }
-
-    fn parse(args: &[String]) -> () {
-        debug_assert_eq!(0, args.len());
-        return ();
-    }
-}
-
-
-
-pub enum OneStringArgs {
-}
-
-impl AggregatorArgs for OneStringArgs {
-    type Val = Arc<str>;
-
-    fn argct() -> usize {
-        return 1;
-    }
-
-    fn parse(args: &[String]) -> Arc<str> {
-        debug_assert_eq!(1, args.len());
-        return Arc::from(&*args[0]);
     }
 }
