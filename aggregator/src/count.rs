@@ -13,13 +13,13 @@ pub struct Impl {
 
 impl AggregatorBe for Impl {
     type Args = ZeroArgs;
-    type State = u32;
+    type State = i64;
 
-    fn add(state: &mut u32, _a: &(), _r: Record) {
+    fn add(state: &mut i64, _a: &(), _r: Record) {
         *state += 1;
     }
 
-    fn finish(state: Box<u32>, _a: &()) -> Record {
+    fn finish(state: Box<i64>, _a: &()) -> Record {
         return Record::from_primitive(*state);
     }
 }
