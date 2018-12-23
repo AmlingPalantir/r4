@@ -41,7 +41,7 @@ pub trait OperationBe {
     type PreOptions: Default + Validates<To = Self::PostOptions> + 'static;
     type PostOptions: Send + Sync + 'static;
 
-    fn options<'a, X: 'static>(&'a mut OptParserView<'a, X, Self::PreOptions>);
+    fn options<'a>(OptParserView<'a, Self::PreOptions>);
     fn get_extra(&Self::PostOptions) -> &Vec<String>;
     fn wrap_stream(&Self::PostOptions, Stream) -> Stream;
 }
@@ -49,7 +49,7 @@ pub trait OperationBe {
 impl<B: OperationBe> OperationFe for B {
     fn validate(&self, args: &mut Vec<String>) -> StreamWrapper {
         let mut opt = OptParser::<B::PreOptions>::new();
-        B::options(&mut opt.view());
+        B::options(opt.view());
         let o = opt.parse(args).validate();
         *args = B::get_extra(&o).clone();
 
@@ -63,7 +63,7 @@ pub trait OperationBe2 {
     type PreOptions: Default + Validates<To = Self::PostOptions> + 'static;
     type PostOptions: Send + Sync + 'static;
 
-    fn options<'a, X: 'static>(&'a mut OptParserView<'a, X, Self::PreOptions>);
+    fn options<'a>(OptParserView<'a, Self::PreOptions>);
     fn wrap_stream(&Self::PostOptions, Stream) -> Stream;
 }
 
@@ -88,8 +88,8 @@ impl<B: OperationBe2> OperationBe for B {
     type PreOptions = AndArgsOptions<B::PreOptions>;
     type PostOptions = AndArgsOptions<B::PostOptions>;
 
-    fn options<'a, X: 'static>(opt: &'a mut OptParserView<'a, X, AndArgsOptions<B::PreOptions>>) {
-        B::options(&mut opt.sub(|p| &mut p.p));
+    fn options<'a>(mut opt: OptParserView<'a, AndArgsOptions<B::PreOptions>>) {
+        B::options(opt.sub(|p| &mut p.p));
         opt.sub(|p| &mut p.args).match_extra_soft(|p, a| {
             p.push(a.clone());
             return true;

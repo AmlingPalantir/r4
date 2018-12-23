@@ -23,7 +23,7 @@ impl OperationBe2 for Impl {
     type PreOptions = PreOptions;
     type PostOptions = PostOptions;
 
-    fn options<'a, X: 'static>(opt: &'a mut OptParserView<'a, X, PreOptions>) {
+    fn options<'a>(mut opt: OptParserView<'a, PreOptions>) {
         opt.sub(|p| &mut p.msg).match_single(&["m", "msg"], OneOption::set_string_option);
     }
 

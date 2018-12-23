@@ -23,7 +23,7 @@ impl OperationBe for Impl {
     type PreOptions = PreOptions;
     type PostOptions = PostOptions;
 
-    fn options<'a, X: 'static>(opt: &'a mut OptParserView<'a, X, PreOptions>) {
+    fn options<'a>(mut opt: OptParserView<'a, PreOptions>) {
         opt.sub(|p| &mut p.op).match_extra_hard(VarOption::push_string_vec);
     }
 
