@@ -11,6 +11,9 @@ use std::sync::Arc;
 use std::vec::Vec;
 
 #[derive(Clone)]
+struct F64Wrapper(f64);
+
+#[derive(Clone)]
 #[derive(Eq)]
 #[derive(Hash)]
 #[derive(PartialEq)]
@@ -18,7 +21,7 @@ enum JsonPart {
     Null,
     Bool(bool),
     NumberI64(i64),
-    NumberF64(f64),
+    NumberF64(F64Wrapper),
     String(Arc<str>),
     Array(Vec<Record>),
     Hash(BTreeMap<Arc<str>, Record>),
@@ -30,7 +33,7 @@ impl JsonPart {
             return JsonPart::NumberI64(n);
         }
         if let Some(n) = n.as_f64() {
-            return JsonPart::NumberF64(n);
+            return JsonPart::NumberF64(F64Wrapper(n));
         }
         panic!();
     }
@@ -176,7 +179,7 @@ impl ToString for Record {
                     acc.push_str(&serde_json::to_string(&serde_json::Number::from(*n)).unwrap());
                 }
                 JsonPart::NumberF64(n) => {
-                    acc.push_str(&serde_json::to_string(&serde_json::Number::from_f64(*n)).unwrap());
+                    acc.push_str(&serde_json::to_string(&serde_json::Number::from_f64(n.0)).unwrap());
                 }
                 JsonPart::String(s) => {
                     let sr: &str = &*s;
