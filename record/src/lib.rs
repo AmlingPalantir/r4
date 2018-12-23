@@ -1,4 +1,7 @@
 #[derive(Clone)]
+#[derive(Eq)]
+#[derive(Hash)]
+#[derive(PartialEq)]
 pub struct Record(Arc<JsonPart>);
 
 use std::collections::BTreeMap;
@@ -8,22 +11,38 @@ use std::sync::Arc;
 use std::vec::Vec;
 
 #[derive(Clone)]
+#[derive(Eq)]
+#[derive(Hash)]
+#[derive(PartialEq)]
 enum JsonPart {
     Null,
     Bool(bool),
-    Number(serde_json::Number),
+    NumberI64(i64),
+    NumberF64(f64),
     String(Arc<str>),
     Array(Vec<Record>),
     Hash(BTreeMap<Arc<str>, Record>),
+}
+
+impl JsonPart {
+    fn from_serde_number(n: &serde_json::Number) -> JsonPart {
+        if let Some(n) = n.as_i64() {
+            return JsonPart::NumberI64(n);
+        }
+        if let Some(n) = n.as_f64() {
+            return JsonPart::NumberF64(n);
+        }
+        panic!();
+    }
 }
 
 pub trait FromPrimitive<P> {
     fn from_primitive(p: P) -> Self;
 }
 
-impl FromPrimitive<u32> for Record {
-    fn from_primitive(n: u32) -> Self {
-        return Record(Arc::new(JsonPart::Number(serde_json::Number::from(n))));
+impl FromPrimitive<i64> for Record {
+    fn from_primitive(n: i64) -> Self {
+        return Record(Arc::new(JsonPart::NumberI64(n)));
     }
 }
 
@@ -132,7 +151,7 @@ impl FromStr for Record {
             return Record(Arc::new(match p {
                 serde_json::value::Value::Null => JsonPart::Null,
                 serde_json::value::Value::Bool(b) => JsonPart::Bool(*b),
-                serde_json::value::Value::Number(n) => JsonPart::Number(n.clone()),
+                serde_json::value::Value::Number(n) => JsonPart::from_serde_number(n),
                 serde_json::value::Value::String(s) => JsonPart::String(Arc::from(s.clone())),
                 serde_json::value::Value::Array(arr) => JsonPart::Array(arr.iter().map(|v| convert_part(v)).collect()),
                 serde_json::value::Value::Object(map) => JsonPart::Hash(map.iter().map(|(k, v)| (Arc::from(k.clone()), convert_part(v))).collect()),
@@ -153,8 +172,11 @@ impl ToString for Record {
                 JsonPart::Bool(b) => {
                     acc.push_str(if *b { "true" } else { "false" });
                 }
-                JsonPart::Number(n) => {
-                    acc.push_str(&serde_json::to_string(&n).unwrap());
+                JsonPart::NumberI64(n) => {
+                    acc.push_str(&serde_json::to_string(&serde_json::Number::from(*n)).unwrap());
+                }
+                JsonPart::NumberF64(n) => {
+                    acc.push_str(&serde_json::to_string(&serde_json::Number::from_f64(*n)).unwrap());
                 }
                 JsonPart::String(s) => {
                     let sr: &str = &*s;
