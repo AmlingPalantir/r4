@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 #[macro_export]
 macro_rules! registry {
-    {$r:ty: $($id:ident),*,} => {
+    {$r:ty: $($id:ident,)*} => {
         $(
             pub mod $id;
         )*
