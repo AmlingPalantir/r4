@@ -1,6 +1,3 @@
-use std::ops::Deref;
-use std::ops::DerefMut;
-
 #[macro_export]
 macro_rules! declare_opts {
     {$($name:ident: $type:ty,)*} => {
@@ -82,16 +79,8 @@ impl RequiredStringOption {
 #[derive(Default)]
 pub struct UnvalidatedOption<T>(T);
 
-impl<T> Deref for UnvalidatedOption<T> {
-    type Target = T;
-
-    fn deref(&self) -> &T {
-        return &self.0;
-    }
-}
-
-impl<T> DerefMut for UnvalidatedOption<T> {
-    fn deref_mut(&mut self) -> &mut T {
+impl<T> AsMut<T> for UnvalidatedOption<T> {
+    fn as_mut(&mut self) -> &mut T {
         return &mut self.0;
     }
 }

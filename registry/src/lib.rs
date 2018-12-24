@@ -1,7 +1,6 @@
 extern crate opts;
 
 use opts::parser::OptParserView;
-use opts::vals::UnvalidatedOption;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -35,7 +34,7 @@ impl<R> Registry<R> {
         }
     }
 
-    pub fn labelled_single_options<'a>(&'static self, opt: &mut OptParserView<'a, UnvalidatedOption<Vec<(String, R)>>>, aliases: &[&str]) {
+    pub fn labelled_single_options<'a, O: AsMut<Vec<(String, R)>> + 'static>(&'static self, opt: &mut OptParserView<'a, O>, aliases: &[&str]) {
         opt.match_single(aliases, move |rs, a| {
             let (label, a) = match a.find('=') {
                 Some(i) => (a[0..i].to_string(), &a[(i + 1)..]),
@@ -45,7 +44,7 @@ impl<R> Registry<R> {
             let name = parts.next().unwrap();
             let args: Vec<&str> = parts.collect();
             let r = self.find(name, &args);
-            rs.push((label, r));
+            rs.as_mut().push((label, r));
         });
     }
 
