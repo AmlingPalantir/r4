@@ -27,7 +27,8 @@ use clumper::ClumperWrapper;
 use opts::parser::OptParser;
 use opts::parser::OptParserView;
 use opts::vals::OptionTrait;
-use opts::vals::UnvalidatedOption;
+use record::Record;
+use std::rc::Rc;
 use std::sync::Arc;
 use stream::Stream;
 
@@ -183,11 +184,46 @@ struct SubOperationOptions {
     wr: Arc<StreamWrapper>,
 }
 
-pub fn clumper_options<'a>(opt: &mut OptParserView<'a, UnvalidatedOption<Vec<Box<ClumperWrapper>>>>) {
-    clumper::REGISTRY.single_options(opt, &["c", "clumper"]);
-    opt.match_single(&["k", "key"], |p, a| {
-        for a in a.split(',') {
-            p.push(clumper::key::Impl::init(&[a]));
-        }
-    });
+#[derive(Clone)]
+#[derive(Default)]
+struct ClumperOptions {
+    cws: Vec<Box<ClumperWrapper>>,
+}
+
+impl OptionTrait for ClumperOptions {
+    type ValidatesTo = ClumperOptions;
+
+    fn validate(self) -> ClumperOptions {
+        return self;
+    }
+}
+
+impl ClumperOptions {
+    fn options<'a>(opt: &mut OptParserView<'a, ClumperOptions>) {
+        clumper::REGISTRY.single_options(&mut opt.sub(|p| &mut p.cws), &["c", "clumper"]);
+        opt.match_single(&["k", "key"], |p, a| {
+            for a in a.split(',') {
+                p.cws.push(clumper::key::Impl::init(&[a]));
+            }
+        });
+    }
+
+    fn stream<F: Fn(Vec<(Arc<str>, Record)>) -> Stream + 'static>(&self, f: F) -> Stream {
+        let mut bsw: Rc<Fn(Vec<(Arc<str>, Record)>) -> Stream> = Rc::new(f);
+
+        bsw = self.cws.iter().rev().fold(bsw, |bsw, cw| {
+            let cw = cw.clone();
+            return Rc::new(move |bucket_outer| {
+                let bucket_outer = bucket_outer.clone();
+                let bsw = bsw.clone();
+                return cw.stream(Box::new(move |bucket_inner| {
+                    let mut bucket = bucket_outer.clone();
+                    bucket.extend(bucket_inner);
+                    return bsw(bucket);
+                }));
+            });
+        });
+
+        return bsw(vec![]);
+    }
 }

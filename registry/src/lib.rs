@@ -49,13 +49,13 @@ impl<R> Registry<R> {
         });
     }
 
-    pub fn single_options<'a>(&'static self, opt: &mut OptParserView<'a, UnvalidatedOption<Vec<R>>>, aliases: &[&str]) {
+    pub fn single_options<'a, O: AsMut<Vec<R>> + 'static>(&'static self, opt: &mut OptParserView<'a, O>, aliases: &[&str]) {
         opt.match_single(aliases, move |rs, a| {
             let mut parts = a.split(',');
             let name = parts.next().unwrap();
             let args: Vec<&str> = parts.collect();
             let r = self.find(name, &args);
-            rs.push(r);
+            rs.as_mut().push(r);
         });
     }
 }
