@@ -86,7 +86,7 @@ struct ParseStream();
 impl StreamTrait for ParseStream {
     fn write(&mut self, e: Entry, w: &mut FnMut(Entry) -> bool) -> bool {
         return w(match e {
-            Entry::Line(line) => Entry::Record(Record::from_str(&line).unwrap()),
+            Entry::Line(line) => Entry::Record(Record::from_str(&line).expect("Could not parse line")),
             e => e,
         });
     }
