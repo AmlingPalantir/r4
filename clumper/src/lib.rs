@@ -10,7 +10,7 @@ use stream::Stream;
 
 registry! {
     ClumperFe:
-    //key,
+    key,
 }
 
 pub trait ClumperFe {
@@ -20,13 +20,13 @@ pub trait ClumperFe {
 
 
 pub trait ClumperWrapper {
-    fn wrap(&self, os: Stream, bsw: Box<Fn(Stream, Vec<(Arc<str>, Record)>) -> Stream>) -> Stream;
+    fn stream(&self, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream;
 }
 
 pub trait ClumperBe {
     type Args: RegistryArgs;
 
-    fn wrap(&<Self::Args as RegistryArgs>::Val, Stream, Box<Fn(Stream, Vec<(Arc<str>, Record)>) -> Stream>) -> Stream;
+    fn stream(&<Self::Args as RegistryArgs>::Val, Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream;
 }
 
 impl<B: ClumperBe + 'static> ClumperFe for B {
@@ -46,7 +46,7 @@ struct ClumperWrapperImpl<B: ClumperBe> {
 }
 
 impl<B: ClumperBe> ClumperWrapper for ClumperWrapperImpl<B> {
-    fn wrap(&self, os: Stream, bsw: Box<Fn(Stream, Vec<(Arc<str>, Record)>) -> Stream>) -> Stream {
-        return B::wrap(&self.a, os, bsw);
+    fn stream(&self, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream {
+        return B::stream(&self.a, bsw);
     }
 }

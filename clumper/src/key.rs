@@ -18,37 +18,40 @@ pub struct Impl {
 impl ClumperBe for Impl {
     type Args = OneStringArgs;
 
-    fn wrap(k: &Arc<str>, os: Stream, bsw: Box<Fn(Stream, Vec<(Arc<str>, Record)>) -> Stream>) -> Stream {
-        return Stream::new(KeyStream {
+    fn stream(k: &Arc<str>, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream {
+        let s = Stream::new(KeyStream {
             k: k.clone(),
-            os: os,
             bsw: bsw,
             substreams: HashMap::new(),
-        }).parse();
+        });
+        return Stream::compound(Stream::parse(), s);
     }
 }
 
 struct KeyStream {
     k: Arc<str>,
-    os: Stream,
-    bsw: Box<Fn(Stream, Vec<(Arc<str>, Record)>) -> Stream>,
+    bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>,
     substreams: HashMap<Record, Stream>,
 }
 
 impl KeyStream {
     fn find_stream(&mut self, v: Record) -> &mut Stream {
-        return self.substreams.entry(v).or_insert_with(|| {
+        let k = &self.k;
+        let bsw = &self.bsw;
+        return self.substreams.entry(v.clone()).or_insert_with(|| {
+            return bsw(vec![(k.clone(), v)]);
         });
     }
 }
 
 impl StreamTrait for KeyStream {
-    fn write(&mut self, e: Entry) -> bool {
+    fn write(&mut self, e: Entry, w: &mut FnMut(Entry) -> bool) -> bool {
         match e {
             Entry::Bof(_file) => {
             },
             Entry::Record(r) => {
-                self.find_stream(r.get_path(&self.k)).write(Entry::Record(r));
+                let v = r.get_path(&self.k);
+                self.find_stream(v).write(Entry::Record(r), w);
             },
             Entry::Line(_line) => {
                 panic!();
@@ -59,10 +62,9 @@ impl StreamTrait for KeyStream {
         return true;
     }
 
-    fn close(self: Box<KeyStream>) {
+    fn close(self: Box<KeyStream>, w: &mut FnMut(Entry) -> bool) {
         for (_, substream) in self.substreams.into_iter() {
-            substream.close();
+            substream.close(w);
         }
-        self.os.close();
     }
 }
