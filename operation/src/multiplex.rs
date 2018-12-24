@@ -1,7 +1,7 @@
 use ClumperOptions;
 use OperationBe;
 use SubOperationOption;
-use opts::OptParserView;
+use opts::parser::OptParserView;
 use stream::Stream;
 
 pub(crate) fn names() -> Vec<&'static str> {

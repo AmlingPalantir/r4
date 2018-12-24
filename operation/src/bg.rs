@@ -1,6 +1,6 @@
 use OperationBe;
 use SubOperationOption;
-use opts::OptParserView;
+use opts::parser::OptParserView;
 use std::thread;
 use stream::Stream;
 

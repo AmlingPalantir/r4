@@ -1,7 +1,7 @@
 use OperationBe2;
 use aggregator::AggregatorState;
-use opts::OptParserView;
 use opts::UnvalidatedOption;
+use opts::parser::OptParserView;
 use record::Record;
 use stream::Entry;
 use stream::Stream;

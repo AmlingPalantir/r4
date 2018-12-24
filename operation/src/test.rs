@@ -1,6 +1,6 @@
 use OperationBe2;
-use opts::OptParserView;
 use opts::RequiredStringOption;
+use opts::parser::OptParserView;
 use record::FromPrimitive;
 use record::Record;
 use std::sync::Arc;

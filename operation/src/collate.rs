@@ -1,6 +1,6 @@
 use ClumperOptions;
 use OperationBe;
-use opts::OptParserView;
+use opts::parser::OptParserView;
 use stream::Stream;
 use super::aggregate;
 
