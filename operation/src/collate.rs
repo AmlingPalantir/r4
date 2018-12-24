@@ -21,7 +21,7 @@ impl OperationBe for Impl {
     }
 
     fn options<'a>(mut opt: OptParserView<'a, PreOptions>) {
-        clumper::REGISTRY.single_options(opt.sub(|p| &mut p.cws), &["c", "clumper"]);
+        super::clumper_options(opt.sub(|p| &mut p.cws));
         aggregate::Impl::options(opt.sub(|p| &mut p.ag));
     }
 

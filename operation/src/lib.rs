@@ -26,6 +26,7 @@ use clumper::ClumperWrapper;
 use opts::parser::OptParser;
 use opts::parser::OptParserView;
 use opts::vals::OptionTrait;
+use opts::vals::UnvalidatedOption;
 use std::sync::Arc;
 use stream::Stream;
 
@@ -179,4 +180,8 @@ impl OptionTrait for SubOperationOption {
 struct SubOperationOptions {
     extra: Vec<String>,
     wr: Arc<StreamWrapper>,
+}
+
+pub fn clumper_options<'a>(opt: OptParserView<'a, UnvalidatedOption<Vec<Box<ClumperWrapper>>>>) {
+    clumper::REGISTRY.single_options(opt, &["c", "clumper"]);
 }
