@@ -114,12 +114,20 @@ enum SubOperationOption {
 
 impl OptionTrait for SubOperationOption {
     type PreType = Vec<String>;
-    type ValType = (Vec<String>, Arc<StreamWrapper>);
+    type ValType = SubOperationOptions;
 
-    fn validate(mut p: Vec<String>) -> (Vec<String>, Arc<StreamWrapper>) {
+    fn validate(mut p: Vec<String>) -> SubOperationOptions {
         let name = p.remove(0);
         let op = find(&name);
-        let w = op.validate(&mut p);
-        return (p, Arc::new(w));
+        let wr = op.validate(&mut p);
+        return SubOperationOptions {
+            extra: p,
+            wr: Arc::new(wr),
+        };
     }
+}
+
+struct SubOperationOptions {
+    extra: Vec<String>,
+    wr: Arc<StreamWrapper>,
 }

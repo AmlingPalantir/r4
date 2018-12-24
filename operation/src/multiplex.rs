@@ -38,11 +38,11 @@ impl OperationBe for Impl {
     }
 
     fn get_extra(o: &PostOptions) -> &Vec<String> {
-        return &o.op.0;
+        return &o.op.extra;
     }
 
     fn stream(o: &PostOptions) -> Stream {
-        let sub = o.op.1.clone();
+        let sub_wr = o.op.wr.clone();
         let mut bsw: Rc<Fn(Vec<(Arc<str>, Record)>) -> Stream> = Rc::new(move |bucket| {
             let s = Stream::transform_records(move |mut r| {
                 for (path, v) in &bucket {
@@ -50,7 +50,7 @@ impl OperationBe for Impl {
                 }
                 return r;
             });
-            return Stream::compound(sub.stream(), s);
+            return Stream::compound(sub_wr.stream(), s);
         });
 
         bsw = o.cws.iter().rev().fold(bsw, |bsw, cw| {

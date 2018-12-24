@@ -26,15 +26,15 @@ impl OperationBe for Impl {
     }
 
     fn get_extra(o: &PostOptions) -> &Vec<String> {
-        return &o.op.0;
+        return &o.op.extra;
     }
 
     fn stream(o: &PostOptions) -> Stream {
         let (fe, rbe, mut wbe) = bgop::new();
 
-        let op = o.op.clone();
+        let sub_wr = o.op.wr.clone();
         thread::spawn(move || {
-            let mut os = op.1.stream();
+            let mut os = sub_wr.stream();
 
             loop {
                 match rbe.read() {
