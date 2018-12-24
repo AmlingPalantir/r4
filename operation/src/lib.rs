@@ -7,6 +7,7 @@ extern crate record;
 #[macro_use]
 extern crate registry;
 extern crate stream;
+extern crate stream_process;
 
 registry! {
     OperationFe:
@@ -25,6 +26,7 @@ use record::Record;
 use std::rc::Rc;
 use std::sync::Arc;
 use stream::Stream;
+use stream_process::ProcessStream;
 
 pub trait OperationFe {
     fn validate(&self, &mut Vec<String>) -> StreamWrapper;
@@ -126,12 +128,22 @@ impl OptionTrait for SubOperationOption {
     type ValidatesTo = SubOperationOptions;
 
     fn validate(mut self) -> SubOperationOptions {
-        let name = self.0.remove(0);
-        let op = find(&name);
-        let wr = op.validate(&mut self.0);
+        if self.0.len() >= 2 && self.0[0] == "r4" {
+            self.0.remove(0);
+            let name = self.0.remove(0);
+            let op = find(&name);
+            let wr = op.validate(&mut self.0);
+            return SubOperationOptions {
+                extra: self.0,
+                wr: Arc::new(wr),
+            };
+        }
+
         return SubOperationOptions {
-            extra: self.0,
-            wr: Arc::new(wr),
+            extra: vec![],
+            wr: Arc::new(StreamWrapper::new(move || {
+                return Stream::new(ProcessStream::new(self.0.clone()));
+            })),
         };
     }
 }

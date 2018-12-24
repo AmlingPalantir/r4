@@ -11,4 +11,5 @@ opts = { path = "../opts" }
 record = { path = "../record" }
 registry = { path = "../registry" }
 stream = { path = "../stream" }
+stream_process = { path = "../stream_process" }
 serde_json = "1.0"
