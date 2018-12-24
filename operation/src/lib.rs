@@ -12,6 +12,7 @@ registry! {
     OperationFe:
     aggregate,
     bg,
+    collate,
     multiplex,
     test,
 }
