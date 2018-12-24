@@ -1,13 +1,14 @@
-use ClumperOptions;
+use ClumperWrapper;
 use OperationBe;
 use SubOperationOption;
 use opts::parser::OptParserView;
+use opts::vals::UnvalidatedOption;
 use stream::Stream;
 
 pub struct Impl();
 
 declare_opts! {
-    cl: ClumperOptions,
+    cws: UnvalidatedOption<Vec<Box<ClumperWrapper>>>,
     op: SubOperationOption,
 }
 
@@ -21,7 +22,7 @@ impl OperationBe for Impl {
 
     fn options<'a>(mut opt: OptParserView<'a, PreOptions>) {
         opt.sub(|p| &mut p.op).match_extra_hard(SubOperationOption::push);
-        opt.sub(|p| &mut p.cl).match_single(&["c", "clumper"], ClumperOptions::add_single);
+        clumper::REGISTRY.single_options(opt.sub(|p| &mut p.cws), &["c", "clumper"]);
     }
 
     fn get_extra(o: &PostOptions) -> &Vec<String> {
@@ -30,7 +31,7 @@ impl OperationBe for Impl {
 
     fn stream(o: &PostOptions) -> Stream {
         let sub_wr = o.op.wr.clone();
-        return o.cl.stream(move |bucket| {
+        return clumper::stream(&o.cws, move |bucket| {
             let s = stream::transform_records(move |mut r| {
                 for (path, v) in &bucket {
                     r.set_path(&path, v.clone());

@@ -48,6 +48,16 @@ impl<R> Registry<R> {
             rs.push((label, r));
         });
     }
+
+    pub fn single_options<'a>(&'static self, mut opt: OptParserView<'a, UnvalidatedOption<Vec<R>>>, aliases: &[&str]) {
+        opt.match_single(aliases, move |rs, a| {
+            let mut parts = a.split(',');
+            let name = parts.next().unwrap();
+            let args: Vec<&str> = parts.collect();
+            let r = self.find(name, &args);
+            rs.push(r);
+        });
+    }
 }
 
 #[macro_export]

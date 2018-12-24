@@ -7,6 +7,7 @@ extern crate stream;
 
 use record::Record;
 use registry::RegistryArgs;
+use std::rc::Rc;
 use std::sync::Arc;
 use stream::Stream;
 
@@ -24,6 +25,7 @@ pub trait ClumperFe {
 
 pub trait ClumperWrapper: Send + Sync {
     fn stream(&self, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream;
+    fn box_clone(&self) -> Box<ClumperWrapper>;
 }
 
 pub trait ClumperBe {
@@ -43,18 +45,43 @@ impl<B: ClumperBe + 'static> ClumperFe for B {
     }
 
     fn init(args: &[&str]) -> Box<ClumperWrapper> {
-        return Box::new(ClumperWrapperImpl::<B> {
-            a: Arc::from(B::Args::parse(args)),
-        });
+        return Box::new(ClumperWrapperImpl::<B>(Arc::from(B::Args::parse(args))));
     }
 }
 
-struct ClumperWrapperImpl<B: ClumperBe> {
-    a: Arc<<<B as ClumperBe>::Args as RegistryArgs>::Val>,
-}
+struct ClumperWrapperImpl<B: ClumperBe>(Arc<<<B as ClumperBe>::Args as RegistryArgs>::Val>);
 
-impl<B: ClumperBe> ClumperWrapper for ClumperWrapperImpl<B> {
+impl<B: ClumperBe + 'static> ClumperWrapper for ClumperWrapperImpl<B> {
     fn stream(&self, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream {
-        return B::stream(&self.a, bsw);
+        return B::stream(&self.0, bsw);
     }
+
+    fn box_clone(&self) -> Box<ClumperWrapper> {
+        return Box::new(ClumperWrapperImpl::<B>(self.0.clone()));
+    }
+}
+
+impl Clone for Box<ClumperWrapper> {
+    fn clone(&self) -> Box<ClumperWrapper> {
+        return self.box_clone();
+    }
+}
+
+pub fn stream<F: Fn(Vec<(Arc<str>, Record)>) -> Stream + 'static>(cws: &Vec<Box<ClumperWrapper>>, f: F) -> Stream {
+    let mut bsw: Rc<Fn(Vec<(Arc<str>, Record)>) -> Stream> = Rc::new(f);
+
+    bsw = cws.iter().rev().fold(bsw, |bsw, cw| {
+        let cw = cw.clone();
+        return Rc::new(move |bucket_outer| {
+            let bucket_outer = bucket_outer.clone();
+            let bsw = bsw.clone();
+            return cw.stream(Box::new(move |bucket_inner| {
+                let mut bucket = bucket_outer.clone();
+                bucket.extend(bucket_inner);
+                return bsw(bucket);
+            }));
+        });
+    });
+
+    return bsw(vec![]);
 }
