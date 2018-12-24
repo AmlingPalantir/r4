@@ -20,9 +20,9 @@ registry! {
 }
 
 use clumper::ClumperWrapper;
-use opts::OptionTrait;
 use opts::parser::OptParser;
 use opts::parser::OptParserView;
+use opts::vals::OptionTrait;
 use record::Record;
 use std::rc::Rc;
 use std::sync::Arc;

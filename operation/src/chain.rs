@@ -1,9 +1,9 @@
 use OperationBe;
 use StreamWrapper;
 use SubOperationOption;
-use opts::BooleanOption;
-use opts::OptionTrait;
 use opts::parser::OptParserView;
+use opts::vals::BooleanOption;
+use opts::vals::OptionTrait;
 use std::sync::Arc;
 use stream::Stream;
 
