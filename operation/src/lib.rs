@@ -13,6 +13,7 @@ registry! {
     OperationFe:
     aggregate,
     bg,
+    chain,
     collate,
     multiplex,
     test,
@@ -121,6 +122,10 @@ struct SubOperationOption(Vec<String>);
 impl SubOperationOption {
     fn push(&mut self, a: &[String]) {
         self.0.extend_from_slice(a);
+    }
+
+    fn of(a: Vec<String>) -> SubOperationOption {
+        return SubOperationOption(a);
     }
 }
 

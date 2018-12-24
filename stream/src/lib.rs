@@ -38,6 +38,10 @@ impl Stream {
     pub fn transform_records<F: FnMut(Record) -> Record + 'static>(f: F) -> Stream {
         return Stream::new(TransformRecordsStream(Box::new(f)));
     }
+
+    pub fn drop_bof() -> Stream {
+        return Stream::new(DropBofStream());
+    }
 }
 
 impl Stream {
@@ -99,6 +103,20 @@ impl StreamTrait for TransformRecordsStream {
             Entry::Record(r) => Entry::Record((*self.0)(r)),
             e => e,
         });
+    }
+
+    fn close(self: Box<Self>, _w: &mut FnMut(Entry) -> bool) {
+    }
+}
+
+struct DropBofStream();
+
+impl StreamTrait for DropBofStream {
+    fn write(&mut self, e: Entry, w: &mut FnMut(Entry) -> bool) -> bool {
+        return match e {
+            Entry::Bof(_file) => true,
+            e => w(e),
+        };
     }
 
     fn close(self: Box<Self>, _w: &mut FnMut(Entry) -> bool) {
