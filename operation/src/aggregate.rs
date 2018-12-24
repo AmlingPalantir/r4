@@ -21,17 +21,7 @@ impl OperationBe2 for Impl {
     }
 
     fn options<'a>(mut opt: OptParserView<'a, PreOptions>) {
-        opt.sub(|p| &mut p.aggs).match_single(&["a", "agg", "aggregator"], |aggs, a| {
-            let (label, a) = match a.find('=') {
-                Some(i) => (a[0..i].to_string(), &a[(i + 1)..]),
-                None => (a.replace("/", "_"), &a[..]),
-            };
-            let mut parts = a.split(',');
-            let name = parts.next().unwrap();
-            let args: Vec<&str> = parts.collect();
-            let state = aggregator::REGISTRY.find(name, &args);
-            aggs.push((label, state));
-        });
+        aggregator::REGISTRY.labelled_single_options(opt.sub(|p| &mut p.aggs), &["a", "agg", "aggregator"]);
     }
 
     fn stream(o: &PostOptions) -> Stream {

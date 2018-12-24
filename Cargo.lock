@@ -74,6 +74,9 @@ dependencies = [
 [[package]]
 name = "registry"
 version = "1.0.0"
+dependencies = [
+ "opts 1.0.0",
+]
 
 [[package]]
 name = "ryu"
