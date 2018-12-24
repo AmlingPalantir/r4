@@ -250,6 +250,7 @@ macro_rules! declare_opts {
             }
         }
 
+        #[derive(Clone)]
         pub struct PostOptions {
             $(
                 $name: <$type as $crate::OptionTrait>::ValType,

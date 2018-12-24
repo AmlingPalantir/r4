@@ -75,6 +75,7 @@ pub trait OperationBe2 {
     fn stream(&Self::PostOptions) -> Stream;
 }
 
+#[derive(Clone)]
 #[derive(Default)]
 pub struct AndArgsOptions<P> {
     p: P,
@@ -131,6 +132,7 @@ impl OptionTrait for SubOperationOption {
     }
 }
 
+#[derive(Clone)]
 struct SubOperationOptions {
     extra: Vec<String>,
     wr: Arc<StreamWrapper>,
@@ -138,6 +140,7 @@ struct SubOperationOptions {
 
 type ClumperOption = UnvalidatedOption<ClumperOptions>;
 
+#[derive(Clone)]
 #[derive(Default)]
 struct ClumperOptions {
     cws: Vec<Arc<Box<ClumperWrapper>>>,
