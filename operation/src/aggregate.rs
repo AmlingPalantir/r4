@@ -5,7 +5,6 @@ use opts::UnvalidatedOption;
 use record::Record;
 use stream::Entry;
 use stream::Stream;
-use stream::StreamTrait;
 
 pub(crate) fn names() -> Vec<&'static str> {
     return vec!["aggregate"];
@@ -38,40 +37,33 @@ impl OperationBe2 for Impl {
     }
 
     fn stream(o: &PostOptions) -> Stream {
-        let s = Stream::new(AggregateStream {
-            aggs: o.aggs.clone(),
-        });
-        return Stream::compound(Stream::parse(), s);
-    }
-}
-
-struct AggregateStream {
-    aggs: Vec<(String, Box<AggregatorState>)>,
-}
-
-impl StreamTrait for AggregateStream {
-    fn write(&mut self, e: Entry, _w: &mut FnMut(Entry) -> bool) -> bool {
-        match e {
-            Entry::Bof(_file) => {
-            }
-            Entry::Record(r) => {
-                for (_, ref mut state) in self.aggs.iter_mut() {
-                    state.add(r.clone());
-                }
-            }
-            Entry::Line(_line) => {
-                panic!("Unexpected line in AggregateStream");
-            }
-        }
-        return true;
-    }
-
-    fn close(self: Box<AggregateStream>, w: &mut FnMut(Entry) -> bool) {
-        let s = *self;
-        let mut r = Record::empty_hash();
-        for (label, state) in s.aggs.into_iter() {
-            r.set_path(&label, state.finish());
-        }
-        w(Entry::Record(r));
+        return Stream::compound(
+            Stream::parse(),
+            Stream::closures(
+                o.aggs.clone(),
+                |s, e, _w| {
+                    match e {
+                        Entry::Bof(_file) => {
+                        }
+                        Entry::Record(r) => {
+                            for (_, ref mut state) in s.iter_mut() {
+                                state.add(r.clone());
+                            }
+                        }
+                        Entry::Line(_line) => {
+                            panic!("Unexpected line in AggregateStream");
+                        }
+                    }
+                    return true;
+                },
+                |s, w| {
+                    let mut r = Record::empty_hash();
+                    for (label, state) in s.into_iter() {
+                        r.set_path(&label, state.finish());
+                    }
+                    w(Entry::Record(r));
+                },
+            ),
+        );
     }
 }
