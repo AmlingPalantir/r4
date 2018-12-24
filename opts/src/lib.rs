@@ -1,8 +1,9 @@
 use std::borrow::BorrowMut;
-use std::collections::HashMap;
 use std::ops::Deref;
 use std::ops::DerefMut;
 use std::rc::Rc;
+
+mod trie;
 
 enum ExtraHandler<P> {
     Soft(Rc<Fn(&mut P, &String) -> bool>),
@@ -50,7 +51,7 @@ impl<'a, P: 'static> OptParserView<'a, P> {
 
 
 pub struct OptParser<P> {
-    named: HashMap<String, (usize, Rc<Fn(&mut P, &[String])>)>,
+    named: trie::NameTrie<(usize, Rc<Fn(&mut P, &[String])>)>,
     extra: Vec<ExtraHandler<P>>,
 }
 
@@ -67,7 +68,7 @@ fn name_from_arg(name: &str) -> Option<&str> {
 impl<P: 'static> OptParser<P> {
     pub fn new() -> OptParser<P> {
         return OptParser {
-            named: HashMap::new(),
+            named: trie::NameTrie::new(),
             extra: Vec::new(),
         };
     }
@@ -92,21 +93,15 @@ impl<P: 'static> OptParser<P> {
                 }
 
                 if let Some(name) = name_from_arg(&args[next_index]) {
-                    match self.named.get(name) {
-                        Some((argct, f)) => {
-                            let start = next_index + 1;
-                            let end = start + argct;
-                            if end > args.len() {
-                                panic!("Not enough arguments for {}", args[next_index]);
-                            }
-                            f(p, &args[start..end]);
-                            next_index = end;
-                            continue;
-                        }
-                        None => {
-                            panic!("No such option {}", args[next_index]);
-                        }
+                    let (argct, f) = self.named.get(name);
+                    let start = next_index + 1;
+                    let end = start + argct;
+                    if end > args.len() {
+                        panic!("Not enough arguments for {}", args[next_index]);
                     }
+                    f(p, &args[start..end]);
+                    next_index = end;
+                    continue;
                 }
             }
 
@@ -142,10 +137,7 @@ impl<P: Default + 'static> OptParser<P> {
 impl<'a, P: 'static> OptParserMatch<P> for &'a mut OptParser<P> {
     fn match_n(&mut self, aliases: &[&str], argct: usize, f: Rc<Fn(&mut P, &[String])>) {
         for alias in aliases {
-            let prev = self.named.insert(alias.to_string(), (argct, f.clone()));
-            if prev.is_some() {
-                panic!("Collision in options at {}", alias);
-            }
+            self.named.insert(alias, (argct, f.clone()));
         }
     }
 
