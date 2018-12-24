@@ -10,7 +10,7 @@ use std::sync::Arc;
 use stream::Stream;
 
 pub(crate) fn names() -> Vec<&'static str> {
-    return vec!["aggregate"];
+    return vec!["multiplex"];
 }
 
 #[derive(Default)]

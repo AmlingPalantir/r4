@@ -15,7 +15,7 @@ macro_rules! registry {
                     }
                 }
             )*
-            panic!();
+            panic!("No implementation named {}", name);
         }
     }
 }
