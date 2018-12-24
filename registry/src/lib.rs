@@ -64,7 +64,7 @@ impl<R> Registry<R> {
 macro_rules! registry {
     {$fe:ident, $r:ty, $($id:ident,)*} => {
         $(
-            mod $id;
+            pub mod $id;
         )*
 
         lazy_static! {
