@@ -1,5 +1,6 @@
 extern crate aggregator;
 extern crate bgop;
+extern crate clumper;
 #[macro_use]
 extern crate opts;
 extern crate record;
@@ -11,6 +12,7 @@ registry! {
     OperationFe:
     aggregate,
     bg,
+    multiplex,
     test,
 }
 

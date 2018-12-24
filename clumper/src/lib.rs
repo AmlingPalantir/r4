@@ -19,7 +19,7 @@ pub trait ClumperFe {
 }
 
 
-pub trait ClumperWrapper {
+pub trait ClumperWrapper: Send + Sync {
     fn stream(&self, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream;
 }
 

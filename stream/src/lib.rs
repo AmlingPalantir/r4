@@ -23,6 +23,10 @@ impl Stream {
         return Stream(Box::new(f));
     }
 
+    pub fn id() -> Stream {
+        return Stream::new(IdStream());
+    }
+
     pub fn compound(s1: Stream, s2: Stream) -> Stream {
         return Stream::new(CompoundStream(s1, s2));
     }
@@ -43,6 +47,17 @@ impl Stream {
 
     pub fn close(self, w: &mut FnMut(Entry) -> bool) {
         self.0.close(w);
+    }
+}
+
+struct IdStream();
+
+impl StreamTrait for IdStream {
+    fn write(&mut self, e: Entry, w: &mut FnMut(Entry) -> bool) -> bool {
+        return w(e);
+    }
+
+    fn close(self: Box<IdStream>, _w: &mut FnMut(Entry) -> bool) {
     }
 }
 
