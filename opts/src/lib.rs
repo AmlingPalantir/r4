@@ -1,5 +1,7 @@
 use std::borrow::BorrowMut;
 use std::collections::HashMap;
+use std::ops::Deref;
+use std::ops::DerefMut;
 use std::rc::Rc;
 
 enum ExtraHandler<P> {
@@ -195,51 +197,18 @@ impl<'a, P: 'static> OptParserView<'a, P> {
 
 
 
-pub enum OneOption {
-}
-
-impl OneOption {
-    pub fn set_string_option(p: &mut Option<String>, a: &String) {
-        if let Some(_) = *p {
-            panic!();
-        }
-        *p = Some(a.clone());
-    }
-
-    pub fn push_string_vec(p: &mut Vec<String>, a: &String) {
-        p.push(a.clone());
-    }
-}
-
-pub enum VarOption {
-}
-
-impl VarOption {
-    pub fn push_string_vec(p: &mut Vec<String>, a: &[String]) {
-        p.extend_from_slice(a);
-    }
-}
-
-
-
-pub trait Validates {
-    type To;
-
-    fn validate(self) -> Self::To;
-}
-
 #[macro_export]
 macro_rules! declare_opts {
     {$($name:ident: $type:ty,)*} => {
         #[derive(Default)]
         pub struct PreOptions {
             $(
-                $name: <$type as $crate::OptionTrait>::PreType,
+                $name: $type,
             )*
         }
 
-        impl $crate::Validates for PreOptions {
-            type To = PostOptions;
+        impl $crate::OptionTrait for PreOptions {
+            type ValidatesTo = PostOptions;
 
             fn validate(self) -> PostOptions {
                 return PostOptions {
@@ -253,55 +222,61 @@ macro_rules! declare_opts {
         #[derive(Clone)]
         pub struct PostOptions {
             $(
-                $name: <$type as $crate::OptionTrait>::ValType,
+                $name: <$type as $crate::OptionTrait>::ValidatesTo,
             )*
         }
     }
 }
 
 pub trait OptionTrait {
-    type PreType;
-    type ValType;
+    type ValidatesTo;
 
-    fn validate(Self::PreType) -> Self::ValType;
+    fn validate(self) -> Self::ValidatesTo;
 }
 
-pub enum RequiredStringOption {
-}
+#[derive(Default)]
+pub struct RequiredStringOption(Option<String>);
 
 impl OptionTrait for RequiredStringOption {
-    type PreType = Option<String>;
-    type ValType = String;
+    type ValidatesTo = String;
 
-    fn validate(p: Option<String>) -> String {
-        return p.unwrap();
+    fn validate(self) -> String {
+        return self.0.unwrap();
     }
 }
 
-pub struct UnvalidatedOption<T> {
-    _x: std::marker::PhantomData<T>,
+impl RequiredStringOption {
+    pub fn set(&mut self, a: &String) {
+        if let Some(_) = self.0 {
+            panic!();
+        }
+        self.0 = Some(a.clone());
+    }
+}
+
+#[derive(Default)]
+pub struct UnvalidatedOption<T>(T);
+
+impl<T> Deref for UnvalidatedOption<T> {
+    type Target = T;
+
+    fn deref(&self) -> &T {
+        return &self.0;
+    }
+}
+
+impl<T> DerefMut for UnvalidatedOption<T> {
+    fn deref_mut(&mut self) -> &mut T {
+        return &mut self.0;
+    }
 }
 
 impl<T> OptionTrait for UnvalidatedOption<T> {
-    type PreType = T;
-    type ValType = T;
+    type ValidatesTo = T;
 
-    fn validate(p: T) -> T {
-        return p;
+    fn validate(self) -> T {
+        return self.0;
     }
 }
 
 pub type StringVecOption = UnvalidatedOption<Vec<String>>;
-
-pub struct ValidatesOption<P: Validates> {
-    _x: std::marker::PhantomData<P>,
-}
-
-impl<P: Validates> OptionTrait for ValidatesOption<P> {
-    type PreType = P;
-    type ValType = P::To;
-
-    fn validate(p: P) -> P::To {
-        return p.validate();
-    }
-}

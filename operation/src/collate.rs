@@ -1,8 +1,6 @@
-use ClumperOption;
 use ClumperOptions;
 use OperationBe;
 use opts::OptParserView;
-use opts::ValidatesOption;
 use stream::Stream;
 use super::aggregate;
 
@@ -15,8 +13,8 @@ pub struct Impl {
 }
 
 declare_opts! {
-    cl: ClumperOption,
-    ag: ValidatesOption<<aggregate::Impl as OperationBe>::PreOptions>,
+    cl: ClumperOptions,
+    ag: <aggregate::Impl as OperationBe>::PreOptions,
 }
 
 impl OperationBe for Impl {

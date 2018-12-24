@@ -1,9 +1,7 @@
-use ClumperOption;
 use ClumperOptions;
 use OperationBe;
 use SubOperationOption;
 use opts::OptParserView;
-use opts::VarOption;
 use stream::Stream;
 
 pub(crate) fn names() -> Vec<&'static str> {
@@ -15,7 +13,7 @@ pub struct Impl {
 }
 
 declare_opts! {
-    cl: ClumperOption,
+    cl: ClumperOptions,
     op: SubOperationOption,
 }
 
@@ -24,7 +22,7 @@ impl OperationBe for Impl {
     type PostOptions = PostOptions;
 
     fn options<'a>(mut opt: OptParserView<'a, PreOptions>) {
-        opt.sub(|p| &mut p.op).match_extra_hard(VarOption::push_string_vec);
+        opt.sub(|p| &mut p.op).match_extra_hard(SubOperationOption::push);
         opt.sub(|p| &mut p.cl).match_single(&["c", "clumper"], ClumperOptions::add_single);
     }
 

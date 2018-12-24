@@ -1,5 +1,4 @@
 use OperationBe2;
-use opts::OneOption;
 use opts::OptParserView;
 use opts::RequiredStringOption;
 use record::FromPrimitive;
@@ -24,7 +23,7 @@ impl OperationBe2 for Impl {
     type PostOptions = PostOptions;
 
     fn options<'a>(mut opt: OptParserView<'a, PreOptions>) {
-        opt.sub(|p| &mut p.msg).match_single(&["m", "msg"], OneOption::set_string_option);
+        opt.sub(|p| &mut p.msg).match_single(&["m", "msg"], RequiredStringOption::set);
     }
 
     fn stream(o: &PostOptions) -> Stream {

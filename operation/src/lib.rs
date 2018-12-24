@@ -21,8 +21,6 @@ use clumper::ClumperWrapper;
 use opts::OptParser;
 use opts::OptParserView;
 use opts::OptionTrait;
-use opts::UnvalidatedOption;
-use opts::Validates;
 use record::Record;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -47,7 +45,7 @@ impl StreamWrapper {
 
 
 pub trait OperationBe {
-    type PreOptions: Validates<To = Self::PostOptions> + Default + 'static;
+    type PreOptions: OptionTrait<ValidatesTo = Self::PostOptions> + Default + 'static;
     type PostOptions: Send + Sync + 'static;
 
     fn options<'a>(OptParserView<'a, Self::PreOptions>);
@@ -69,7 +67,7 @@ impl<B: OperationBe> OperationFe for B {
 
 
 pub trait OperationBe2 {
-    type PreOptions: Validates<To = Self::PostOptions> + Default + 'static;
+    type PreOptions: OptionTrait<ValidatesTo = Self::PostOptions> + Default + 'static;
     type PostOptions: Send + Sync + 'static;
 
     fn options<'a>(OptParserView<'a, Self::PreOptions>);
@@ -83,10 +81,10 @@ pub struct AndArgsOptions<P> {
     args: Vec<String>,
 }
 
-impl<V, P: Validates<To = V>> Validates for AndArgsOptions<P> {
-    type To = AndArgsOptions<V>;
+impl<P: OptionTrait> OptionTrait for AndArgsOptions<P> {
+    type ValidatesTo = AndArgsOptions<<P as OptionTrait>::ValidatesTo>;
 
-    fn validate(self) -> AndArgsOptions<V> {
+    fn validate(self) -> AndArgsOptions<<P as OptionTrait>::ValidatesTo> {
         return AndArgsOptions {
             p: self.p.validate(),
             args: self.args,
@@ -115,19 +113,24 @@ impl<B: OperationBe2> OperationBe for B {
     }
 }
 
-enum SubOperationOption {
+#[derive(Default)]
+struct SubOperationOption(Vec<String>);
+
+impl SubOperationOption {
+    fn push(&mut self, a: &[String]) {
+        self.0.extend_from_slice(a);
+    }
 }
 
 impl OptionTrait for SubOperationOption {
-    type PreType = Vec<String>;
-    type ValType = SubOperationOptions;
+    type ValidatesTo = SubOperationOptions;
 
-    fn validate(mut p: Vec<String>) -> SubOperationOptions {
-        let name = p.remove(0);
+    fn validate(mut self) -> SubOperationOptions {
+        let name = self.0.remove(0);
         let op = find(&name);
-        let wr = op.validate(&mut p);
+        let wr = op.validate(&mut self.0);
         return SubOperationOptions {
-            extra: p,
+            extra: self.0,
             wr: Arc::new(wr),
         };
     }
@@ -139,12 +142,18 @@ struct SubOperationOptions {
     wr: Arc<StreamWrapper>,
 }
 
-type ClumperOption = UnvalidatedOption<ClumperOptions>;
-
 #[derive(Clone)]
 #[derive(Default)]
 struct ClumperOptions {
     cws: Vec<Arc<Box<ClumperWrapper>>>,
+}
+
+impl OptionTrait for ClumperOptions {
+    type ValidatesTo = ClumperOptions;
+
+    fn validate(self) -> ClumperOptions {
+        return self;
+    }
 }
 
 impl ClumperOptions {

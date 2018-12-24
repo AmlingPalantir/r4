@@ -1,7 +1,6 @@
 use OperationBe;
 use SubOperationOption;
 use opts::OptParserView;
-use opts::VarOption;
 use std::thread;
 use stream::Stream;
 
@@ -22,7 +21,7 @@ impl OperationBe for Impl {
     type PostOptions = PostOptions;
 
     fn options<'a>(mut opt: OptParserView<'a, PreOptions>) {
-        opt.sub(|p| &mut p.op).match_extra_hard(VarOption::push_string_vec);
+        opt.sub(|p| &mut p.op).match_extra_hard(SubOperationOption::push);
     }
 
     fn get_extra(o: &PostOptions) -> &Vec<String> {
