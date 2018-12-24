@@ -1,8 +1,7 @@
 use OperationBe2;
 use aggregator::AggregatorState;
-use opts::OneOption;
 use opts::OptParserView;
-use opts::OptionTrait;
+use opts::UnvalidatedOption;
 use record::Record;
 use stream::Entry;
 use stream::Stream;
@@ -17,7 +16,7 @@ pub struct Impl {
 }
 
 declare_opts! {
-    aggs: AggregatorsOption,
+    aggs: UnvalidatedOption<Vec<(String, Box<AggregatorState>)>>,
 }
 
 impl OperationBe2 for Impl {
@@ -25,26 +24,7 @@ impl OperationBe2 for Impl {
     type PostOptions = PostOptions;
 
     fn options<'a>(mut opt: OptParserView<'a, PreOptions>) {
-        opt.sub(|p| &mut p.aggs).match_single(&["a", "agg", "aggregator"], OneOption::push_string_vec);
-    }
-
-    fn stream(o: &PostOptions) -> Stream {
-        let s = Stream::new(AggregateStream {
-            aggs: o.aggs.clone(),
-        });
-        return Stream::compound(Stream::parse(), s);
-    }
-}
-
-enum AggregatorsOption {
-}
-
-impl OptionTrait for AggregatorsOption {
-    type PreType = Vec<String>;
-    type ValType = Vec<(String, Box<AggregatorState>)>;
-
-    fn validate(p: Vec<String>) -> Vec<(String, Box<AggregatorState>)> {
-        return p.iter().map(|a| {
+        opt.sub(|p| &mut p.aggs).match_single(&["a", "agg", "aggregator"], |aggs, a| {
             let (label, a) = match a.find('=') {
                 Some(i) => (a[0..i].to_string(), &a[(i + 1)..]),
                 None => (a.replace("/", "_"), &a[..]),
@@ -53,8 +33,15 @@ impl OptionTrait for AggregatorsOption {
             let agg = aggregator::find(parts.next().unwrap());
             let args: Vec<&str> = parts.collect();
             let state = agg.state(&args);
-            return (label, state);
-        }).collect();
+            aggs.push((label, state));
+        });
+    }
+
+    fn stream(o: &PostOptions) -> Stream {
+        let s = Stream::new(AggregateStream {
+            aggs: o.aggs.clone(),
+        });
+        return Stream::compound(Stream::parse(), s);
     }
 }
 

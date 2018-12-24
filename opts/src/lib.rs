@@ -277,14 +277,17 @@ impl OptionTrait for RequiredStringOption {
     }
 }
 
-pub enum StringVecOption {
+pub struct UnvalidatedOption<T> {
+    _x: std::marker::PhantomData<T>,
 }
 
-impl OptionTrait for StringVecOption {
-    type PreType = Vec<String>;
-    type ValType = Vec<String>;
+impl<T> OptionTrait for UnvalidatedOption<T> {
+    type PreType = T;
+    type ValType = T;
 
-    fn validate(p: Vec<String>) -> Vec<String> {
+    fn validate(p: T) -> T {
         return p;
     }
 }
+
+pub type StringVecOption = UnvalidatedOption<Vec<String>>;
