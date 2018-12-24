@@ -55,7 +55,7 @@ impl JsonPart {
         if let Some(n) = n.as_f64() {
             return JsonPart::NumberF64(F64Wrapper(n));
         }
-        panic!();
+        panic!("Unhandled JSON number type: {}", n);
     }
 }
 
@@ -102,7 +102,7 @@ impl Record {
                 None => None,
             };
         }
-        panic!();
+        panic!("Record::get_hash() on non-hash");
     }
 
     pub fn get_array(&self, key: usize) -> Option<Record> {
@@ -115,7 +115,7 @@ impl Record {
             }
             return Some(arr[key].clone());
         }
-        panic!();
+        panic!("Record::get_array() on non-array");
     }
 
 
@@ -143,7 +143,7 @@ impl Record {
             if let JsonPart::Hash(ref mut map) = *r {
                 return Arc::make_mut(&mut map.entry(Arc::from(key)).or_insert(Record(Arc::new(JsonPart::Null))).0);
             }
-            panic!();
+            panic!("Record::_get_hash_mut() on non-hash");
         }
 
         fn _get_array_mut(r: &mut JsonPart, key: usize) -> &mut JsonPart {
@@ -156,7 +156,7 @@ impl Record {
                 }
                 return Arc::make_mut(&mut arr[key].0);
             }
-            panic!();
+            panic!("Record::_get_array_mut() on non-array");
         }
 
         return path.split('/').fold(Arc::make_mut(&mut self.0), |r, part| {

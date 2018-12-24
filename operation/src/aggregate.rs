@@ -60,7 +60,7 @@ impl StreamTrait for AggregateStream {
                 }
             }
             Entry::Line(_line) => {
-                panic!();
+                panic!("Unexpected line in AggregateStream");
             }
         }
         return true;

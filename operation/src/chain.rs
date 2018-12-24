@@ -83,7 +83,7 @@ impl OptionTrait for CmdsOption {
                 }
                 Some(_) => {
                     if so.extra.len() > 0 {
-                        panic!();
+                        panic!("Unexpected extra args for non-first chain stage?");
                     }
                 }
             }

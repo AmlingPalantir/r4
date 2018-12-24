@@ -54,7 +54,7 @@ impl StreamTrait for KeyStream {
                 self.find_stream(v).write(Entry::Record(r), w);
             },
             Entry::Line(_line) => {
-                panic!();
+                panic!("Unexpected line in KeyStream");
             },
         }
         // Sad, but you could always be opening a new stream so we can never be

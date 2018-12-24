@@ -97,14 +97,14 @@ impl<P: 'static> OptParser<P> {
                             let start = next_index + 1;
                             let end = start + argct;
                             if end > args.len() {
-                                panic!();
+                                panic!("Not enough arguments for {}", args[next_index]);
                             }
                             f(p, &args[start..end]);
                             next_index = end;
                             continue;
                         }
                         None => {
-                            panic!();
+                            panic!("No such option {}", args[next_index]);
                         }
                     }
                 }
@@ -126,7 +126,7 @@ impl<P: 'static> OptParser<P> {
                 }
             }
 
-            panic!();
+            panic!("No handler at {}", args[next_index]);
         }
     }
 }
@@ -144,7 +144,7 @@ impl<'a, P: 'static> OptParserMatch<P> for &'a mut OptParser<P> {
         for alias in aliases {
             let prev = self.named.insert(alias.to_string(), (argct, f.clone()));
             if prev.is_some() {
-                panic!();
+                panic!("Collision in options at {}", alias);
             }
         }
     }
@@ -269,7 +269,7 @@ impl OptionTrait for RequiredStringOption {
 impl RequiredStringOption {
     pub fn set(&mut self, a: &String) {
         if let Some(_) = self.0 {
-            panic!();
+            panic!("RequiredStringOption missing");
         }
         self.0 = Some(a.clone());
     }
