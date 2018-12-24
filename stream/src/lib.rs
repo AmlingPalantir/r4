@@ -57,7 +57,7 @@ impl StreamTrait for IdStream {
         return w(e);
     }
 
-    fn close(self: Box<IdStream>, _w: &mut FnMut(Entry) -> bool) {
+    fn close(self: Box<Self>, _w: &mut FnMut(Entry) -> bool) {
     }
 }
 
@@ -69,7 +69,7 @@ impl StreamTrait for CompoundStream {
         return self.0.write(e, &mut |e| s2.write(e, w));
     }
 
-    fn close(self: Box<CompoundStream>, w: &mut FnMut(Entry) -> bool) {
+    fn close(self: Box<Self>, w: &mut FnMut(Entry) -> bool) {
         let s = *self;
         let mut s2 = s.1;
         s.0.close(&mut |e| s2.write(e, w));
@@ -87,7 +87,7 @@ impl StreamTrait for ParseStream {
         });
     }
 
-    fn close(self: Box<ParseStream>, _w: &mut FnMut(Entry) -> bool) {
+    fn close(self: Box<Self>, _w: &mut FnMut(Entry) -> bool) {
     }
 }
 
@@ -101,6 +101,6 @@ impl StreamTrait for TransformRecordsStream {
         });
     }
 
-    fn close(self: Box<TransformRecordsStream>, _w: &mut FnMut(Entry) -> bool) {
+    fn close(self: Box<Self>, _w: &mut FnMut(Entry) -> bool) {
     }
 }
