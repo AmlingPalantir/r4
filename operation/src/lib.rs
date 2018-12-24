@@ -26,7 +26,7 @@ pub trait OperationFe {
 pub struct StreamWrapper(Box<Fn() -> Stream + Send + Sync>);
 
 impl StreamWrapper {
-    pub fn new<F: Fn() -> Stream + 'static + Send + Sync>(f: F) -> Self {
+    pub fn new<F: Fn() -> Stream + Send + Sync + 'static>(f: F) -> Self {
         return StreamWrapper(Box::new(f));
     }
 
@@ -38,7 +38,7 @@ impl StreamWrapper {
 
 
 pub trait OperationBe {
-    type PreOptions: Default + Validates<To = Self::PostOptions> + 'static;
+    type PreOptions: Validates<To = Self::PostOptions> + Default + 'static;
     type PostOptions: Send + Sync + 'static;
 
     fn options<'a>(OptParserView<'a, Self::PreOptions>);
@@ -60,7 +60,7 @@ impl<B: OperationBe> OperationFe for B {
 
 
 pub trait OperationBe2 {
-    type PreOptions: Default + Validates<To = Self::PostOptions> + 'static;
+    type PreOptions: Validates<To = Self::PostOptions> + Default + 'static;
     type PostOptions: Send + Sync + 'static;
 
     fn options<'a>(OptParserView<'a, Self::PreOptions>);
