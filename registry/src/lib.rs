@@ -42,7 +42,7 @@ impl RegistryArgs for ZeroArgs {
     }
 
     fn parse(args: &[&str]) -> () {
-        debug_assert_eq!(0, args.len());
+        assert_eq!(0, args.len());
         return ();
     }
 }
@@ -60,7 +60,7 @@ impl RegistryArgs for OneStringArgs {
     }
 
     fn parse(args: &[&str]) -> Arc<str> {
-        debug_assert_eq!(1, args.len());
+        assert_eq!(1, args.len());
         return Arc::from(&*args[0]);
     }
 }
