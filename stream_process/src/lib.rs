@@ -1,6 +1,7 @@
 extern crate bgop;
 extern crate stream;
 
+use bgop::BgopFe;
 use std::ffi::OsStr;
 use std::io::BufRead;
 use std::io::BufReader;
@@ -12,16 +13,15 @@ use std::process::Stdio;
 use std::sync::Arc;
 use std::thread;
 use stream::Entry;
-use stream::Stream;
 use stream::StreamTrait;
 
 pub struct ProcessStream {
-    os: Stream,
+    fe: BgopFe,
     p: Child,
 }
 
 impl ProcessStream {
-    pub fn new<I: IntoIterator<Item = S>, S: AsRef<OsStr>>(os: Stream, args: I) -> Self {
+    pub fn new<I: IntoIterator<Item = S>, S: AsRef<OsStr>>(args: I) -> Self {
         let mut args = args.into_iter();
         let mut p = Command::new(args.next().unwrap())
             .args(args)
@@ -30,7 +30,7 @@ impl ProcessStream {
             .spawn()
             .unwrap();
 
-        let (fe, rbe, mut wbe) = bgop::new(os);
+        let (fe, rbe, mut wbe) = bgop::new();
         let p_stdin = p.stdin.take().unwrap();
         let p_stdout = p.stdout.take().unwrap();
 
@@ -72,20 +72,20 @@ impl ProcessStream {
         });
 
         return ProcessStream {
-            os: Stream::new(fe),
+            fe: fe,
             p: p,
         };
     }
 }
 
 impl StreamTrait for ProcessStream {
-    fn write(&mut self, e: Entry) -> bool {
-        return self.os.write(e);
+    fn write(&mut self, e: Entry, w: &mut FnMut(Entry) -> bool) -> bool {
+        return self.fe.write(e, w);
     }
 
-    fn close(self: Box<ProcessStream>) {
+    fn close(self: Box<ProcessStream>, w: &mut FnMut(Entry) -> bool) {
         let mut s = *self;
-        s.os.close();
+        Box::new(s.fe).close(w);
         s.p.wait().unwrap();
     }
 }

@@ -28,11 +28,11 @@ impl OperationBe2 for Impl {
         opt.sub(|p| &mut p.aggs).match_single(&["a", "agg", "aggregator"], OneOption::push_string_vec);
     }
 
-    fn wrap_stream(o: &PostOptions, os: Stream) -> Stream {
-        return Stream::new(AggregateStream {
-            os: os,
+    fn stream(o: &PostOptions) -> Stream {
+        let s = Stream::new(AggregateStream {
             aggs: o.aggs.clone(),
-        }).parse();
+        });
+        return Stream::compound(Stream::parse(), s);
     }
 }
 
@@ -59,12 +59,11 @@ impl OptionTrait for AggregatorsOption {
 }
 
 struct AggregateStream {
-    os: Stream,
     aggs: Vec<(String, Box<AggregatorState>)>,
 }
 
 impl StreamTrait for AggregateStream {
-    fn write(&mut self, e: Entry) -> bool {
+    fn write(&mut self, e: Entry, _w: &mut FnMut(Entry) -> bool) -> bool {
         match e {
             Entry::Bof(_file) => {
             }
@@ -80,13 +79,12 @@ impl StreamTrait for AggregateStream {
         return true;
     }
 
-    fn close(self: Box<AggregateStream>) {
-        let mut s = *self;
+    fn close(self: Box<AggregateStream>, w: &mut FnMut(Entry) -> bool) {
+        let s = *self;
         let mut r = Record::empty_hash();
         for (label, state) in s.aggs.into_iter() {
             r.set_path(&label, state.finish());
         }
-        s.os.write(Entry::Record(r));
-        s.os.close();
+        w(Entry::Record(r));
     }
 }

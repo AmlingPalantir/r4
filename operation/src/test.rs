@@ -27,16 +27,17 @@ impl OperationBe2 for Impl {
         opt.sub(|p| &mut p.msg).match_single(&["m", "msg"], OneOption::set_string_option);
     }
 
-    fn wrap_stream(o: &PostOptions, os: Stream) -> Stream {
+    fn stream(o: &PostOptions) -> Stream {
         let msg: Arc<str> = Arc::from(&*o.msg);
         let mut n = 0;
 
-        return os.transform_records(move |mut r| {
+        let s = Stream::transform_records(move |mut r| {
             n += 1;
             r.set_path("n", Record::from_primitive(n));
             r.set_path("msg", Record::from_primitive_string(msg.clone()));
 
             return r;
-        }).parse();
+        });
+        return Stream::compound(Stream::parse(), s);
     }
 }

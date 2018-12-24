@@ -31,23 +31,23 @@ impl OperationBe for Impl {
         return &o.op.0;
     }
 
-    fn wrap_stream(o: &PostOptions, os: Stream) -> Stream {
-        let (fe, rbe, wbe) = bgop::new(os);
+    fn stream(o: &PostOptions) -> Stream {
+        let (fe, rbe, mut wbe) = bgop::new();
 
         let op = o.op.clone();
         thread::spawn(move || {
-            let os = Stream::new(wbe);
-            let mut os = op.1.wrap(os);
+            let mut os = op.1.stream();
 
             loop {
                 match rbe.read() {
                     Some(e) => {
-                        if !os.write(e) {
+                        if !os.write(e, &mut |e| wbe.write(e)) {
                             rbe.rclose();
                         }
                     }
                     None => {
-                        os.close();
+                        os.close(&mut |e| wbe.write(e));
+                        Box::new(wbe).close();
                         return;
                     }
                 }

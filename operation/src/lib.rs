@@ -23,15 +23,15 @@ pub trait OperationFe {
     fn validate(&self, &mut Vec<String>) -> StreamWrapper;
 }
 
-pub struct StreamWrapper(Box<Fn(Stream) -> Stream + Send + Sync>);
+pub struct StreamWrapper(Box<Fn() -> Stream + Send + Sync>);
 
 impl StreamWrapper {
-    pub fn new<F: Fn(Stream) -> Stream + 'static + Send + Sync>(f: F) -> Self {
+    pub fn new<F: Fn() -> Stream + 'static + Send + Sync>(f: F) -> Self {
         return StreamWrapper(Box::new(f));
     }
 
-    pub fn wrap(&self, os: Stream) -> Stream {
-        return self.0(os);
+    pub fn stream(&self) -> Stream {
+        return self.0();
     }
 }
 
@@ -43,7 +43,7 @@ pub trait OperationBe {
 
     fn options<'a>(OptParserView<'a, Self::PreOptions>);
     fn get_extra(&Self::PostOptions) -> &Vec<String>;
-    fn wrap_stream(&Self::PostOptions, Stream) -> Stream;
+    fn stream(&Self::PostOptions) -> Stream;
 }
 
 impl<B: OperationBe> OperationFe for B {
@@ -53,7 +53,7 @@ impl<B: OperationBe> OperationFe for B {
         let o = opt.parse(args).validate();
         *args = B::get_extra(&o).clone();
 
-        return StreamWrapper::new(move |os| B::wrap_stream(&o, os));
+        return StreamWrapper::new(move || B::stream(&o));
     }
 }
 
@@ -64,7 +64,7 @@ pub trait OperationBe2 {
     type PostOptions: Send + Sync + 'static;
 
     fn options<'a>(OptParserView<'a, Self::PreOptions>);
-    fn wrap_stream(&Self::PostOptions, Stream) -> Stream;
+    fn stream(&Self::PostOptions) -> Stream;
 }
 
 #[derive(Default)]
@@ -100,7 +100,7 @@ impl<B: OperationBe2> OperationBe for B {
         return &p.args;
     }
 
-    fn wrap_stream(p: &AndArgsOptions<B::PostOptions>, os: Stream) -> Stream {
-        return B::wrap_stream(&p.p, os);
+    fn stream(p: &AndArgsOptions<B::PostOptions>) -> Stream {
+        return B::stream(&p.p);
     }
 }

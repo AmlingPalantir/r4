@@ -4,7 +4,6 @@ extern crate wns;
 use std::collections::VecDeque;
 use std::sync::Arc;
 use stream::Entry;
-use stream::Stream;
 use stream::StreamTrait;
 use wns::WaitNotifyState;
 
@@ -75,33 +74,32 @@ impl BgopWbe {
             return (None, false);
         });
     }
-}
 
-impl StreamTrait for BgopWbe {
-    fn write(&mut self, e: Entry) -> bool {
+    pub fn write(&mut self, e: Entry) -> bool {
         self.enqueue(Some(e));
         return self.state.read(|buffers| {
             return !buffers.be_to_fe.rclosed;
         });
     }
 
-    fn close(self: Box<BgopWbe>) {
+    pub fn close(self: Box<BgopWbe>) {
         self.enqueue(None);
     }
 }
 
 pub struct BgopFe {
-    os: Option<Stream>,
+    os_closed: bool,
     state: Arc<WaitNotifyState<BgopState>>,
 }
 
 impl BgopFe {
-    fn ferry<R, F: FnMut(bool, &mut BgopState) -> Option<R>>(&mut self, f: &mut F) -> R {
+    fn ferry<R, F: FnMut(bool, &mut BgopState) -> Option<R>>(&mut self, f: &mut F, w: &mut FnMut(Entry) -> bool) -> R {
         enum Ret<R> {
             Ferry(Vec<Option<Entry>>),
             Return(R),
         }
         loop {
+            let os_closed = self.os_closed;
             let ret = self.state.await(&mut |buffers| {
                 if buffers.be_to_fe.buf.len() > 0 {
                     let mut maybe_es = Vec::new();
@@ -111,7 +109,7 @@ impl BgopFe {
                     return (Some(Ret::Ferry(maybe_es)), true);
                 }
 
-                if let Some(ret) = f(self.os.is_none(), buffers) {
+                if let Some(ret) = f(os_closed, buffers) {
                     return (Some(Ret::Return(ret)), true);
                 }
 
@@ -122,7 +120,7 @@ impl BgopFe {
                     for maybe_e in maybe_es {
                         match maybe_e {
                             Some(e) => {
-                                if !self.os.as_mut().unwrap().write(e) {
+                                if !w(e) {
                                     self.state.write(|buffers| {
                                         buffers.be_to_fe.rclosed = true;
                                         buffers.be_to_fe.buf.clear();
@@ -131,7 +129,7 @@ impl BgopFe {
                                 }
                             }
                             None => {
-                                self.os.take().unwrap().close();
+                                self.os_closed = true;
                             }
                         }
                     }
@@ -145,7 +143,7 @@ impl BgopFe {
 }
 
 impl StreamTrait for BgopFe {
-    fn write(&mut self, e: Entry) -> bool {
+    fn write(&mut self, e: Entry, w: &mut FnMut(Entry) -> bool) -> bool {
         return self.ferry(&mut |_os_closed, buffers| {
             if buffers.fe_to_be.rclosed {
                 return Some(false);
@@ -157,10 +155,10 @@ impl StreamTrait for BgopFe {
             }
 
             return None;
-        });
+        }, w);
     }
 
-    fn close(mut self: Box<BgopFe>) {
+    fn close(mut self: Box<BgopFe>, w: &mut FnMut(Entry) -> bool) {
         self.state.write(|buffers| {
             buffers.fe_to_be.buf.push_back(None);
         });
@@ -169,15 +167,15 @@ impl StreamTrait for BgopFe {
                 return Some(());
             }
             return None;
-        });
+        }, w);
     }
 }
 
-pub fn new(os: Stream) -> (BgopFe, BgopRbe, BgopWbe) {
+pub fn new() -> (BgopFe, BgopRbe, BgopWbe) {
     let state = Arc::new(WaitNotifyState::new(BgopState::new()));
 
     let fe = BgopFe {
-        os: Some(os),
+        os_closed: false,
         state: state.clone(),
     };
 

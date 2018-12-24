@@ -53,7 +53,6 @@ dependencies = [
  "operation 1.0.0",
  "stream 1.0.0",
  "stream_process 1.0.0",
- "stream_stdout 1.0.0",
 ]
 
 [[package]]
@@ -99,13 +98,6 @@ name = "stream_process"
 version = "1.0.0"
 dependencies = [
  "bgop 1.0.0",
- "stream 1.0.0",
-]
-
-[[package]]
-name = "stream_stdout"
-version = "1.0.0"
-dependencies = [
  "stream 1.0.0",
 ]
 

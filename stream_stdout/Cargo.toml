@@ -1,7 +1,0 @@
-[package]
-name = "stream_stdout"
-version = "1.0.0"
-authors = ["Keith Amling <me@amling2.org>"]
-
-[dependencies]
-stream = { path = "../stream" }

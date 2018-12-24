@@ -7,4 +7,3 @@ authors = ["Keith Amling <me@amling2.org>"]
 operation = { path = "../operation" }
 stream = { path = "../stream" }
 stream_process = { path = "../stream_process" }
-stream_stdout = { path = "../stream_stdout" }
