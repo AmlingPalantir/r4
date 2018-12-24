@@ -2,7 +2,6 @@ use std::collections::BTreeMap;
 use std::hash::Hash;
 use std::hash::Hasher;
 use std::ops::Deref;
-use std::str::FromStr;
 use std::sync::Arc;
 use std::vec::Vec;
 
@@ -173,12 +172,8 @@ impl Record {
     pub fn set_path(&mut self, path: &str, r: Record) {
         *self.get_path_mut(path) = (*r.0).clone();
     }
-}
 
-impl FromStr for Record {
-    type Err = serde_json::error::Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    pub fn parse(s: &str) -> Self {
         fn convert_part(p: &serde_json::value::Value) -> Record {
             return Record(Arc::new(match p {
                 serde_json::value::Value::Null => JsonPart::Null,
@@ -190,12 +185,10 @@ impl FromStr for Record {
             }));
         }
 
-        return serde_json::from_str(s).map(|j| convert_part(&j));
+        return convert_part(&serde_json::from_str(s).unwrap());
     }
-}
 
-impl ToString for Record {
-    fn to_string(&self) -> String {
+    pub fn deparse(&self) -> String {
         fn _to_string_aux(p: &Record, acc: &mut String) {
             match &*p.0 {
                 JsonPart::Null => {

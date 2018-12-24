@@ -1,7 +1,6 @@
 extern crate record;
 
 use record::Record;
-use std::str::FromStr;
 use std::sync::Arc;
 
 #[derive(Clone)]
@@ -72,7 +71,7 @@ struct ParseStream();
 impl StreamTrait for ParseStream {
     fn write(&mut self, e: Entry, w: &mut FnMut(Entry) -> bool) -> bool {
         return w(match e {
-            Entry::Line(line) => Entry::Record(Record::from_str(&line).expect("Could not parse line")),
+            Entry::Line(line) => Entry::Record(Record::parse(&line)),
             e => e,
         });
     }

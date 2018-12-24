@@ -34,7 +34,7 @@ pub fn new<I: IntoIterator<Item = S>, S: AsRef<OsStr>>(args: I) -> Stream {
                     continue;
                 }
                 Some(Entry::Record(r)) => {
-                    if let Err(_) = writeln!(lw, "{}", r.to_string()) {
+                    if let Err(_) = writeln!(lw, "{}", r.deparse()) {
                         rbe.rclose();
                     }
                 }

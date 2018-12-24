@@ -24,7 +24,7 @@ fn main() {
                 return true;
             }
             Entry::Record(r) => {
-                return writeln!(io::stdout(), "{}", r.to_string()).is_ok();
+                return writeln!(io::stdout(), "{}", r.deparse()).is_ok();
             }
             Entry::Line(line) => {
                 return writeln!(io::stdout(), "{}", line).is_ok();
