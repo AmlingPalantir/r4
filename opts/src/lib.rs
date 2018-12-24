@@ -292,3 +292,16 @@ impl<T> OptionTrait for UnvalidatedOption<T> {
 }
 
 pub type StringVecOption = UnvalidatedOption<Vec<String>>;
+
+pub struct ValidatesOption<P: Validates> {
+    _x: std::marker::PhantomData<P>,
+}
+
+impl<P: Validates> OptionTrait for ValidatesOption<P> {
+    type PreType = P;
+    type ValType = P::To;
+
+    fn validate(p: P) -> P::To {
+        return p.validate();
+    }
+}
