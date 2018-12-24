@@ -78,18 +78,15 @@ impl BgopWbe {
 }
 
 impl StreamTrait for BgopWbe {
-    fn write(&mut self, e: Entry) {
+    fn write(&mut self, e: Entry) -> bool {
         self.enqueue(Some(e));
+        return self.state.read(|buffers| {
+            return !buffers.be_to_fe.rclosed;
+        });
     }
 
     fn close(self: Box<BgopWbe>) {
         self.enqueue(None);
-    }
-
-    fn rclosed(&mut self) -> bool {
-        return self.state.read(|buffers| {
-            return buffers.be_to_fe.rclosed;
-        });
     }
 }
 
@@ -125,8 +122,7 @@ impl BgopFe {
                     for maybe_e in maybe_es {
                         match maybe_e {
                             Some(e) => {
-                                self.os.as_mut().unwrap().write(e);
-                                if self.os.as_mut().unwrap().rclosed() {
+                                if !self.os.as_mut().unwrap().write(e) {
                                     self.state.write(|buffers| {
                                         buffers.be_to_fe.rclosed = true;
                                         buffers.be_to_fe.buf.clear();
@@ -149,15 +145,15 @@ impl BgopFe {
 }
 
 impl StreamTrait for BgopFe {
-    fn write(&mut self, e: Entry) {
-        self.ferry(&mut |_os_closed, buffers| {
+    fn write(&mut self, e: Entry) -> bool {
+        return self.ferry(&mut |_os_closed, buffers| {
             if buffers.fe_to_be.rclosed {
-                return Some(());
+                return Some(false);
             }
 
             if buffers.fe_to_be.buf.len() < 1024 {
                 buffers.fe_to_be.buf.push_back(Some(e.clone()));
-                return Some(());
+                return Some(true);
             }
 
             return None;
@@ -173,12 +169,6 @@ impl StreamTrait for BgopFe {
                 return Some(());
             }
             return None;
-        });
-    }
-
-    fn rclosed(&mut self) -> bool {
-        return self.state.read(|buffers| {
-            return buffers.fe_to_be.rclosed;
         });
     }
 }

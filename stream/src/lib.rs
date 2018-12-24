@@ -12,9 +12,8 @@ pub enum Entry {
 }
 
 pub trait StreamTrait {
-    fn write(&mut self, Entry);
+    fn write(&mut self, Entry) -> bool;
     fn close(self: Box<Self>);
-    fn rclosed(&mut self) -> bool;
 }
 
 pub struct Stream(Box<StreamTrait>);
@@ -37,39 +36,27 @@ impl Stream {
 }
 
 impl Stream {
-    pub fn write(&mut self, e: Entry) {
-        self.0.write(e);
+    pub fn write(&mut self, e: Entry) -> bool {
+        return self.0.write(e);
     }
 
     pub fn close(self) {
         self.0.close();
-    }
-
-    pub fn rclosed(&mut self) -> bool {
-        return self.0.rclosed();
     }
 }
 
 struct ParseStream(Stream);
 
 impl StreamTrait for ParseStream {
-    fn write(&mut self, e: Entry) {
-        match e {
-            Entry::Line(line) => {
-                self.0.write(Entry::Record(Record::from_str(&line).unwrap()));
-            }
-            e => {
-                self.0.write(e);
-            }
-        }
+    fn write(&mut self, e: Entry) -> bool {
+        return self.0.write(match e {
+            Entry::Line(line) => Entry::Record(Record::from_str(&line).unwrap()),
+            e => e,
+        });
     }
 
     fn close(self: Box<ParseStream>) {
         self.0.close();
-    }
-
-    fn rclosed(&mut self) -> bool {
-        return self.0.rclosed();
     }
 }
 
@@ -79,22 +66,14 @@ struct TransformRecordsStream {
 }
 
 impl StreamTrait for TransformRecordsStream {
-    fn write(&mut self, e: Entry) {
-        match e {
-            Entry::Record(r) => {
-                self.os.write(Entry::Record((*self.f)(r)));
-            }
-            e => {
-                self.os.write(e);
-            }
-        }
+    fn write(&mut self, e: Entry) -> bool {
+        return self.os.write(match e {
+            Entry::Record(r) => Entry::Record((*self.f)(r)),
+            e => e,
+        });
     }
 
     fn close(self: Box<TransformRecordsStream>) {
         self.os.close();
-    }
-
-    fn rclosed(&mut self) -> bool {
-        return self.os.rclosed();
     }
 }

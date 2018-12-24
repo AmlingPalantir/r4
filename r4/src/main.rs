@@ -28,8 +28,7 @@ fn main() {
         let stdin = io::stdin();
         for line in stdin.lock().lines() {
             let line = line.unwrap();
-            os.write(Entry::Line(Arc::from(line)));
-            if os.rclosed() {
+            if !os.write(Entry::Line(Arc::from(line))) {
                 break;
             }
         }
@@ -38,8 +37,7 @@ fn main() {
         'arg: for arg in args {
             os.write(Entry::Bof(Arc::from(&*arg)));
             for line in BufReader::new(File::open(arg).unwrap()).lines() {
-                os.write(Entry::Line(Arc::from(line.unwrap())));
-                if os.rclosed() {
+                if !os.write(Entry::Line(Arc::from(line.unwrap()))) {
                     break 'arg;
                 }
             }

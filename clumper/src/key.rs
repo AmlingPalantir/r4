@@ -43,7 +43,7 @@ impl KeyStream {
 }
 
 impl StreamTrait for KeyStream {
-    fn write(&mut self, e: Entry) {
+    fn write(&mut self, e: Entry) -> bool {
         match e {
             Entry::Bof(_file) => {
             },
@@ -54,6 +54,9 @@ impl StreamTrait for KeyStream {
                 panic!();
             },
         }
+        // Sad, but you could always be opening a new stream so we can never be
+        // sure we're done.
+        return true;
     }
 
     fn close(self: Box<KeyStream>) {
@@ -61,9 +64,5 @@ impl StreamTrait for KeyStream {
             substream.close();
         }
         self.os.close();
-    }
-
-    fn rclosed(&mut self) -> bool {
-        return self.os.rclosed();
     }
 }

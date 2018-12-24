@@ -63,8 +63,7 @@ impl ProcessStream {
             let r = BufReader::new(p_stdout);
             for line in r.lines() {
                 let line = line.unwrap();
-                wbe.write(Entry::Line(Arc::from(line)));
-                if wbe.rclosed() {
+                if !wbe.write(Entry::Line(Arc::from(line))) {
                     break;
                 }
             }
@@ -80,17 +79,13 @@ impl ProcessStream {
 }
 
 impl StreamTrait for ProcessStream {
-    fn write(&mut self, e: Entry) {
-        self.os.write(e);
+    fn write(&mut self, e: Entry) -> bool {
+        return self.os.write(e);
     }
 
     fn close(self: Box<ProcessStream>) {
         let mut s = *self;
         s.os.close();
         s.p.wait().unwrap();
-    }
-
-    fn rclosed(&mut self) -> bool {
-        return self.os.rclosed();
     }
 }

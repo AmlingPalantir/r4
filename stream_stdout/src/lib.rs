@@ -28,7 +28,7 @@ impl StdoutStream {
 }
 
 impl StreamTrait for StdoutStream {
-    fn write(&mut self, e: Entry) {
+    fn write(&mut self, e: Entry) -> bool {
         match e {
             Entry::Bof(_file) => {
             }
@@ -39,15 +39,12 @@ impl StreamTrait for StdoutStream {
                 self.maybe_rclosed(writeln!(io::stdout(), "{}", line));
             }
         }
+        return !self.rclosed;
     }
 
     fn close(mut self: Box<StdoutStream>) {
         // This seems to be all we can do?  We hope/expect the process
         // to be donezo soon anyway...
         self.maybe_rclosed(io::stdout().flush());
-    }
-
-    fn rclosed(&mut self) -> bool {
-        return self.rclosed;
     }
 }

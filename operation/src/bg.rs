@@ -42,15 +42,14 @@ impl OperationBe for Impl {
             loop {
                 match rbe.read() {
                     Some(e) => {
-                        os.write(e);
+                        if !os.write(e) {
+                            rbe.rclose();
+                        }
                     }
                     None => {
                         os.close();
                         return;
                     }
-                }
-                if os.rclosed() {
-                    rbe.rclose();
                 }
             }
         });

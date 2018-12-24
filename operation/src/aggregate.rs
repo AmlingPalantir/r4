@@ -64,7 +64,7 @@ struct AggregateStream {
 }
 
 impl StreamTrait for AggregateStream {
-    fn write(&mut self, e: Entry) {
+    fn write(&mut self, e: Entry) -> bool {
         match e {
             Entry::Bof(_file) => {
             }
@@ -77,6 +77,7 @@ impl StreamTrait for AggregateStream {
                 panic!();
             }
         }
+        return true;
     }
 
     fn close(self: Box<AggregateStream>) {
@@ -87,9 +88,5 @@ impl StreamTrait for AggregateStream {
         }
         s.os.write(Entry::Record(r));
         s.os.close();
-    }
-
-    fn rclosed(&mut self) -> bool {
-        return self.os.rclosed();
     }
 }
