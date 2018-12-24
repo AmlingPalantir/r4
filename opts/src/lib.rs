@@ -235,6 +235,27 @@ pub trait OptionTrait {
 }
 
 #[derive(Default)]
+pub struct BooleanOption(bool);
+
+impl OptionTrait for BooleanOption {
+    type ValidatesTo = bool;
+
+    fn validate(self) -> bool {
+        return self.0;
+    }
+}
+
+impl BooleanOption {
+    pub fn set(&mut self) {
+        self.0 = true;
+    }
+
+    pub fn clear(&mut self) {
+        self.0 = false;
+    }
+}
+
+#[derive(Default)]
 pub struct RequiredStringOption(Option<String>);
 
 impl OptionTrait for RequiredStringOption {
