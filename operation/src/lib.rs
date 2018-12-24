@@ -27,7 +27,6 @@ use record::Record;
 use std::rc::Rc;
 use std::sync::Arc;
 use stream::Stream;
-use stream_process::ProcessStream;
 
 pub trait OperationFe {
     fn validate(&self, &mut Vec<String>) -> StreamWrapper;
@@ -147,7 +146,7 @@ impl OptionTrait for SubOperationOption {
         return SubOperationOptions {
             extra: vec![],
             wr: Arc::new(StreamWrapper::new(move || {
-                return Stream::new(ProcessStream::new(self.0.clone()));
+                return stream_process::new(self.0.clone());
             })),
         };
     }
