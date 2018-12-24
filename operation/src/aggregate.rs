@@ -6,13 +6,7 @@ use record::Record;
 use stream::Entry;
 use stream::Stream;
 
-pub(crate) fn names() -> Vec<&'static str> {
-    return vec!["aggregate"];
-}
-
-#[derive(Default)]
-pub struct Impl {
-}
+pub struct Impl();
 
 declare_opts! {
     aggs: UnvalidatedOption<Vec<(String, Box<AggregatorState>)>>,
@@ -22,6 +16,10 @@ impl OperationBe2 for Impl {
     type PreOptions = PreOptions;
     type PostOptions = PostOptions;
 
+    fn names() -> Vec<&'static str> {
+        return vec!["aggregate"];
+    }
+
     fn options<'a>(mut opt: OptParserView<'a, PreOptions>) {
         opt.sub(|p| &mut p.aggs).match_single(&["a", "agg", "aggregator"], |aggs, a| {
             let (label, a) = match a.find('=') {
@@ -29,9 +27,9 @@ impl OperationBe2 for Impl {
                 None => (a.replace("/", "_"), &a[..]),
             };
             let mut parts = a.split(',');
-            let agg = aggregator::find(parts.next().unwrap());
+            let name = parts.next().unwrap();
             let args: Vec<&str> = parts.collect();
-            let state = agg.state(&args);
+            let state = aggregator::find(name, &args);
             aggs.push((label, state));
         });
     }

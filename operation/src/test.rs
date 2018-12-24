@@ -6,13 +6,7 @@ use record::Record;
 use std::sync::Arc;
 use stream::Stream;
 
-pub(crate) fn names() -> Vec<&'static str> {
-    return vec!["test"];
-}
-
-#[derive(Default)]
-pub struct Impl {
-}
+pub struct Impl();
 
 declare_opts! {
     msg: RequiredStringOption,
@@ -21,6 +15,10 @@ declare_opts! {
 impl OperationBe2 for Impl {
     type PreOptions = PreOptions;
     type PostOptions = PostOptions;
+
+    fn names() -> Vec<&'static str> {
+        return vec!["test"];
+    }
 
     fn options<'a>(mut opt: OptParserView<'a, PreOptions>) {
         opt.sub(|p| &mut p.msg).match_single(&["m", "msg"], RequiredStringOption::set);

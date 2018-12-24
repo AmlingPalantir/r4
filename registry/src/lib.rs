@@ -2,16 +2,19 @@ use std::sync::Arc;
 
 #[macro_export]
 macro_rules! registry {
-    {$r:ty: $($id:ident,)*} => {
+    {$fe:ident, $r:ty, $($id:ident,)*} => {
         $(
-            pub mod $id;
+            mod $id;
         )*
 
-        pub fn find(name: &str) -> Box<$r> {
+        pub fn find(name: &str, args: &[&str]) -> $r {
             $(
-                for name2 in $id::names() {
+                for name2 in <$id::Impl as $fe>::names() {
                     if name == name2 {
-                        return Box::new($id::Impl::default());
+                        if args.len() != <$id::Impl as $fe>::argct() {
+                            panic!("Wrong number of args for {}", name);
+                        }
+                        return <$id::Impl as $fe>::init(args);
                     }
                 }
             )*

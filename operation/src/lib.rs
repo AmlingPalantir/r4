@@ -10,7 +10,8 @@ extern crate stream;
 extern crate stream_process;
 
 registry! {
-    OperationFe:
+    OperationFe,
+    Box<Fn(&mut Vec<String>) -> StreamWrapper>,
     aggregate,
     bg,
     chain,
@@ -29,6 +30,12 @@ use std::sync::Arc;
 use stream::Stream;
 
 pub trait OperationFe {
+    fn names() -> Vec<&'static str>;
+    fn argct() -> usize;
+    fn init(args: &[&str]) -> Box<Fn(&mut Vec<String>) -> StreamWrapper>;
+}
+
+pub trait OperationFe2 {
     fn validate(&self, &mut Vec<String>) -> StreamWrapper;
 }
 
@@ -50,19 +57,30 @@ pub trait OperationBe {
     type PreOptions: OptionTrait<ValidatesTo = Self::PostOptions> + Default + 'static;
     type PostOptions: Send + Sync + 'static;
 
+    fn names() -> Vec<&'static str>;
     fn options<'a>(OptParserView<'a, Self::PreOptions>);
     fn get_extra(&Self::PostOptions) -> &Vec<String>;
     fn stream(&Self::PostOptions) -> Stream;
 }
 
 impl<B: OperationBe> OperationFe for B {
-    fn validate(&self, args: &mut Vec<String>) -> StreamWrapper {
-        let mut opt = OptParser::<B::PreOptions>::new();
-        B::options(opt.view());
-        let o = opt.parse(args).validate();
-        *args = B::get_extra(&o).clone();
+    fn names() -> Vec<&'static str> {
+        return B::names();
+    }
 
-        return StreamWrapper::new(move || B::stream(&o));
+    fn argct() -> usize {
+        return 0;
+    }
+
+    fn init(_args: &[&str]) -> Box<Fn(&mut Vec<String>) -> StreamWrapper> {
+        return Box::new(|args| {
+            let mut opt = OptParser::<B::PreOptions>::new();
+            B::options(opt.view());
+            let o = opt.parse(args).validate();
+            *args = B::get_extra(&o).clone();
+
+            return StreamWrapper::new(move || B::stream(&o));
+        });
     }
 }
 
@@ -72,6 +90,7 @@ pub trait OperationBe2 {
     type PreOptions: OptionTrait<ValidatesTo = Self::PostOptions> + Default + 'static;
     type PostOptions: Send + Sync + 'static;
 
+    fn names() -> Vec<&'static str>;
     fn options<'a>(OptParserView<'a, Self::PreOptions>);
     fn stream(&Self::PostOptions) -> Stream;
 }
@@ -97,6 +116,10 @@ impl<P: OptionTrait> OptionTrait for AndArgsOptions<P> {
 impl<B: OperationBe2> OperationBe for B {
     type PreOptions = AndArgsOptions<B::PreOptions>;
     type PostOptions = AndArgsOptions<B::PostOptions>;
+
+    fn names() -> Vec<&'static str> {
+        return B::names();
+    }
 
     fn options<'a>(mut opt: OptParserView<'a, AndArgsOptions<B::PreOptions>>) {
         B::options(opt.sub(|p| &mut p.p));
@@ -135,8 +158,8 @@ impl OptionTrait for SubOperationOption {
         if self.0.len() >= 2 && self.0[0] == "r4" {
             self.0.remove(0);
             let name = self.0.remove(0);
-            let op = find(&name);
-            let wr = op.validate(&mut self.0);
+            let op = find(&name, &[]);
+            let wr = op(&mut self.0);
             return SubOperationOptions {
                 extra: self.0,
                 wr: Arc::new(wr),
@@ -175,9 +198,9 @@ impl OptionTrait for ClumperOptions {
 impl ClumperOptions {
     fn add_single(&mut self, a: &String) {
         let mut parts = a.split(',');
-        let cl = clumper::find(parts.next().unwrap());
+        let name = parts.next().unwrap();
         let args: Vec<&str> = parts.collect();
-        let cw = cl.wrapper(&args);
+        let cw = clumper::find(name, &args);
         self.cws.push(Arc::new(cw));
     }
 

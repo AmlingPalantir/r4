@@ -14,9 +14,9 @@ use stream::Entry;
 fn main() {
     let mut args = env::args();
     args.next().unwrap();
-    let op = operation::find(&args.next().unwrap());
+    let op = operation::find(&args.next().unwrap(), &[]);
     let mut args = args.collect();
-    let op = op.validate(&mut args);
+    let op = op(&mut args);
 
     let mut w = |e| {
         match e {

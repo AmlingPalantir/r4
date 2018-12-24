@@ -3,17 +3,15 @@ use record::FromPrimitive;
 use record::Record;
 use registry::ZeroArgs;
 
-pub(crate) fn names() -> Vec<&'static str> {
-    return vec!["ct", "count"];
-}
-
-#[derive(Default)]
-pub struct Impl {
-}
+pub struct Impl();
 
 impl AggregatorBe for Impl {
     type Args = ZeroArgs;
     type State = i64;
+
+    fn names() -> Vec<&'static str> {
+        return vec!["ct", "count"];
+    }
 
     fn add(state: &mut i64, _a: &(), _r: Record) {
         *state += 1;

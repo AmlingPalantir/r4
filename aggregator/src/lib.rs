@@ -7,15 +7,11 @@ use registry::RegistryArgs;
 use std::sync::Arc;
 
 registry! {
-    AggregatorFe:
+    AggregatorFe,
+    Box<AggregatorState>,
     array,
     count,
     records,
-}
-
-pub trait AggregatorFe {
-    fn argct(&self) -> usize;
-    fn state(&self, args: &[&str]) -> Box<AggregatorState>;
 }
 
 pub trait AggregatorState: Send + Sync {
@@ -24,20 +20,31 @@ pub trait AggregatorState: Send + Sync {
     fn box_clone(&self) -> Box<AggregatorState>;
 }
 
+pub trait AggregatorFe {
+    fn names() -> Vec<&'static str>;
+    fn argct() -> usize;
+    fn init(&[&str]) -> Box<AggregatorState>;
+}
+
 pub trait AggregatorBe {
     type Args: RegistryArgs;
     type State: Clone + Default + Send + Sync;
 
+    fn names() -> Vec<&'static str>;
     fn add(&mut Self::State, &<Self::Args as RegistryArgs>::Val, Record);
     fn finish(Box<Self::State>, &<Self::Args as RegistryArgs>::Val) -> Record;
 }
 
 impl<B: AggregatorBe + 'static> AggregatorFe for B {
-    fn argct(&self) -> usize {
+    fn names() -> Vec<&'static str>{
+        return B::names();
+    }
+
+    fn argct() -> usize {
         return B::Args::argct();
     }
 
-    fn state(&self, args: &[&str]) -> Box<AggregatorState> {
+    fn init(args: &[&str]) -> Box<AggregatorState> {
         return Box::new(AggregatorStateImpl::<B> {
             a: Arc::from(B::Args::parse(args)),
             s: B::State::default(),

@@ -7,13 +7,7 @@ use opts::vals::OptionTrait;
 use std::sync::Arc;
 use stream::Stream;
 
-pub(crate) fn names() -> Vec<&'static str> {
-    return vec!["chain"];
-}
-
-#[derive(Default)]
-pub struct Impl {
-}
+pub struct Impl();
 
 declare_opts! {
     keep_bof: BooleanOption,
@@ -23,6 +17,10 @@ declare_opts! {
 impl OperationBe for Impl {
     type PreOptions = PreOptions;
     type PostOptions = PostOptions;
+
+    fn names() -> Vec<&'static str> {
+        return vec!["chain"];
+    }
 
     fn options<'a>(mut opt: OptParserView<'a, PreOptions>) {
         opt.sub(|p| &mut p.cmds).match_extra_hard(CmdsOption::push);

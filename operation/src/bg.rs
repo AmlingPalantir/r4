@@ -4,13 +4,7 @@ use opts::parser::OptParserView;
 use std::thread;
 use stream::Stream;
 
-pub(crate) fn names() -> Vec<&'static str> {
-    return vec!["bg"];
-}
-
-#[derive(Default)]
-pub struct Impl {
-}
+pub struct Impl();
 
 declare_opts! {
     op: SubOperationOption,
@@ -19,6 +13,10 @@ declare_opts! {
 impl OperationBe for Impl {
     type PreOptions = PreOptions;
     type PostOptions = PostOptions;
+
+    fn names() -> Vec<&'static str> {
+        return vec!["bg"];
+    }
 
     fn options<'a>(mut opt: OptParserView<'a, PreOptions>) {
         opt.sub(|p| &mut p.op).match_extra_hard(SubOperationOption::push);

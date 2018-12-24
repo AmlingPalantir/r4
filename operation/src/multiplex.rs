@@ -4,13 +4,7 @@ use SubOperationOption;
 use opts::parser::OptParserView;
 use stream::Stream;
 
-pub(crate) fn names() -> Vec<&'static str> {
-    return vec!["multiplex"];
-}
-
-#[derive(Default)]
-pub struct Impl {
-}
+pub struct Impl();
 
 declare_opts! {
     cl: ClumperOptions,
@@ -20,6 +14,10 @@ declare_opts! {
 impl OperationBe for Impl {
     type PreOptions = PreOptions;
     type PostOptions = PostOptions;
+
+    fn names() -> Vec<&'static str> {
+        return vec!["multiplex"];
+    }
 
     fn options<'a>(mut opt: OptParserView<'a, PreOptions>) {
         opt.sub(|p| &mut p.op).match_extra_hard(SubOperationOption::push);

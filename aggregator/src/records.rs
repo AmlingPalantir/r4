@@ -2,17 +2,15 @@ use AggregatorBe;
 use record::Record;
 use registry::ZeroArgs;
 
-pub(crate) fn names() -> Vec<&'static str> {
-    return vec!["recs", "records"];
-}
-
-#[derive(Default)]
-pub struct Impl {
-}
+pub struct Impl();
 
 impl AggregatorBe for Impl {
     type Args = ZeroArgs;
     type State = Vec<Record>;
+
+    fn names() -> Vec<&'static str> {
+        return vec!["recs", "records"];
+    }
 
     fn add(state: &mut Vec<Record>, _a: &(), r: Record) {
         state.push(r);

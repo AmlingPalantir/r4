@@ -5,16 +5,15 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
-pub(crate) fn names() -> Vec<&'static str> {
-    return vec!["k", "key"];
-}
 
-#[derive(Default)]
-pub struct Impl {
-}
+pub struct Impl();
 
 impl ClumperBe for Impl {
     type Args = OneStringArgs;
+
+    fn names() -> Vec<&'static str> {
+        return vec!["k", "key"];
+    }
 
     fn stream(k: &Arc<str>, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream {
         let k = k.clone();
