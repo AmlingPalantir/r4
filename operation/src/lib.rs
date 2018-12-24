@@ -22,6 +22,7 @@ registry! {
     test,
 }
 
+use clumper::ClumperFe;
 use clumper::ClumperWrapper;
 use opts::parser::OptParser;
 use opts::parser::OptParserView;
@@ -184,4 +185,9 @@ struct SubOperationOptions {
 
 pub fn clumper_options<'a>(opt: &mut OptParserView<'a, UnvalidatedOption<Vec<Box<ClumperWrapper>>>>) {
     clumper::REGISTRY.single_options(opt, &["c", "clumper"]);
+    opt.match_single(&["k", "key"], |p, a| {
+        for a in a.split(',') {
+            p.push(clumper::key::Impl::init(&[a]));
+        }
+    });
 }
