@@ -16,7 +16,9 @@ registry! {
 
 use opts::OptParser;
 use opts::OptParserView;
+use opts::OptionTrait;
 use opts::Validates;
+use std::sync::Arc;
 use stream::Stream;
 
 pub trait OperationFe {
@@ -102,5 +104,20 @@ impl<B: OperationBe2> OperationBe for B {
 
     fn stream(p: &AndArgsOptions<B::PostOptions>) -> Stream {
         return B::stream(&p.p);
+    }
+}
+
+enum SubOperationOption {
+}
+
+impl OptionTrait for SubOperationOption {
+    type PreType = Vec<String>;
+    type ValType = (Vec<String>, Arc<StreamWrapper>);
+
+    fn validate(mut p: Vec<String>) -> (Vec<String>, Arc<StreamWrapper>) {
+        let name = p.remove(0);
+        let op = find(&name);
+        let w = op.validate(&mut p);
+        return (p, Arc::new(w));
     }
 }

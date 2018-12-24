@@ -1,9 +1,7 @@
 use OperationBe;
-use StreamWrapper;
+use SubOperationOption;
 use opts::OptParserView;
-use opts::OptionTrait;
 use opts::VarOption;
-use std::sync::Arc;
 use std::thread;
 use stream::Stream;
 
@@ -55,20 +53,5 @@ impl OperationBe for Impl {
         });
 
         return Stream::new(fe);
-    }
-}
-
-enum SubOperationOption {
-}
-
-impl OptionTrait for SubOperationOption {
-    type PreType = Vec<String>;
-    type ValType = Arc<(Vec<String>, StreamWrapper)>;
-
-    fn validate(mut p: Vec<String>) -> Arc<(Vec<String>, StreamWrapper)> {
-        let name = p.remove(0);
-        let op = super::find(&name);
-        let w = op.validate(&mut p);
-        return Arc::from((p, w));
     }
 }
