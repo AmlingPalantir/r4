@@ -10,7 +10,7 @@ use stream::Stream;
 
 registry! {
     ClumperFe:
-    key,
+    //key,
 }
 
 pub trait ClumperFe {
