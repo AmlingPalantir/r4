@@ -29,7 +29,7 @@ impl OperationBe2 for Impl {
             let mut parts = a.split(',');
             let name = parts.next().unwrap();
             let args: Vec<&str> = parts.collect();
-            let state = aggregator::find(name, &args);
+            let state = aggregator::REGISTRY.find(name, &args);
             aggs.push((label, state));
         });
     }

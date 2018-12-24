@@ -14,7 +14,7 @@ use stream::Entry;
 fn main() {
     let mut args = env::args();
     args.next().unwrap();
-    let op = operation::find(&args.next().unwrap(), &[]);
+    let op = operation::REGISTRY.find(&args.next().unwrap(), &[]);
     let mut args = args.collect();
     let op = op(&mut args);
 

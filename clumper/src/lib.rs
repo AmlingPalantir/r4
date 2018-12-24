@@ -1,3 +1,5 @@
+#[macro_use]
+extern crate lazy_static;
 extern crate record;
 #[macro_use]
 extern crate registry;

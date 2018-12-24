@@ -1,4 +1,36 @@
+use std::collections::HashMap;
 use std::sync::Arc;
+
+pub struct Registry<R> {
+    map: HashMap<String, (usize, Box<Fn(&[&str]) -> R + Send + Sync>)>,
+}
+
+impl<R> Registry<R> {
+    pub fn new() -> Self {
+        return Registry {
+            map: HashMap::new(),
+        };
+    }
+
+    pub fn add<F: Fn(&[&str]) -> R + Send + Sync + 'static>(&mut self, name: &str, argct: usize, f: F) {
+        let prev = self.map.insert(name.to_string(), (argct, Box::new(f)));
+        assert!(prev.is_none());
+    }
+
+    pub fn find(&self, name: &str, args: &[&str]) -> R {
+        match self.map.get(name) {
+            None => {
+                panic!("No implementation named {}", name);
+            }
+            Some((argct, f)) => {
+                if args.len() != *argct {
+                    panic!("Wrong number of args for {}", name);
+                }
+                return f(args);
+            }
+        }
+    }
+}
 
 #[macro_export]
 macro_rules! registry {
@@ -7,18 +39,16 @@ macro_rules! registry {
             mod $id;
         )*
 
-        pub fn find(name: &str, args: &[&str]) -> $r {
-            $(
-                for name2 in <$id::Impl as $fe>::names() {
-                    if name == name2 {
-                        if args.len() != <$id::Impl as $fe>::argct() {
-                            panic!("Wrong number of args for {}", name);
-                        }
-                        return <$id::Impl as $fe>::init(args);
+        lazy_static! {
+            pub static ref REGISTRY: $crate::Registry<$r> = {
+                let mut r = $crate::Registry::new();
+                $(
+                    for name in <$id::Impl as $fe>::names() {
+                        r.add(name, <$id::Impl as $fe>::argct(), <$id::Impl as $fe>::init);
                     }
-                }
-            )*
-            panic!("No implementation named {}", name);
+                )*
+                r
+            };
         }
     }
 }

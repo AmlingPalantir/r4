@@ -2,6 +2,8 @@ extern crate aggregator;
 extern crate bgop;
 extern crate clumper;
 #[macro_use]
+extern crate lazy_static;
+#[macro_use]
 extern crate opts;
 extern crate record;
 #[macro_use]
@@ -158,7 +160,7 @@ impl OptionTrait for SubOperationOption {
         if self.0.len() >= 2 && self.0[0] == "r4" {
             self.0.remove(0);
             let name = self.0.remove(0);
-            let op = find(&name, &[]);
+            let op = REGISTRY.find(&name, &[]);
             let wr = op(&mut self.0);
             return SubOperationOptions {
                 extra: self.0,
@@ -200,7 +202,7 @@ impl ClumperOptions {
         let mut parts = a.split(',');
         let name = parts.next().unwrap();
         let args: Vec<&str> = parts.collect();
-        let cw = clumper::find(name, &args);
+        let cw = clumper::REGISTRY.find(name, &args);
         self.cws.push(Arc::new(cw));
     }
 
