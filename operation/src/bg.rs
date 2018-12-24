@@ -51,6 +51,6 @@ impl OperationBe for Impl {
             }
         });
 
-        return Stream::new(fe);
+        return fe;
     }
 }

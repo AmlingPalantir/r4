@@ -4,6 +4,7 @@ extern crate wns;
 use std::collections::VecDeque;
 use std::sync::Arc;
 use stream::Entry;
+use stream::Stream;
 use stream::StreamTrait;
 use wns::WaitNotifyState;
 
@@ -158,7 +159,7 @@ impl StreamTrait for BgopFe {
     }
 }
 
-pub fn new() -> (BgopFe, BgopRbe, BgopWbe) {
+pub fn new() -> (Stream, BgopRbe, BgopWbe) {
     let state = Arc::new(WaitNotifyState::new(BgopState::new()));
 
     let fe = BgopFe {
@@ -173,5 +174,5 @@ pub fn new() -> (BgopFe, BgopRbe, BgopWbe) {
         state: state.clone(),
     };
 
-    return (fe, rbe, wbe);
+    return (Stream::new(fe), rbe, wbe);
 }

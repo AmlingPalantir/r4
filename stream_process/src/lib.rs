@@ -12,7 +12,6 @@ use std::sync::Arc;
 use std::thread;
 use stream::Entry;
 use stream::Stream;
-use stream::StreamTrait;
 
 pub fn new<I: IntoIterator<Item = S>, S: AsRef<OsStr>>(args: I) -> Stream {
     let mut args = args.into_iter();
