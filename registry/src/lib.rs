@@ -35,7 +35,7 @@ impl<R> Registry<R> {
         }
     }
 
-    pub fn labelled_single_options<'a>(&'static self, mut opt: OptParserView<'a, UnvalidatedOption<Vec<(String, R)>>>, aliases: &[&str]) {
+    pub fn labelled_single_options<'a>(&'static self, opt: &mut OptParserView<'a, UnvalidatedOption<Vec<(String, R)>>>, aliases: &[&str]) {
         opt.match_single(aliases, move |rs, a| {
             let (label, a) = match a.find('=') {
                 Some(i) => (a[0..i].to_string(), &a[(i + 1)..]),
@@ -49,7 +49,7 @@ impl<R> Registry<R> {
         });
     }
 
-    pub fn single_options<'a>(&'static self, mut opt: OptParserView<'a, UnvalidatedOption<Vec<R>>>, aliases: &[&str]) {
+    pub fn single_options<'a>(&'static self, opt: &mut OptParserView<'a, UnvalidatedOption<Vec<R>>>, aliases: &[&str]) {
         opt.match_single(aliases, move |rs, a| {
             let mut parts = a.split(',');
             let name = parts.next().unwrap();

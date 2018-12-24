@@ -18,7 +18,7 @@ impl OperationBe for Impl {
         return vec!["bg"];
     }
 
-    fn options<'a>(mut opt: OptParserView<'a, PreOptions>) {
+    fn options<'a>(opt: &mut OptParserView<'a, PreOptions>) {
         opt.sub(|p| &mut p.op).match_extra_hard(SubOperationOption::push);
     }
 

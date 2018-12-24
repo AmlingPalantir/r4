@@ -20,9 +20,9 @@ impl OperationBe for Impl {
         return vec!["collate"];
     }
 
-    fn options<'a>(mut opt: OptParserView<'a, PreOptions>) {
-        super::clumper_options(opt.sub(|p| &mut p.cws));
-        aggregate::Impl::options(opt.sub(|p| &mut p.ag));
+    fn options<'a>(opt: &mut OptParserView<'a, PreOptions>) {
+        super::clumper_options(&mut opt.sub(|p| &mut p.cws));
+        aggregate::Impl::options(&mut opt.sub(|p| &mut p.ag));
     }
 
     fn get_extra(o: &PostOptions) -> &Vec<String> {

@@ -59,7 +59,7 @@ pub trait OperationBe {
     type PostOptions: Send + Sync + 'static;
 
     fn names() -> Vec<&'static str>;
-    fn options<'a>(OptParserView<'a, Self::PreOptions>);
+    fn options<'a>(&mut OptParserView<'a, Self::PreOptions>);
     fn get_extra(&Self::PostOptions) -> &Vec<String>;
     fn stream(&Self::PostOptions) -> Stream;
 }
@@ -76,7 +76,7 @@ impl<B: OperationBe> OperationFe for B {
     fn init(_args: &[&str]) -> Box<Fn(&mut Vec<String>) -> StreamWrapper> {
         return Box::new(|args| {
             let mut opt = OptParser::<B::PreOptions>::new();
-            B::options(opt.view());
+            B::options(&mut opt.view());
             let o = opt.parse(args).validate();
             *args = B::get_extra(&o).clone();
 
@@ -92,7 +92,7 @@ pub trait OperationBe2 {
     type PostOptions: Send + Sync + 'static;
 
     fn names() -> Vec<&'static str>;
-    fn options<'a>(OptParserView<'a, Self::PreOptions>);
+    fn options<'a>(&mut OptParserView<'a, Self::PreOptions>);
     fn stream(&Self::PostOptions) -> Stream;
 }
 
@@ -122,8 +122,8 @@ impl<B: OperationBe2> OperationBe for B {
         return B::names();
     }
 
-    fn options<'a>(mut opt: OptParserView<'a, AndArgsOptions<B::PreOptions>>) {
-        B::options(opt.sub(|p| &mut p.p));
+    fn options<'a>(opt: &mut OptParserView<'a, AndArgsOptions<B::PreOptions>>) {
+        B::options(&mut opt.sub(|p| &mut p.p));
         opt.sub(|p| &mut p.args).match_extra_soft(|p, a| {
             p.push(a.clone());
             return true;
@@ -182,6 +182,6 @@ struct SubOperationOptions {
     wr: Arc<StreamWrapper>,
 }
 
-pub fn clumper_options<'a>(opt: OptParserView<'a, UnvalidatedOption<Vec<Box<ClumperWrapper>>>>) {
+pub fn clumper_options<'a>(opt: &mut OptParserView<'a, UnvalidatedOption<Vec<Box<ClumperWrapper>>>>) {
     clumper::REGISTRY.single_options(opt, &["c", "clumper"]);
 }

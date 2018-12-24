@@ -20,9 +20,9 @@ impl OperationBe for Impl {
         return vec!["multiplex"];
     }
 
-    fn options<'a>(mut opt: OptParserView<'a, PreOptions>) {
+    fn options<'a>(opt: &mut OptParserView<'a, PreOptions>) {
         opt.sub(|p| &mut p.op).match_extra_hard(SubOperationOption::push);
-        super::clumper_options(opt.sub(|p| &mut p.cws));
+        super::clumper_options(&mut opt.sub(|p| &mut p.cws));
     }
 
     fn get_extra(o: &PostOptions) -> &Vec<String> {

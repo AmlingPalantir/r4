@@ -22,7 +22,7 @@ impl OperationBe for Impl {
         return vec!["chain"];
     }
 
-    fn options<'a>(mut opt: OptParserView<'a, PreOptions>) {
+    fn options<'a>(opt: &mut OptParserView<'a, PreOptions>) {
         opt.sub(|p| &mut p.cmds).match_extra_hard(CmdsOption::push);
         opt.sub(|p| &mut p.keep_bof).match_zero(&["keep-bof"], BooleanOption::set);
         opt.sub(|p| &mut p.keep_bof).match_zero(&["no-keep-bof"], BooleanOption::clear);

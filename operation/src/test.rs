@@ -20,7 +20,7 @@ impl OperationBe2 for Impl {
         return vec!["test"];
     }
 
-    fn options<'a>(mut opt: OptParserView<'a, PreOptions>) {
+    fn options<'a>(opt: &mut OptParserView<'a, PreOptions>) {
         opt.sub(|p| &mut p.msg).match_single(&["m", "msg"], RequiredStringOption::set);
     }
 
