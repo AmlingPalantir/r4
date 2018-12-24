@@ -33,13 +33,13 @@ impl OperationBe for Impl {
     fn stream(o: &PostOptions) -> Stream {
         let ag_opt = o.ag.clone();
         return o.cl.stream(move |bucket| {
-            let s = Stream::transform_records(move |mut r| {
+            let s = stream::transform_records(move |mut r| {
                 for (path, v) in &bucket {
                     r.set_path(&path, v.clone());
                 }
                 return r;
             });
-            return Stream::compound(aggregate::Impl::stream(&ag_opt), s);
+            return stream::compound(aggregate::Impl::stream(&ag_opt), s);
         });
     }
 }

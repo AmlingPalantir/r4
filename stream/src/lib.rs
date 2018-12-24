@@ -23,32 +23,6 @@ impl Stream {
         return Stream(Box::new(f));
     }
 
-    pub fn id() -> Stream {
-        return Stream::new(IdStream());
-    }
-
-    pub fn compound(s1: Stream, s2: Stream) -> Stream {
-        return Stream::new(CompoundStream(s1, s2));
-    }
-
-    pub fn parse() -> Stream {
-        return Stream::new(ParseStream());
-    }
-
-    pub fn transform_records<F: FnMut(Record) -> Record + 'static>(f: F) -> Stream {
-        return Stream::new(TransformRecordsStream(Box::new(f)));
-    }
-
-    pub fn drop_bof() -> Stream {
-        return Stream::new(DropBofStream());
-    }
-
-    pub fn closures<S: 'static, W: Fn(&mut S, Entry, &mut FnMut(Entry) -> bool) -> bool + 'static, C: Fn(Box<S>, &mut FnMut(Entry) -> bool) + 'static>(s: S, w: W, c: C) -> Stream {
-        return Stream::new(ClosuresStream(s, Box::new(w), Box::new(c)));
-    }
-}
-
-impl Stream {
     pub fn write(&mut self, e: Entry, w: &mut FnMut(Entry) -> bool) -> bool {
         return self.0.write(e, w);
     }
@@ -69,6 +43,10 @@ impl StreamTrait for IdStream {
     }
 }
 
+pub fn id() -> Stream {
+    return Stream::new(IdStream());
+}
+
 struct CompoundStream(Stream, Stream);
 
 impl StreamTrait for CompoundStream {
@@ -85,6 +63,10 @@ impl StreamTrait for CompoundStream {
     }
 }
 
+pub fn compound(s1: Stream, s2: Stream) -> Stream {
+    return Stream::new(CompoundStream(s1, s2));
+}
+
 struct ParseStream();
 
 impl StreamTrait for ParseStream {
@@ -97,6 +79,10 @@ impl StreamTrait for ParseStream {
 
     fn close(self: Box<Self>, _w: &mut FnMut(Entry) -> bool) {
     }
+}
+
+pub fn parse() -> Stream {
+    return Stream::new(ParseStream());
 }
 
 struct TransformRecordsStream(Box<FnMut(Record) -> Record>);
@@ -113,6 +99,10 @@ impl StreamTrait for TransformRecordsStream {
     }
 }
 
+pub fn transform_records<F: FnMut(Record) -> Record + 'static>(f: F) -> Stream {
+    return Stream::new(TransformRecordsStream(Box::new(f)));
+}
+
 struct DropBofStream();
 
 impl StreamTrait for DropBofStream {
@@ -127,6 +117,10 @@ impl StreamTrait for DropBofStream {
     }
 }
 
+pub fn drop_bof() -> Stream {
+    return Stream::new(DropBofStream());
+}
+
 struct ClosuresStream<S>(S, Box<Fn(&mut S, Entry, &mut FnMut(Entry) -> bool) -> bool>, Box<Fn(Box<S>, &mut FnMut(Entry) -> bool)>);
 
 impl<S> StreamTrait for ClosuresStream<S> {
@@ -138,4 +132,8 @@ impl<S> StreamTrait for ClosuresStream<S> {
         let s = *self;
         s.2(Box::new(s.0), w);
     }
+}
+
+pub fn closures<S: 'static, W: Fn(&mut S, Entry, &mut FnMut(Entry) -> bool) -> bool + 'static, C: Fn(Box<S>, &mut FnMut(Entry) -> bool) + 'static>(s: S, w: W, c: C) -> Stream {
+    return Stream::new(ClosuresStream(s, Box::new(w), Box::new(c)));
 }

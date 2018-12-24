@@ -63,7 +63,7 @@ pub fn new<I: IntoIterator<Item = S>, S: AsRef<OsStr>>(args: I) -> Stream {
         // return drops r
     });
 
-    return Stream::closures(
+    return stream::closures(
         (fe, p),
         |s, e, w| {
             return s.0.write(e, w);

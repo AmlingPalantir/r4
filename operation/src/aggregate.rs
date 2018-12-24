@@ -37,9 +37,9 @@ impl OperationBe2 for Impl {
     }
 
     fn stream(o: &PostOptions) -> Stream {
-        return Stream::compound(
-            Stream::parse(),
-            Stream::closures(
+        return stream::compound(
+            stream::parse(),
+            stream::closures(
                 o.aggs.clone(),
                 |s, e, _w| {
                     match e {

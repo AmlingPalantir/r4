@@ -36,11 +36,11 @@ impl OperationBe for Impl {
 
     fn stream(o: &PostOptions) -> Stream {
         let keep_bof = o.keep_bof;
-        return o.cmds.wrs.iter().rev().fold(Stream::id(), |mut s, wr| {
+        return o.cmds.wrs.iter().rev().fold(stream::id(), |mut s, wr| {
             if !keep_bof {
-                s = Stream::compound(Stream::drop_bof(), s);
+                s = stream::compound(stream::drop_bof(), s);
             }
-            return Stream::compound(wr.stream(), s)
+            return stream::compound(wr.stream(), s)
         });
     }
 }

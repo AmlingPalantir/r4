@@ -30,13 +30,13 @@ impl OperationBe2 for Impl {
         let msg: Arc<str> = Arc::from(&*o.msg);
         let mut n = 0;
 
-        let s = Stream::transform_records(move |mut r| {
+        let s = stream::transform_records(move |mut r| {
             n += 1;
             r.set_path("n", Record::from_primitive(n));
             r.set_path("msg", Record::from_primitive_string(msg.clone()));
 
             return r;
         });
-        return Stream::compound(Stream::parse(), s);
+        return stream::compound(stream::parse(), s);
     }
 }

@@ -19,9 +19,9 @@ impl ClumperBe for Impl {
     fn stream(k: &Arc<str>, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream {
         let k = k.clone();
 
-        return Stream::compound(
-            Stream::parse(),
-            Stream::closures(
+        return stream::compound(
+            stream::parse(),
+            stream::closures(
                 HashMap::new(),
                 move |s, e, w| {
                     match e {
