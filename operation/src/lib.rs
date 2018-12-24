@@ -16,10 +16,14 @@ registry! {
     test,
 }
 
+use clumper::ClumperWrapper;
 use opts::OptParser;
 use opts::OptParserView;
 use opts::OptionTrait;
+use opts::UnvalidatedOption;
 use opts::Validates;
+use record::Record;
+use std::rc::Rc;
 use std::sync::Arc;
 use stream::Stream;
 
@@ -130,4 +134,40 @@ impl OptionTrait for SubOperationOption {
 struct SubOperationOptions {
     extra: Vec<String>,
     wr: Arc<StreamWrapper>,
+}
+
+type ClumperOption = UnvalidatedOption<ClumperOptions>;
+
+#[derive(Default)]
+struct ClumperOptions {
+    cws: Vec<Arc<Box<ClumperWrapper>>>,
+}
+
+impl ClumperOptions {
+    fn add_single(&mut self, a: &String) {
+        let mut parts = a.split(',');
+        let cl = clumper::find(parts.next().unwrap());
+        let args: Vec<&str> = parts.collect();
+        let cw = cl.wrapper(&args);
+        self.cws.push(Arc::new(cw));
+    }
+
+    fn stream<F: Fn(Vec<(Arc<str>, Record)>) -> Stream + 'static>(&self, f: F) -> Stream {
+        let mut bsw: Rc<Fn(Vec<(Arc<str>, Record)>) -> Stream> = Rc::new(f);
+
+        bsw = self.cws.iter().rev().fold(bsw, |bsw, cw| {
+            let cw = cw.clone();
+            return Rc::new(move |bucket_outer| {
+                let bucket_outer = bucket_outer.clone();
+                let bsw = bsw.clone();
+                return cw.stream(Box::new(move |bucket_inner| {
+                    let mut bucket = bucket_outer.clone();
+                    bucket.extend(bucket_inner);
+                    return bsw(bucket);
+                }));
+            });
+        });
+
+        return bsw(vec![]);
+    }
 }
