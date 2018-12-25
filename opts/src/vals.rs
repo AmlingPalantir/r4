@@ -56,25 +56,71 @@ impl BooleanOption {
     }
 }
 
-#[derive(Default)]
-pub struct RequiredStringOption(Option<String>);
+pub struct RequiredOption<T>(Option<T>);
 
-impl OptionTrait for RequiredStringOption {
-    type ValidatesTo = String;
+impl<T> Default for RequiredOption<T> {
+    fn default() -> Self {
+        return RequiredOption(None);
+    }
+}
 
-    fn validate(self) -> String {
+impl<T> OptionTrait for RequiredOption<T> {
+    type ValidatesTo = T;
+
+    fn validate(self) -> T {
         return self.0.unwrap();
     }
 }
 
-impl RequiredStringOption {
-    pub fn set(&mut self, a: &String) {
+impl<T> RequiredOption<T> {
+    pub fn set(&mut self, t: T) {
         if let Some(_) = self.0 {
-            panic!("RequiredStringOption missing");
+            panic!("RequiredOption specified multiple times");
         }
-        self.0 = Some(a.clone());
+        self.0 = Some(t);
     }
 }
+
+impl<T: Clone> RequiredOption<T> {
+    pub fn set_clone(&mut self, t: &T) {
+        self.set(t.clone());
+    }
+}
+
+pub type RequiredStringOption = RequiredOption<String>;
+
+pub struct OptionalOption<T>(Option<T>);
+
+impl<T> Default for OptionalOption<T> {
+    fn default() -> Self {
+        return OptionalOption(None);
+    }
+}
+
+impl<T> OptionTrait for OptionalOption<T> {
+    type ValidatesTo = Option<T>;
+
+    fn validate(self) -> Option<T> {
+        return self.0;
+    }
+}
+
+impl<T> OptionalOption<T> {
+    pub fn set(&mut self, t: T) {
+        if let Some(_) = self.0 {
+            panic!("OptionalOption specified multiple times");
+        }
+        self.0 = Some(t);
+    }
+}
+
+impl<T: Clone> OptionalOption<T> {
+    pub fn set_clone(&mut self, t: &T) {
+        self.set(t.clone());
+    }
+}
+
+pub type OptionalStringOption = OptionalOption<String>;
 
 #[derive(Default)]
 pub struct UnvalidatedOption<T>(T);
@@ -94,3 +140,9 @@ impl<T> OptionTrait for UnvalidatedOption<T> {
 }
 
 pub type StringVecOption = UnvalidatedOption<Vec<String>>;
+
+impl StringVecOption {
+    pub fn push(&mut self, s: String) {
+        self.0.push(s);
+    }
+}
