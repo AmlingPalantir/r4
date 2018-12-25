@@ -17,7 +17,7 @@ impl<R> Registry<R> {
 
     pub fn add<F: Fn(&[&str]) -> R + Send + Sync + 'static>(&mut self, name: &str, argct: usize, f: F) {
         let prev = self.map.insert(name.to_string(), (argct, Box::new(f)));
-        assert!(prev.is_none());
+        assert!(prev.is_none(), "registry collision for {}", name);
     }
 
     pub fn find(&self, name: &str, args: &[&str]) -> R {
