@@ -19,6 +19,7 @@ registry! {
     distinct_count,
     first,
     first_record,
+    hash,
     last,
     last_record,
     records,

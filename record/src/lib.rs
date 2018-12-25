@@ -84,6 +84,10 @@ impl Record {
         return Record(Arc::new(JsonPart::Array(arr)));
     }
 
+    pub fn from_hash(hash: BTreeMap<Arc<str>, Record>) -> Self {
+        return Record(Arc::new(JsonPart::Hash(hash)));
+    }
+
     pub fn from_i64(n: i64) -> Self {
         return Record(Arc::new(JsonPart::NumberI64(n)));
     }
