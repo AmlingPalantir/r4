@@ -167,23 +167,6 @@ impl OptionalStringOption {
 }
 
 #[derive(Default)]
-pub struct UnvalidatedOption<T>(T);
-
-impl<T> AsMut<T> for UnvalidatedOption<T> {
-    fn as_mut(&mut self) -> &mut T {
-        return &mut self.0;
-    }
-}
-
-impl<T> OptionTrait for UnvalidatedOption<T> {
-    type ValidatesTo = T;
-
-    fn validate(self) -> T {
-        return self.0;
-    }
-}
-
-#[derive(Default)]
 pub struct StringVecOption(Vec<String>);
 
 impl OptionTrait for StringVecOption {
