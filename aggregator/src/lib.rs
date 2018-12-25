@@ -12,6 +12,7 @@ registry! {
     AggregatorFe,
     Box<AggregatorState>,
     array,
+    concat,
     count,
     records,
 }
