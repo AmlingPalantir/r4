@@ -34,6 +34,18 @@ impl<R> Registry<R> {
         }
     }
 
+    pub fn labelled_multiple_options<'a, O: AsMut<Vec<(String, R)>> + 'static>(&'static self, opt: &mut OptParserView<'a, O>, prefixes: &[&str]) {
+        for (alias, (argct, f)) in &self.map {
+            let aliases: Vec<String> = prefixes.iter().map(|prefix| format!("{}-{}", prefix, alias)).collect();
+            opt.match_n(aliases, argct + 1, move |rs, a| {
+                let mut iter = a.iter();
+                let label = iter.next().unwrap().to_string();
+                let a: Vec<&str> = iter.map(|s| s as &str).collect();
+                rs.as_mut().push((label, f(&a)));
+            });
+        }
+    }
+
     pub fn labelled_single_options<'a, O: AsMut<Vec<(String, R)>> + 'static>(&'static self, opt: &mut OptParserView<'a, O>, aliases: &[&str]) {
         opt.match_single(aliases, move |rs, a| {
             let (label, a) = match a.find('=') {

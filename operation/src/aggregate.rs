@@ -22,6 +22,7 @@ impl OperationBe2 for Impl {
 
     fn options<'a>(opt: &mut OptParserView<'a, PreOptions>) {
         aggregator::REGISTRY.labelled_single_options(&mut opt.sub(|p| &mut p.aggs), &["a", "agg", "aggregator"]);
+        aggregator::REGISTRY.labelled_multiple_options(&mut opt.sub(|p| &mut p.aggs), &["a", "agg", "aggregator"]);
     }
 
     fn stream(o: &PostOptions) -> Stream {
