@@ -92,6 +92,10 @@ impl Record {
         return Record(Arc::new(JsonPart::NumberI64(n)));
     }
 
+    pub fn from_f64(f: f64) -> Self {
+        return Record(Arc::new(JsonPart::NumberF64(F64Wrapper(f))));
+    }
+
     pub fn get_hash(&self, key: &str) -> Option<Record> {
         if let JsonPart::Null = *self.0 {
             return None;
@@ -241,6 +245,15 @@ impl Record {
     pub fn expect_string(&self) -> Arc<str> {
         return match *self.0 {
             JsonPart::String(ref s) => s.clone(),
+            _ => panic!(),
+        };
+    }
+
+    pub fn coerce_f64(&self) -> f64 {
+        return match *self.0 {
+            JsonPart::NumberF64(ref f) => f.0,
+            JsonPart::NumberI64(i) => i as f64,
+            JsonPart::String(ref s) => s.parse().unwrap(),
             _ => panic!(),
         };
     }

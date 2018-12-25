@@ -12,6 +12,7 @@ registry! {
     AggregatorFe,
     Box<AggregatorState>,
     array,
+    average,
     concat,
     count,
     count_by,
@@ -36,6 +37,8 @@ registry! {
     record_for_min,
     record_for_percentile,
     records,
+    standard_deviation,
+    sum,
 }
 
 pub trait AggregatorState: Send + Sync {
