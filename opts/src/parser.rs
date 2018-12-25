@@ -8,7 +8,7 @@ enum ExtraHandler<P> {
 }
 
 trait OptParserMatch<P: 'static> {
-    fn match_n(&mut self, &str, usize, Rc<Fn(&mut P, &[String])>);
+    fn match_n(&mut self, &str, id: Rc<()>, usize, Rc<Fn(&mut P, &[String])>);
     fn match_extra_soft(&mut self, Rc<Fn(&mut P, &String) -> bool>);
     fn match_extra_hard(&mut self, Rc<Fn(&mut P, &[String])>);
 }
@@ -25,9 +25,10 @@ impl<'a, P: 'static> OptParserView<'a, P> {
     }
 
     pub fn match_n<S: AsRef<str>, I: IntoIterator<Item = S>, F: Fn(&mut P, &[String]) + 'static>(&mut self, aliases: I, argct: usize, f: F) {
+        let id = Rc::new(());
         let f = Rc::new(f);
         for alias in aliases.into_iter() {
-            self.0.match_n(alias.as_ref(), argct, f.clone());
+            self.0.match_n(alias.as_ref(), id.clone(), argct, f.clone());
         }
     }
 
@@ -43,7 +44,7 @@ impl<'a, P: 'static> OptParserView<'a, P> {
 
 
 pub struct OptParser<P> {
-    named: NameTrie<(String, usize, Rc<Fn(&mut P, &[String])>)>,
+    named: NameTrie<(String, Rc<()>, usize, Rc<Fn(&mut P, &[String])>)>,
     extra: Vec<ExtraHandler<P>>,
 }
 
@@ -85,13 +86,13 @@ impl<P: 'static> OptParser<P> {
                 }
 
                 if let Some(name) = name_from_arg(&args[next_index]) {
-                    let (_, argct, f) = self.named.get(name).iter().fold(None, |hit, (name2, argct2, f2)| {
-                        if let Some((name1, argct1, f1)) = hit {
-                            if argct1 != *argct2 || !Rc::ptr_eq(&f1, f2) {
+                    let (_, _, argct, f) = self.named.get(name).iter().fold(None, |hit, (name2, id2, argct2, f2)| {
+                        if let Some((name1, id1, _, _)) = hit {
+                            if !Rc::ptr_eq(id1, id2) {
                                 panic!("Option {} is ambiguous (e.g.  {} and {})", name, name1, name2);
                             }
                         }
-                        return Some((name2, *argct2, f2.clone()));
+                        return Some((name2, id2, argct2, f2));
                     }).expect(&format!("No such option {}", name));
                     let start = next_index + 1;
                     let end = start + argct;
@@ -134,8 +135,8 @@ impl<P: Default + 'static> OptParser<P> {
 }
 
 impl<'a, P: 'static> OptParserMatch<P> for &'a mut OptParser<P> {
-    fn match_n(&mut self, alias: &str, argct: usize, f: Rc<Fn(&mut P, &[String])>) {
-        self.named.insert(alias, (alias.to_string(), argct, f.clone()));
+    fn match_n(&mut self, alias: &str, id: Rc<()>, argct: usize, f: Rc<Fn(&mut P, &[String])>) {
+        self.named.insert(alias, (alias.to_string(), id, argct, f.clone()));
     }
 
     fn match_extra_soft(&mut self, f: Rc<Fn(&mut P, &String) -> bool>) {
@@ -155,9 +156,9 @@ struct OptParserSubMatch<'a, PP: 'a, P> {
 }
 
 impl<'a, PP: 'static, P: 'static> OptParserMatch<P> for OptParserSubMatch<'a, PP, P> {
-    fn match_n(&mut self, alias: &str, argct: usize, f: Rc<Fn(&mut P, &[String])>) {
+    fn match_n(&mut self, alias: &str, id: Rc<()>, argct: usize, f: Rc<Fn(&mut P, &[String])>) {
         let f1 = self.f.clone();
-        self.parent.match_n(alias, argct, Rc::new(move |p, a| f(f1(p), a)));
+        self.parent.match_n(alias, id, argct, Rc::new(move |p, a| f(f1(p), a)));
     }
 
     fn match_extra_soft(&mut self, f: Rc<Fn(&mut P, &String) -> bool>) {
