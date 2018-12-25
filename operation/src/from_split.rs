@@ -4,6 +4,7 @@ use opts::vals::OptionalOption;
 use opts::vals::StringVecOption;
 use record::Record;
 use regex::Regex;
+use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
 
@@ -12,7 +13,7 @@ pub struct Impl();
 #[derive(Clone)]
 enum DelimiterOption {
     String(String),
-    Regex(Regex),
+    Regex(Arc<Regex>),
 }
 
 declare_opts! {
@@ -30,7 +31,7 @@ impl OperationBe2 for Impl {
 
     fn options<'a>(opt: &mut OptParserView<'a, PreOptions>) {
         opt.match_single(&["d", "delim"], |p, a| p.delimiter.set(DelimiterOption::String(a.to_string())));
-        opt.match_single(&["re", "regex"], |p, a| p.delimiter.set(DelimiterOption::Regex(Regex::new(a).unwrap())));
+        opt.match_single(&["re", "regex"], |p, a| p.delimiter.set(DelimiterOption::Regex(Arc::new(Regex::new(a).unwrap()))));
         opt.sub(|p| &mut p.keys).match_single(&["k", "keys"], StringVecOption::push_split);
     }
 
