@@ -7,6 +7,7 @@ use record::Record;
 use regex::Regex;
 use std::sync::Arc;
 use stream::Entry;
+use stream::Flow;
 use stream::Stream;
 
 pub struct Impl();
@@ -71,7 +72,7 @@ impl OperationBe2 for Impl {
                                 return w(Entry::Record(r));
                             }
 
-                            return true;
+                            return Flow(true);
                         }
                     }
                 },

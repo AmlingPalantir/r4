@@ -6,6 +6,7 @@ use opts::parser::OptParserView;
 use opts::vals::OptionalStringOption;
 use std::sync::Arc;
 use stream::Entry;
+use stream::Flow;
 use stream::Stream;
 
 pub struct Impl();
@@ -42,7 +43,7 @@ impl OperationBe2 for Impl {
                 move |_s, e, w| {
                     match e {
                         Entry::Bof(file) => {
-                            w(Entry::Bof(file));
+                            return w(Entry::Bof(file));
                         }
                         Entry::Record(r) => {
                             let tru = tru.clone();
@@ -53,14 +54,17 @@ impl OperationBe2 for Impl {
                                     return tru.union(r1.clone(), r2);
                                 }),
                             );
+                            // Disregard flow hint as one substream rclosing
+                            // does not stop us.
                             substream.write(Entry::Line(r.get_path(&lk).expect_string()), w);
                             substream.close(w);
+
+                            return Flow(true);
                         }
                         Entry::Line(_line) => {
                             panic!("Unexpected line in DeaggregateStream");
                         }
                     }
-                    return true;
                 },
                 |_s, _w| {
                 },

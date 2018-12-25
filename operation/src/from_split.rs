@@ -46,7 +46,7 @@ impl OperationBe2 for Impl {
                 move |_s, e, w| {
                     match e {
                         Entry::Bof(file) => {
-                            w(Entry::Bof(file));
+                            return w(Entry::Bof(file));
                         }
                         Entry::Record(_r) => {
                             panic!("Unexpected record in FromSplitStream");
@@ -60,10 +60,9 @@ impl OperationBe2 for Impl {
                             for (k, v) in keys.iter().zip(vals) {
                                 r.set_path(k, Record::from_str(v));
                             }
-                            w(Entry::Record(r));
+                            return w(Entry::Record(r));
                         }
                     }
-                    return true;
                 },
                 |_s, _w| {
                 },

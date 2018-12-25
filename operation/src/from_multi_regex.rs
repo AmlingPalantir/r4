@@ -7,6 +7,7 @@ use record::Record;
 use regex::Regex;
 use std::sync::Arc;
 use stream::Entry;
+use stream::Flow;
 use stream::Stream;
 
 pub struct Impl();
@@ -64,14 +65,16 @@ impl OperationBe2 for Impl {
         }
 
         impl State {
-            fn flush(&mut self, w: &mut FnMut(Entry) -> bool) -> bool {
-                let mut ret = true;
+            fn flush(&mut self, w: &mut FnMut(Entry) -> Flow) {
                 if !self.r.expect_hash().is_empty() {
-                    ret = w(Entry::Record(self.r.clone()));
+                    // We ignore the flow hint, but that's okay as the
+                    // surrounding Stream will remember it and at worst we do
+                    // the rest of our process for the line.
+                    w(Entry::Record(self.r.clone()));
                 }
 
                 if self.keep_all {
-                    return ret;
+                    return;
                 }
 
                 let mut r2 = Record::empty_hash();
@@ -82,8 +85,6 @@ impl OperationBe2 for Impl {
                 }
 
                 self.r = r2;
-
-                return ret;
             }
         }
 
@@ -99,9 +100,7 @@ impl OperationBe2 for Impl {
                     match e {
                         Entry::Bof(file) => {
                             if !clobber1 {
-                                if !s.flush(w) {
-                                    return false;
-                                }
+                                s.flush(w);
                             }
 
                             s.r = Record::empty_hash();
@@ -128,9 +127,7 @@ impl OperationBe2 for Impl {
                                         }
                                     }
                                     if pre_flush {
-                                        if !s.flush(w) {
-                                            return false;
-                                        }
+                                        s.flush(w);
                                     }
                                     let ki = keys.iter();
                                     let gi = m.iter().skip(1);
@@ -140,13 +137,11 @@ impl OperationBe2 for Impl {
                                         }
                                     }
                                     if *post_flush {
-                                        if !s.flush(w) {
-                                            return false;
-                                        }
+                                        s.flush(w);
                                     }
                                 }
                             }
-                            return true;
+                            return Flow(true);
                         }
                     }
                 },

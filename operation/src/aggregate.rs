@@ -4,6 +4,7 @@ use opts::parser::OptParserView;
 use opts::vals::OptionTrait;
 use record::Record;
 use stream::Entry;
+use stream::Flow;
 use stream::Stream;
 
 pub struct Impl();
@@ -67,7 +68,7 @@ impl OperationBe2 for Impl {
                             panic!("Unexpected line in AggregateStream");
                         }
                     }
-                    return true;
+                    return Flow(true);
                 },
                 |s, w| {
                     let mut r = Record::empty_hash();

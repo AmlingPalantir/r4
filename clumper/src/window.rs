@@ -4,6 +4,7 @@ use registry::OneIntArgs;
 use std::collections::VecDeque;
 use std::sync::Arc;
 use stream::Entry;
+use stream::Flow;
 use stream::Stream;
 
 pub struct Impl();
@@ -26,7 +27,7 @@ impl ClumperBe for Impl {
                     match e {
                         Entry::Bof(file) => {
                             s.clear();
-                            w(Entry::Bof(file));
+                            return w(Entry::Bof(file));
                         },
                         Entry::Record(r) => {
                             s.push_back(r);
@@ -37,20 +38,20 @@ impl ClumperBe for Impl {
                                 let mut substream = bsw(vec![]);
 
                                 for r in s {
+                                    // Disregard flow since one substream
+                                    // ending does not mean we're done (e.g.
+                                    // each substream could be head -n 1).
                                     substream.write(Entry::Record(r.clone()), w);
                                 }
 
                                 Box::new(substream).close(w);
                             }
+                            return Flow(true);
                         },
                         Entry::Line(_line) => {
                             panic!("Unexpected line in WindowStream");
                         },
                     }
-                    // Sad, but you will always be opening a new stream (and we
-                    // don't know if it's just swallowing or what) so we can
-                    // never be sure we're done.
-                    return true;
                 },
                 |_s, _w| {
                 },

@@ -4,6 +4,7 @@ use registry::OneStringArgs;
 use std::collections::HashMap;
 use std::sync::Arc;
 use stream::Entry;
+use stream::Flow;
 use stream::Stream;
 
 pub struct Impl();
@@ -25,6 +26,7 @@ impl ClumperBe for Impl {
                 move |s, e, w| {
                     match e {
                         Entry::Bof(_file) => {
+                            return Flow(true);
                         },
                         Entry::Record(r) => {
                             let v = r.get_path(&k);
@@ -33,15 +35,17 @@ impl ClumperBe for Impl {
                                 return bsw(vec![(k.clone(), v)]);
                             });
 
+                            // Disregard flow since one substream ending does
+                            // not mean we're done (e.g.  each substream could
+                            // be head -n 1).
                             substream.write(Entry::Record(r), w);
+
+                            return Flow(true);
                         },
                         Entry::Line(_line) => {
                             panic!("Unexpected line in KeyStream");
                         },
                     }
-                    // Sad, but you could always be opening a new stream so we can never be
-                    // sure we're done.
-                    return true;
                 },
                 |s, w| {
                     for (_, substream) in s.into_iter() {

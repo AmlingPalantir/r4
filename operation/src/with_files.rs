@@ -6,6 +6,7 @@ use opts::vals::OptionalStringOption;
 use record::Record;
 use std::sync::Arc;
 use stream::Entry;
+use stream::Flow;
 use stream::Stream;
 
 pub struct Impl();
@@ -39,7 +40,7 @@ impl OperationBe for Impl {
             substream: Option<Stream>,
         };
         impl StreamState {
-            fn close(&mut self, w: &mut FnMut(Entry) -> bool) {
+            fn close(&mut self, w: &mut FnMut(Entry) -> Flow) {
                 if let Some(substream) = self.substream.take() {
                     substream.close(w);
                 }
@@ -77,16 +78,13 @@ impl OperationBe for Impl {
                         s.open(Some(file.clone()));
                         return w(Entry::Bof(file.clone()));
                     },
-                    Entry::Record(r) => {
-                        s.open(None).write(Entry::Record(r), w);
-                    }
-                    Entry::Line(line) => {
-                        s.open(None).write(Entry::Line(line), w);
+                    e => {
+                        // Disregard flow hint as one operation stopping does
+                        // not stop us.
+                        s.open(None).write(e, w);
+                        return Flow(true);
                     }
                 }
-                // Again, sad, but we don't really know what will happen in
-                // future substreams even if one substream is rclosed.
-                return true;
             },
             |mut s, w| {
                 s.close(w);

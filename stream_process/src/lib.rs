@@ -55,7 +55,7 @@ pub fn new<I: IntoIterator<Item = S>, S: AsRef<OsStr>>(args: I) -> Stream {
         let r = BufReader::new(p_stdout);
         for line in r.lines() {
             let line = line.unwrap();
-            if !wbe.write(Entry::Line(Arc::from(line))) {
+            if !wbe.write(Entry::Line(Arc::from(line))).0 {
                 break;
             }
         }
