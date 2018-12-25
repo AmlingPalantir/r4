@@ -26,7 +26,7 @@ impl OperationBe2 for Impl {
 
     fn options<'a>(opt: &mut OptParserView<'a, PreOptions>) {
         TwoRecordUnionOptions::options(&mut opt.sub(|p| &mut p.tru));
-        opt.sub(|p| &mut p.lk).match_single(&["lk", "line-key"], OptionalStringOption::set_str);
+        opt.sub(|p| &mut p.lk).match_single(&["lk", "line-key"], OptionalStringOption::set);
         opt.sub(|p| &mut p.op).match_extra_hard(SubOperationOption::push);
     }
 

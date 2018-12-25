@@ -20,7 +20,7 @@ impl OperationBe2 for Impl {
     }
 
     fn options<'a>(opt: &mut OptParserView<'a, PreOptions>) {
-        opt.sub(|p| &mut p.msg).match_single(&["m", "msg"], RequiredStringOption::set_str);
+        opt.sub(|p| &mut p.msg).match_single(&["m", "msg"], RequiredStringOption::set);
     }
 
     fn stream(o: &PostOptions) -> Stream {

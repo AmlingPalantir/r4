@@ -256,18 +256,18 @@ impl OptionTrait for TwoRecordUnionOption {
 
 #[derive(Clone)]
 struct TwoRecordUnionOptions {
-    left_prefix: Option<String>,
-    right_prefix: Option<String>,
+    left_prefix: Option<Arc<str>>,
+    right_prefix: Option<Arc<str>>,
 }
 
 impl TwoRecordUnionOptions {
     fn options<'a>(opt: &mut OptParserView<'a, TwoRecordUnionOption>) {
-        opt.sub(|p| &mut p.left_prefix).match_single(&["lp", "left-prefix"], OptionalStringOption::set_str);
-        opt.sub(|p| &mut p.right_prefix).match_single(&["rp", "right-prefix"], OptionalStringOption::set_str);
+        opt.sub(|p| &mut p.left_prefix).match_single(&["lp", "left-prefix"], OptionalStringOption::set);
+        opt.sub(|p| &mut p.right_prefix).match_single(&["rp", "right-prefix"], OptionalStringOption::set);
     }
 
     fn union(&self, r1: Record, r2: Record) -> Record {
-        fn _union_aux(r: &mut Record, prefix: &Option<String>, r1: Record) {
+        fn _union_aux(r: &mut Record, prefix: &Option<Arc<str>>, r1: Record) {
             match prefix {
                 Some(prefix) => {
                     r.set_path(&prefix, r1);

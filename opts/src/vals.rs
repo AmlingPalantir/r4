@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 #[macro_export]
 macro_rules! declare_opts {
     {$($name:ident: $type:ty,)*} => {
@@ -87,11 +89,26 @@ impl<T: Clone> RequiredOption<T> {
     }
 }
 
-pub type RequiredStringOption = RequiredOption<String>;
+#[derive(Default)]
+pub struct RequiredStringOption(Option<String>);
+
+impl OptionTrait for RequiredStringOption {
+    type ValidatesTo = Arc<str>;
+
+    fn validate(self) -> Arc<str> {
+        return match self.0 {
+            Some(s) => Arc::from(&s as &str),
+            None => panic!("RequiredStringOption not specified"),
+        };
+    }
+}
 
 impl RequiredStringOption {
-    pub fn set_str(&mut self, a: &str) {
-        self.set(a.to_string());
+    pub fn set(&mut self, a: &str) {
+        if let Some(_) = self.0 {
+            panic!("RequiredStringOption specified multiple times");
+        }
+        self.0 = Some(a.to_string());
     }
 }
 
@@ -126,11 +143,26 @@ impl<T: Clone> OptionalOption<T> {
     }
 }
 
-pub type OptionalStringOption = OptionalOption<String>;
+#[derive(Default)]
+pub struct OptionalStringOption(Option<String>);
+
+impl OptionTrait for OptionalStringOption {
+    type ValidatesTo = Option<Arc<str>>;
+
+    fn validate(self) -> Option<Arc<str>> {
+        return match self.0 {
+            Some(s) => Some(Arc::from(&s as &str)),
+            None => None,
+        };
+    }
+}
 
 impl OptionalStringOption {
-    pub fn set_str(&mut self, a: &str) {
-        self.set(a.to_string());
+    pub fn set(&mut self, a: &str) {
+        if let Some(_) = self.0 {
+            panic!("OptionalStringOption specified multiple times");
+        }
+        self.0 = Some(a.to_string());
     }
 }
 
