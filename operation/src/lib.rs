@@ -22,6 +22,7 @@ registry! {
     collate,
     decollate,
     from_lines,
+    from_regex,
     from_split,
     multiplex,
     test,
