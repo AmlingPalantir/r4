@@ -25,8 +25,10 @@ registry! {
     last_record,
     lexical_max,
     lexical_min,
+    lexical_percentile,
     record_for_lexical_max,
     record_for_lexical_min,
+    record_for_lexical_percentile,
     records,
 }
 
