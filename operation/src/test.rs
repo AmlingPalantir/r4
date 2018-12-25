@@ -1,7 +1,6 @@
 use OperationBe2;
 use opts::parser::OptParserView;
 use opts::vals::RequiredStringOption;
-use record::FromPrimitive;
 use record::Record;
 use std::sync::Arc;
 use stream::Stream;
@@ -30,7 +29,7 @@ impl OperationBe2 for Impl {
 
         let s = stream::transform_records(move |mut r| {
             n += 1;
-            r.set_path("n", Record::from_primitive(n));
+            r.set_path("n", Record::from_i64(n));
             r.set_path("msg", Record::from_str(msg.clone()));
 
             return r;

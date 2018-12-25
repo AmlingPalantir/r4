@@ -67,16 +67,6 @@ impl JsonPart {
 #[derive(PartialEq)]
 pub struct Record(Arc<JsonPart>);
 
-pub trait FromPrimitive<P> {
-    fn from_primitive(p: P) -> Self;
-}
-
-impl FromPrimitive<i64> for Record {
-    fn from_primitive(n: i64) -> Self {
-        return Record(Arc::new(JsonPart::NumberI64(n)));
-    }
-}
-
 impl Record {
     pub fn null() -> Self {
         return Record(Arc::new(JsonPart::Null));
@@ -92,6 +82,10 @@ impl Record {
 
     pub fn from_vec(arr: Vec<Record>) -> Self {
         return Record(Arc::new(JsonPart::Array(arr)));
+    }
+
+    pub fn from_i64(n: i64) -> Self {
+        return Record(Arc::new(JsonPart::NumberI64(n)));
     }
 
     pub fn get_hash(&self, key: &str) -> Option<Record> {
