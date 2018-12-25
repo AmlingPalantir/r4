@@ -15,6 +15,7 @@ registry! {
     ClumperFe,
     Box<ClumperWrapper>,
     key,
+    window,
 }
 
 pub trait ClumperFe {

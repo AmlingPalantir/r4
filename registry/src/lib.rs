@@ -149,6 +149,23 @@ impl RegistryArgs for OneStringArgs {
 
 
 
+pub enum OneIntArgs {
+}
+
+impl RegistryArgs for OneIntArgs {
+    type Val = i64;
+
+    fn argct() -> usize {
+        return 1;
+    }
+
+    fn parse(args: &[&str]) -> i64 {
+        assert_eq!(1, args.len());
+        return args[0].parse().unwrap();
+    }
+}
+
+
 pub enum TwoStringArgs {
 }
 
