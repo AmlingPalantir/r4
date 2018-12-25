@@ -13,12 +13,12 @@ impl<T> NameTrie<T> {
         }
     }
 
-    pub fn get(&self, name: &str) -> &T {
+    pub fn get(&self, name: &str) -> Vec<&T> {
         let mut n = self;
         for c in name.chars() {
             match n.children.get(&c) {
                 None => {
-                    panic!("No option {}", name);
+                    return vec![];
                 }
                 Some(ref n2) => {
                     n = n2;
@@ -27,22 +27,21 @@ impl<T> NameTrie<T> {
         }
         if let Some(ref t) = n.t {
             // Exact, honor even if there are longer matches.
-            return t;
+            return vec![t]
         }
         loop {
-            if let Some(ref t) = n.t {
-                if n.children.is_empty() {
-                    return t;
-                }
-                panic!("Ambiguous option {}", name);
-            }
+            let mut acc = Vec::<&T>::new();
+            n.collect(&mut acc);
+            return acc;
+        }
+    }
 
-            let mut iter = n.children.iter();
-            let first = iter.next().unwrap();
-            if iter.next().is_some() {
-                panic!("Ambiguous option {}", name);
-            }
-            n = first.1;
+    fn collect<'a, 'b: 'a>(&'b self, acc: &'a mut Vec<&'b T>) {
+        if let Some(ref t) = self.t {
+            acc.push(t);
+        }
+        for (_, n) in &self.children {
+            n.collect(acc);
         }
     }
 

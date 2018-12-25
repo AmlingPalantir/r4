@@ -43,7 +43,7 @@ impl<'a, P: 'static> OptParserView<'a, P> {
 
 
 pub struct OptParser<P> {
-    named: NameTrie<(usize, Rc<Fn(&mut P, &[String])>)>,
+    named: NameTrie<(String, usize, Rc<Fn(&mut P, &[String])>)>,
     extra: Vec<ExtraHandler<P>>,
 }
 
@@ -85,7 +85,14 @@ impl<P: 'static> OptParser<P> {
                 }
 
                 if let Some(name) = name_from_arg(&args[next_index]) {
-                    let (argct, f) = self.named.get(name);
+                    let (_, argct, f) = self.named.get(name).iter().fold(None, |hit, (name2, argct2, f2)| {
+                        if let Some((name1, argct1, f1)) = hit {
+                            if argct1 != *argct2 || !Rc::ptr_eq(&f1, f2) {
+                                panic!("Option {} is ambiguous (e.g.  {} and {})", name, name1, name2);
+                            }
+                        }
+                        return Some((name2, *argct2, f2.clone()));
+                    }).expect(&format!("No such option {}", name));
                     let start = next_index + 1;
                     let end = start + argct;
                     if end > args.len() {
@@ -128,7 +135,7 @@ impl<P: Default + 'static> OptParser<P> {
 
 impl<'a, P: 'static> OptParserMatch<P> for &'a mut OptParser<P> {
     fn match_n(&mut self, alias: &str, argct: usize, f: Rc<Fn(&mut P, &[String])>) {
-        self.named.insert(alias, (argct, f.clone()));
+        self.named.insert(alias, (alias.to_string(), argct, f.clone()));
     }
 
     fn match_extra_soft(&mut self, f: Rc<Fn(&mut P, &String) -> bool>) {
