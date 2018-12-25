@@ -142,7 +142,13 @@ impl<T> OptionTrait for UnvalidatedOption<T> {
 pub type StringVecOption = UnvalidatedOption<Vec<String>>;
 
 impl StringVecOption {
-    pub fn push(&mut self, s: String) {
-        self.0.push(s);
+    pub fn push(&mut self, s: &str) {
+        self.0.push(s.to_string());
+    }
+
+    pub fn push_split(&mut self, s: &String) {
+        for a in s.split(',') {
+            self.push(a);
+        }
     }
 }

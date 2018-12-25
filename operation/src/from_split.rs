@@ -31,11 +31,7 @@ impl OperationBe2 for Impl {
     fn options<'a>(opt: &mut OptParserView<'a, PreOptions>) {
         opt.match_single(&["d", "delim"], |p, a| p.delimiter.set(DelimiterOption::String(a.clone())));
         opt.match_single(&["re", "regex"], |p, a| p.delimiter.set(DelimiterOption::Regex(Regex::new(a).unwrap())));
-        opt.match_single(&["k", "keys"], |p, a| {
-            for a in a.split(',') {
-                p.keys.push(a.to_string());
-            }
-        });
+        opt.sub(|p| &mut p.keys).match_single(&["k", "keys"], StringVecOption::push_split);
     }
 
     fn stream(o: &PostOptions) -> Stream {
