@@ -1,11 +1,37 @@
-use AggregatorOptions;
 use OperationBe2;
+use aggregator::AggregatorState;
 use opts::parser::OptParserView;
+use opts::vals::OptionTrait;
 use record::Record;
 use stream::Entry;
 use stream::Stream;
 
 pub struct Impl();
+
+#[derive(Clone)]
+#[derive(Default)]
+struct AggregatorOptions {
+    aggs: Vec<(String, Box<AggregatorState>)>,
+}
+
+impl OptionTrait for AggregatorOptions {
+    type ValidatesTo = AggregatorOptions;
+
+    fn validate(self) -> AggregatorOptions {
+        return self;
+    }
+}
+
+impl AggregatorOptions {
+    fn options<'a>(opt: &mut OptParserView<'a, AggregatorOptions>) {
+        aggregator::REGISTRY.labelled_single_options(&mut opt.sub(|p| &mut p.aggs), &["a", "agg", "aggregator"]);
+        aggregator::REGISTRY.labelled_multiple_options(&mut opt.sub(|p| &mut p.aggs), &["a", "agg", "aggregator"]);
+    }
+
+    fn aggs(&self) -> Vec<(String, Box<AggregatorState>)> {
+        return self.aggs.clone();
+    }
+}
 
 declare_opts! {
     aggs: AggregatorOptions,
