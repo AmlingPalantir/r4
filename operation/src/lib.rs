@@ -1,6 +1,7 @@
 extern crate aggregator;
 extern crate bgop;
 extern crate clumper;
+extern crate deaggregator;
 #[macro_use]
 extern crate lazy_static;
 #[macro_use]
@@ -19,6 +20,7 @@ registry! {
     bg,
     chain,
     collate,
+    decollate,
     from_split,
     multiplex,
     test,
