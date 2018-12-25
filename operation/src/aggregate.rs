@@ -1,7 +1,6 @@
+use AggregatorOptions;
 use OperationBe2;
-use aggregator::AggregatorState;
 use opts::parser::OptParserView;
-use opts::vals::UnvalidatedOption;
 use record::Record;
 use stream::Entry;
 use stream::Stream;
@@ -9,7 +8,7 @@ use stream::Stream;
 pub struct Impl();
 
 declare_opts! {
-    aggs: UnvalidatedOption<Vec<(String, Box<AggregatorState>)>>,
+    aggs: AggregatorOptions,
 }
 
 impl OperationBe2 for Impl {
@@ -21,15 +20,14 @@ impl OperationBe2 for Impl {
     }
 
     fn options<'a>(opt: &mut OptParserView<'a, PreOptions>) {
-        aggregator::REGISTRY.labelled_single_options(&mut opt.sub(|p| &mut p.aggs), &["a", "agg", "aggregator"]);
-        aggregator::REGISTRY.labelled_multiple_options(&mut opt.sub(|p| &mut p.aggs), &["a", "agg", "aggregator"]);
+        AggregatorOptions::options(&mut opt.sub(|p| &mut p.aggs));
     }
 
     fn stream(o: &PostOptions) -> Stream {
         return stream::compound(
             stream::parse(),
             stream::closures(
-                o.aggs.clone(),
+                o.aggs.aggs(),
                 |s, e, _w| {
                     match e {
                         Entry::Bof(_file) => {

@@ -22,6 +22,7 @@ registry! {
     test,
 }
 
+use aggregator::AggregatorState;
 use clumper::ClumperFe;
 use clumper::ClumperWrapper;
 use opts::parser::OptParser;
@@ -225,5 +226,30 @@ impl ClumperOptions {
         });
 
         return bsw(vec![]);
+    }
+}
+
+#[derive(Clone)]
+#[derive(Default)]
+struct AggregatorOptions {
+    aggs: Vec<(String, Box<AggregatorState>)>,
+}
+
+impl OptionTrait for AggregatorOptions {
+    type ValidatesTo = AggregatorOptions;
+
+    fn validate(self) -> AggregatorOptions {
+        return self;
+    }
+}
+
+impl AggregatorOptions {
+    fn options<'a>(opt: &mut OptParserView<'a, AggregatorOptions>) {
+        aggregator::REGISTRY.labelled_single_options(&mut opt.sub(|p| &mut p.aggs), &["a", "agg", "aggregator"]);
+        aggregator::REGISTRY.labelled_multiple_options(&mut opt.sub(|p| &mut p.aggs), &["a", "agg", "aggregator"]);
+    }
+
+    fn aggs(&self) -> Vec<(String, Box<AggregatorState>)> {
+        return self.aggs.clone();
     }
 }
