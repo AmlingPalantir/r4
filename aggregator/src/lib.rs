@@ -17,6 +17,10 @@ registry! {
     distinct_array,
     distinct_concat,
     distinct_count,
+    first,
+    first_record,
+    last,
+    last_record,
     records,
 }
 
