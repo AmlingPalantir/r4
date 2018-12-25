@@ -27,6 +27,7 @@ registry! {
     lexical_max,
     lexical_min,
     lexical_percentile,
+    linear_regression,
     max,
     min,
     percentile,
