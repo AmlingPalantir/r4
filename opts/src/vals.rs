@@ -170,10 +170,10 @@ impl OptionalStringOption {
 pub struct StringVecOption(Vec<String>);
 
 impl OptionTrait for StringVecOption {
-    type ValidatesTo = Vec<Arc<str>>;
+    type ValidatesTo = Arc<Vec<String>>;
 
-    fn validate(self) -> Vec<Arc<str>> {
-        return self.0.into_iter().map(|s| Arc::from(s)).collect();
+    fn validate(self) -> Arc<Vec<String>> {
+        return Arc::new(self.0);
     }
 }
 
