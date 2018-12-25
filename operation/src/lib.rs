@@ -21,6 +21,7 @@ registry! {
     chain,
     collate,
     decollate,
+    from_lines,
     from_split,
     multiplex,
     test,
