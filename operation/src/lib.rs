@@ -6,6 +6,7 @@ extern crate lazy_static;
 #[macro_use]
 extern crate opts;
 extern crate record;
+extern crate regex;
 #[macro_use]
 extern crate registry;
 extern crate stream;
@@ -18,6 +19,7 @@ registry! {
     bg,
     chain,
     collate,
+    from_split,
     multiplex,
     test,
 }
