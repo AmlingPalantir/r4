@@ -3,20 +3,20 @@ use std::rc::Rc;
 use super::trie::NameTrie;
 
 enum ExtraHandler<P> {
-    Soft(Rc<Fn(&mut P, &String) -> bool>),
+    Soft(Rc<Fn(&mut P, &str) -> bool>),
     Hard(Rc<Fn(&mut P, &[String])>),
 }
 
 trait OptParserMatch<P: 'static> {
     fn match_n(&mut self, &str, id: Rc<()>, usize, Rc<Fn(&mut P, &[String])>);
-    fn match_extra_soft(&mut self, Rc<Fn(&mut P, &String) -> bool>);
+    fn match_extra_soft(&mut self, Rc<Fn(&mut P, &str) -> bool>);
     fn match_extra_hard(&mut self, Rc<Fn(&mut P, &[String])>);
 }
 
 pub struct OptParserView<'a, P: 'a>(Box<OptParserMatch<P> + 'a>);
 
 impl<'a, P: 'static> OptParserView<'a, P> {
-    pub fn match_single<F: Fn(&mut P, &String) + 'static>(&mut self, aliases: &[&str], f: F) {
+    pub fn match_single<F: Fn(&mut P, &str) + 'static>(&mut self, aliases: &[&str], f: F) {
         self.match_n(aliases, 1, move |p, a| f(p, &a[0]));
     }
 
@@ -32,7 +32,7 @@ impl<'a, P: 'static> OptParserView<'a, P> {
         }
     }
 
-    pub fn match_extra_soft<F: Fn(&mut P, &String) -> bool + 'static>(&mut self, f: F) {
+    pub fn match_extra_soft<F: Fn(&mut P, &str) -> bool + 'static>(&mut self, f: F) {
         self.0.match_extra_soft(Rc::new(f));
     }
 
@@ -139,7 +139,7 @@ impl<'a, P: 'static> OptParserMatch<P> for &'a mut OptParser<P> {
         self.named.insert(alias, (alias.to_string(), id, argct, f.clone()));
     }
 
-    fn match_extra_soft(&mut self, f: Rc<Fn(&mut P, &String) -> bool>) {
+    fn match_extra_soft(&mut self, f: Rc<Fn(&mut P, &str) -> bool>) {
         self.extra.push(ExtraHandler::Soft(f));
     }
 
@@ -161,7 +161,7 @@ impl<'a, PP: 'static, P: 'static> OptParserMatch<P> for OptParserSubMatch<'a, PP
         self.parent.match_n(alias, id, argct, Rc::new(move |p, a| f(f1(p), a)));
     }
 
-    fn match_extra_soft(&mut self, f: Rc<Fn(&mut P, &String) -> bool>) {
+    fn match_extra_soft(&mut self, f: Rc<Fn(&mut P, &str) -> bool>) {
         let f1 = self.f.clone();
         self.parent.match_extra_soft(Rc::new(move |p, a| f(f1(p), a)));
     }

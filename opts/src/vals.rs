@@ -89,6 +89,12 @@ impl<T: Clone> RequiredOption<T> {
 
 pub type RequiredStringOption = RequiredOption<String>;
 
+impl RequiredStringOption {
+    pub fn set_str(&mut self, a: &str) {
+        self.set(a.to_string());
+    }
+}
+
 pub struct OptionalOption<T>(Option<T>);
 
 impl<T> Default for OptionalOption<T> {
@@ -146,7 +152,7 @@ impl StringVecOption {
         self.0.push(s.to_string());
     }
 
-    pub fn push_split(&mut self, s: &String) {
+    pub fn push_split(&mut self, s: &str) {
         for a in s.split(',') {
             self.push(a);
         }

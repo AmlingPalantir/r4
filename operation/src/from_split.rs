@@ -29,7 +29,7 @@ impl OperationBe2 for Impl {
     }
 
     fn options<'a>(opt: &mut OptParserView<'a, PreOptions>) {
-        opt.match_single(&["d", "delim"], |p, a| p.delimiter.set(DelimiterOption::String(a.clone())));
+        opt.match_single(&["d", "delim"], |p, a| p.delimiter.set(DelimiterOption::String(a.to_string())));
         opt.match_single(&["re", "regex"], |p, a| p.delimiter.set(DelimiterOption::Regex(Regex::new(a).unwrap())));
         opt.sub(|p| &mut p.keys).match_single(&["k", "keys"], StringVecOption::push_split);
     }

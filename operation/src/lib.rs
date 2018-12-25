@@ -130,7 +130,7 @@ impl<B: OperationBe2> OperationBe for B {
     fn options<'a>(opt: &mut OptParserView<'a, AndArgsOptions<B::PreOptions>>) {
         B::options(&mut opt.sub(|p| &mut p.p));
         opt.sub(|p| &mut p.args).match_extra_soft(|p, a| {
-            p.push(a.clone());
+            p.push(a.to_string());
             return true;
         });
     }
