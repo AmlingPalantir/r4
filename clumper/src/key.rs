@@ -4,7 +4,6 @@ use registry::OneStringArgs;
 use std::collections::HashMap;
 use std::sync::Arc;
 use stream::Entry;
-use stream::Flow;
 use stream::Stream;
 
 pub struct Impl();
@@ -26,7 +25,7 @@ impl ClumperBe for Impl {
                 move |s, e, w| {
                     match e {
                         Entry::Bof(_file) => {
-                            return Flow(true);
+                            return true;
                         },
                         Entry::Record(r) => {
                             let v = r.get_path(&k);
@@ -40,7 +39,7 @@ impl ClumperBe for Impl {
                             // be head -n 1).
                             substream.write(Entry::Record(r), w);
 
-                            return Flow(true);
+                            return true;
                         },
                         Entry::Line(_line) => {
                             panic!("Unexpected line in KeyStream");

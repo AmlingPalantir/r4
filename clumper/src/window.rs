@@ -4,7 +4,6 @@ use registry::OneIntArgs;
 use std::collections::VecDeque;
 use std::sync::Arc;
 use stream::Entry;
-use stream::Flow;
 use stream::Stream;
 
 pub struct Impl();
@@ -46,7 +45,7 @@ impl ClumperBe for Impl {
 
                                 Box::new(substream).close(w);
                             }
-                            return Flow(true);
+                            return true;
                         },
                         Entry::Line(_line) => {
                             panic!("Unexpected line in WindowStream");

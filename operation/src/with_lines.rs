@@ -6,7 +6,6 @@ use opts::parser::OptParserView;
 use opts::vals::OptionalStringOption;
 use std::sync::Arc;
 use stream::Entry;
-use stream::Flow;
 use stream::Stream;
 
 pub struct Impl();
@@ -59,7 +58,7 @@ impl OperationBe2 for Impl {
                             substream.write(Entry::Line(r.get_path(&lk).expect_string()), w);
                             substream.close(w);
 
-                            return Flow(true);
+                            return true;
                         }
                         Entry::Line(_line) => {
                             panic!("Unexpected line in DeaggregateStream");

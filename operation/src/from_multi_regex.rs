@@ -7,7 +7,6 @@ use record::Record;
 use regex::Regex;
 use std::sync::Arc;
 use stream::Entry;
-use stream::Flow;
 use stream::Stream;
 
 pub struct Impl();
@@ -65,7 +64,7 @@ impl OperationBe2 for Impl {
         }
 
         impl State {
-            fn flush(&mut self, w: &mut FnMut(Entry) -> Flow) {
+            fn flush(&mut self, w: &mut FnMut(Entry) -> bool) {
                 if !self.r.expect_hash().is_empty() {
                     // We ignore the flow hint, but that's okay as the
                     // surrounding Stream will remember it and at worst we do
@@ -141,7 +140,7 @@ impl OperationBe2 for Impl {
                                     }
                                 }
                             }
-                            return Flow(true);
+                            return true;
                         }
                     }
                 },

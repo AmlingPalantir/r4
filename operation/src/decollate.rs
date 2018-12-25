@@ -3,7 +3,6 @@ use deaggregator::DeaggregatorState;
 use opts::parser::OptParserView;
 use opts::vals::OptionTrait;
 use stream::Entry;
-use stream::Flow;
 use stream::Stream;
 
 pub struct Impl();
@@ -67,11 +66,11 @@ impl OperationBe2 for Impl {
                                     for (k, v) in pairs {
                                         r2.set_path(&k, v);
                                     }
-                                    if !w(Entry::Record(r2)).0 {
-                                        return Flow(false);
+                                    if !w(Entry::Record(r2)) {
+                                        return false;
                                     }
                                 }
-                                return Flow(true);
+                                return true;
                             }
                             Entry::Line(_line) => {
                                 panic!("Unexpected line in DeaggregateStream");

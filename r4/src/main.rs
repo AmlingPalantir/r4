@@ -10,7 +10,6 @@ use std::io::Write;
 use std::io;
 use std::sync::Arc;
 use stream::Entry;
-use stream::Flow;
 
 fn main() {
     let mut args = env::args();
@@ -20,11 +19,11 @@ fn main() {
     let op = op(&mut args);
 
     let mut w = |e| {
-        return Flow(match e {
+        return match e {
             Entry::Bof(_file) => true,
             Entry::Record(r) => writeln!(io::stdout(), "{}", r.deparse()).is_ok(),
             Entry::Line(line) => writeln!(io::stdout(), "{}", line).is_ok(),
-        });
+        };
     };
     let mut os = op.stream();
 
@@ -33,7 +32,7 @@ fn main() {
         let stdin = io::stdin();
         for line in stdin.lock().lines() {
             let line = line.unwrap();
-            if !os.write(Entry::Line(Arc::from(line)), &mut w).0 {
+            if !os.write(Entry::Line(Arc::from(line)), &mut w) {
                 break;
             }
         }
@@ -42,7 +41,7 @@ fn main() {
         'arg: for arg in args {
             os.write(Entry::Bof(Arc::from(&*arg)), &mut w);
             for line in BufReader::new(File::open(arg).unwrap()).lines() {
-                if !os.write(Entry::Line(Arc::from(line.unwrap())), &mut w).0 {
+                if !os.write(Entry::Line(Arc::from(line.unwrap())), &mut w) {
                     break 'arg;
                 }
             }

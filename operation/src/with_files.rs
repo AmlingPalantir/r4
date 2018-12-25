@@ -6,7 +6,6 @@ use opts::vals::OptionalStringOption;
 use record::Record;
 use std::sync::Arc;
 use stream::Entry;
-use stream::Flow;
 use stream::Stream;
 
 pub struct Impl();
@@ -40,7 +39,7 @@ impl OperationBe for Impl {
             substream: Option<Stream>,
         };
         impl StreamState {
-            fn close(&mut self, w: &mut FnMut(Entry) -> Flow) {
+            fn close(&mut self, w: &mut FnMut(Entry) -> bool) {
                 if let Some(substream) = self.substream.take() {
                     substream.close(w);
                 }
@@ -82,7 +81,7 @@ impl OperationBe for Impl {
                         // Disregard flow hint as one operation stopping does
                         // not stop us.
                         s.open(None).write(e, w);
-                        return Flow(true);
+                        return true;
                     }
                 }
             },

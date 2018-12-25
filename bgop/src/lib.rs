@@ -4,7 +4,6 @@ extern crate wns;
 use std::collections::VecDeque;
 use std::sync::Arc;
 use stream::Entry;
-use stream::Flow;
 use stream::Stream;
 use stream::StreamTrait;
 use wns::WaitNotifyState;
@@ -69,14 +68,14 @@ pub struct BgopWbe {
 }
 
 impl BgopWbe {
-    pub fn write(&mut self, e: Entry) -> Flow {
+    pub fn write(&mut self, e: Entry) -> bool {
         return self.state.await(&mut |buffers| {
             if buffers.be_to_fe.rclosed {
-                return (Some(Flow(false)), false);
+                return (Some(false), false);
             }
             if buffers.be_to_fe.buf.len() < 1024 {
                 buffers.be_to_fe.buf.push_back(e.clone());
-                return (Some(Flow(true)), true);
+                return (Some(true), true);
             }
             return (None, false);
         });
@@ -94,7 +93,7 @@ pub struct BgopFe {
 }
 
 impl BgopFe {
-    fn ferry<R, F: FnMut(bool, &mut BgopState) -> Option<R>>(&mut self, f: &mut F, w: &mut FnMut(Entry) -> Flow) -> R {
+    fn ferry<R, F: FnMut(bool, &mut BgopState) -> Option<R>>(&mut self, f: &mut F, w: &mut FnMut(Entry) -> bool) -> R {
         enum Ret<R> {
             Ferry(Vec<Entry>),
             Return(R),
@@ -114,7 +113,7 @@ impl BgopFe {
             match ret {
                 Ret::Ferry(es) => {
                     for e in es {
-                        if !w(e).0 {
+                        if !w(e) {
                             self.state.write(|buffers| {
                                 buffers.be_to_fe.rclosed = true;
                                 buffers.be_to_fe.buf.clear();
@@ -132,22 +131,22 @@ impl BgopFe {
 }
 
 impl StreamTrait for BgopFe {
-    fn write(&mut self, e: Entry, w: &mut FnMut(Entry) -> Flow) -> Flow {
+    fn write(&mut self, e: Entry, w: &mut FnMut(Entry) -> bool) -> bool {
         return self.ferry(&mut |_os_closed, buffers| {
             if buffers.fe_to_be.rclosed {
-                return Some(Flow(false));
+                return Some(false);
             }
 
             if buffers.fe_to_be.buf.len() < 1024 {
                 buffers.fe_to_be.buf.push_back(e.clone());
-                return Some(Flow(true));
+                return Some(true);
             }
 
             return None;
         }, w);
     }
 
-    fn close(mut self: Box<BgopFe>, w: &mut FnMut(Entry) -> Flow) {
+    fn close(mut self: Box<BgopFe>, w: &mut FnMut(Entry) -> bool) {
         self.state.write(|buffers| {
             buffers.fe_to_be.closed = true;
         });

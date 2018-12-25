@@ -36,7 +36,7 @@ impl OperationBe for Impl {
             loop {
                 match rbe.read() {
                     Some(e) => {
-                        if !os.write(e, &mut |e| wbe.write(e)).0 {
+                        if !os.write(e, &mut |e| wbe.write(e)) {
                             rbe.rclose();
                         }
                     }
