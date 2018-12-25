@@ -183,7 +183,16 @@ impl<T> OptionTrait for UnvalidatedOption<T> {
     }
 }
 
-pub type StringVecOption = UnvalidatedOption<Vec<String>>;
+#[derive(Default)]
+pub struct StringVecOption(Vec<String>);
+
+impl OptionTrait for StringVecOption {
+    type ValidatesTo = Vec<Arc<str>>;
+
+    fn validate(self) -> Vec<Arc<str>> {
+        return self.0.into_iter().map(|s| Arc::from(s)).collect();
+    }
+}
 
 impl StringVecOption {
     pub fn push(&mut self, s: &str) {
