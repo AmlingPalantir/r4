@@ -55,15 +55,10 @@ impl OperationBe2 for Impl {
                         }
                         Entry::Line(line) => {
                             let mut r = Record::empty_hash();
-                            let vals: Vec<&str>;
-                            match &delimiter {
-                                DelimiterOption::String(ref s) => {
-                                    vals = line.split(s).collect();
-                                }
-                                DelimiterOption::Regex(ref re) => {
-                                    vals = re.split(&line).collect();
-                                }
-                            }
+                            let vals: Vec<&str> = match &delimiter {
+                                DelimiterOption::String(ref s) => line.split(s).collect(),
+                                DelimiterOption::Regex(ref re) => re.split(&line).collect(),
+                            };
                             for (k, v) in keys.iter().zip(vals) {
                                 r.set_path(k, Record::from_primitive_string(v));
                             }
