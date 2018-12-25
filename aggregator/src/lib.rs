@@ -23,6 +23,10 @@ registry! {
     hash,
     last,
     last_record,
+    lexical_max,
+    lexical_min,
+    record_for_lexical_max,
+    record_for_lexical_min,
     records,
 }
 
