@@ -2,7 +2,6 @@ use OperationBe2;
 use opts::parser::OptParserView;
 use opts::vals::OptionalStringOption;
 use record::Record;
-use std::collections::BTreeMap;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
@@ -49,7 +48,7 @@ impl OperationBe2 for Impl {
                             panic!("Unexpected record in FromLinesStream");
                         }
                         Entry::Line(line) => {
-                            let mut r = Record::from_hash(BTreeMap::new());
+                            let mut r = Record::empty_hash();
 
                             r.set_path(&lk, Record::from_str(line));
                             r.set_path(&lnk, Record::from_i64(s.1));

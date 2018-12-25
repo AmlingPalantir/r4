@@ -37,7 +37,6 @@ use opts::parser::OptParserView;
 use opts::vals::OptionTrait;
 use opts::vals::OptionalStringOption;
 use record::Record;
-use std::collections::BTreeMap;
 use std::rc::Rc;
 use std::sync::Arc;
 use stream::Stream;
@@ -282,7 +281,7 @@ impl TwoRecordUnionOptions {
             }
         }
 
-        let mut r = Record::from_hash(BTreeMap::new());
+        let mut r = Record::empty_hash();
         _union_aux(&mut r, &self.left_prefix, r1);
         _union_aux(&mut r, &self.right_prefix, r2);
 
