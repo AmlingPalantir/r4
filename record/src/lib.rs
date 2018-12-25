@@ -126,8 +126,15 @@ impl Record {
         panic!("Record::get_array() on non-array");
     }
 
+    pub fn has_path(&self, path: &str) -> bool {
+        return self.get_path_opt(path).is_some();
+    }
 
     pub fn get_path(&self, path: &str) -> Record {
+        return self.get_path_opt(path).unwrap_or_else(Record::null);
+    }
+
+    pub fn get_path_opt(&self, path: &str) -> Option<Record> {
         return path.split('/').fold(Some(self.clone()), |r, part| {
             match r {
                 Some(r) => {
@@ -140,7 +147,7 @@ impl Record {
                     return None;
                 }
             }
-        }).unwrap_or_else(Record::null);
+        });
     }
 
     fn get_path_mut(&mut self, path: &str) -> &mut JsonPart {
