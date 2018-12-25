@@ -25,6 +25,7 @@ registry! {
     multiplex,
     test,
     with_files,
+    with_lines,
 }
 
 use clumper::ClumperFe;
@@ -32,7 +33,9 @@ use clumper::ClumperWrapper;
 use opts::parser::OptParser;
 use opts::parser::OptParserView;
 use opts::vals::OptionTrait;
+use opts::vals::OptionalStringOption;
 use record::Record;
+use std::collections::BTreeMap;
 use std::rc::Rc;
 use std::sync::Arc;
 use stream::Stream;
@@ -231,5 +234,56 @@ impl ClumperOptions {
         });
 
         return bsw(vec![]);
+    }
+}
+
+#[derive(Default)]
+struct TwoRecordUnionOption {
+    left_prefix: OptionalStringOption,
+    right_prefix: OptionalStringOption,
+}
+
+impl OptionTrait for TwoRecordUnionOption {
+    type ValidatesTo = TwoRecordUnionOptions;
+
+    fn validate(self) -> TwoRecordUnionOptions {
+        return TwoRecordUnionOptions {
+            left_prefix: self.left_prefix.validate(),
+            right_prefix: self.right_prefix.validate(),
+        };
+    }
+}
+
+#[derive(Clone)]
+struct TwoRecordUnionOptions {
+    left_prefix: Option<String>,
+    right_prefix: Option<String>,
+}
+
+impl TwoRecordUnionOptions {
+    fn options<'a>(opt: &mut OptParserView<'a, TwoRecordUnionOption>) {
+        opt.sub(|p| &mut p.left_prefix).match_single(&["lp", "left-prefix"], OptionalStringOption::set_str);
+        opt.sub(|p| &mut p.right_prefix).match_single(&["rp", "right-prefix"], OptionalStringOption::set_str);
+    }
+
+    fn union(&self, r1: Record, r2: Record) -> Record {
+        fn _union_aux(r: &mut Record, prefix: &Option<String>, r1: Record) {
+            match prefix {
+                Some(prefix) => {
+                    r.set_path(&prefix, r1);
+                }
+                None => {
+                    for (k, v) in r1.expect_hash().into_iter() {
+                        r.set_path(&k, v.clone());
+                    }
+                }
+            }
+        }
+
+        let mut r = Record::from_hash(BTreeMap::new());
+        _union_aux(&mut r, &self.left_prefix, r1);
+        _union_aux(&mut r, &self.right_prefix, r2);
+
+        return r;
     }
 }
