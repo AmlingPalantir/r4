@@ -57,7 +57,7 @@ impl OperationBe2 for Impl {
                                 DelimiterOption::Regex(ref re) => re.split(&line).collect(),
                             };
                             for (k, v) in keys.iter().zip(vals) {
-                                r.set_path(k, Record::from_primitive_string(v));
+                                r.set_path(k, Record::from_str(v));
                             }
                             w(Entry::Record(r));
                         }

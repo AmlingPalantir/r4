@@ -18,6 +18,6 @@ impl AggregatorBe for Impl {
     }
 
     fn finish(state: Box<Vec<String>>, a: &(Arc<str>, Arc<str>)) -> Record {
-        return Record::from_primitive_string(state.join(&a.0));
+        return Record::from_str(state.join(&a.0));
     }
 }

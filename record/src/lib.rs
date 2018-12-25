@@ -86,7 +86,7 @@ impl Record {
         return Record(Arc::new(JsonPart::Hash(BTreeMap::new())));
     }
 
-    pub fn from_primitive_string<S: Deref<Target = str>>(s: S) -> Self {
+    pub fn from_str<S: Deref<Target = str>>(s: S) -> Self {
         return Record(Arc::new(JsonPart::String(Arc::from(&*s))));
     }
 
