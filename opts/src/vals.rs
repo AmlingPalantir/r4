@@ -128,6 +128,12 @@ impl<T: Clone> OptionalOption<T> {
 
 pub type OptionalStringOption = OptionalOption<String>;
 
+impl OptionalStringOption {
+    pub fn set_str(&mut self, a: &str) {
+        self.set(a.to_string());
+    }
+}
+
 #[derive(Default)]
 pub struct UnvalidatedOption<T>(T);
 

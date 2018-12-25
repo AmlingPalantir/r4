@@ -24,6 +24,7 @@ registry! {
     from_split,
     multiplex,
     test,
+    with_files,
 }
 
 use clumper::ClumperFe;
