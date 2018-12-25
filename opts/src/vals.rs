@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::sync::Arc;
 
 #[macro_export]
@@ -167,17 +168,42 @@ impl OptionalStringOption {
 }
 
 #[derive(Default)]
-pub struct StringVecOption(Vec<String>);
+pub struct UnvalidatedArcOption<T>(pub T);
 
-impl OptionTrait for StringVecOption {
-    type ValidatesTo = Arc<Vec<String>>;
+impl<T> OptionTrait for UnvalidatedArcOption<T> {
+    type ValidatesTo = Arc<T>;
 
-    fn validate(self) -> Arc<Vec<String>> {
+    fn validate(self) -> Arc<T> {
         return Arc::new(self.0);
     }
 }
 
+pub type StringVecOption = UnvalidatedArcOption<Vec<String>>;
+
 impl StringVecOption {
+    pub fn push(&mut self, s: &str) {
+        self.0.push(s.to_string());
+    }
+
+    pub fn push_split(&mut self, s: &str) {
+        for a in s.split(',') {
+            self.push(a);
+        }
+    }
+}
+
+#[derive(Default)]
+pub struct StringSetOption(Vec<String>);
+
+impl OptionTrait for StringSetOption {
+    type ValidatesTo = Arc<HashSet<String>>;
+
+    fn validate(self) -> Arc<HashSet<String>> {
+        return Arc::new(self.0.into_iter().collect());
+    }
+}
+
+impl StringSetOption {
     pub fn push(&mut self, s: &str) {
         self.0.push(s.to_string());
     }

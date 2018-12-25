@@ -51,7 +51,7 @@ impl OperationBe2 for Impl {
                 move |_s, e, w| {
                     match e {
                         Entry::Bof(file) => {
-                            w(Entry::Bof(file));
+                            return w(Entry::Bof(file));
                         }
                         Entry::Record(_r) => {
                             panic!("Unexpected record in FromRegexStream");
@@ -68,11 +68,12 @@ impl OperationBe2 for Impl {
                                     }
                                 }
 
-                                w(Entry::Record(r));
+                                return w(Entry::Record(r));
                             }
+
+                            return true;
                         }
                     }
-                    return true;
                 },
                 |_s, _w| {
                 },
