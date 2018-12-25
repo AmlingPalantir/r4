@@ -60,6 +60,16 @@ impl<R> Registry<R> {
         });
     }
 
+    pub fn multiple_options<'a, O: AsMut<Vec<R>> + 'static>(&'static self, opt: &mut OptParserView<'a, O>, prefixes: &[&str]) {
+        for (alias, (argct, f)) in &self.map {
+            let aliases: Vec<String> = prefixes.iter().map(|prefix| format!("{}-{}", prefix, alias)).collect();
+            opt.match_n(aliases, *argct, move |rs, a| {
+                let a: Vec<&str> = a.iter().map(|s| s as &str).collect();
+                rs.as_mut().push(f(&a));
+            });
+        }
+    }
+
     pub fn single_options<'a, O: AsMut<Vec<R>> + 'static>(&'static self, opt: &mut OptParserView<'a, O>, aliases: &[&str]) {
         opt.match_single(aliases, move |rs, a| {
             let mut parts = a.split(',');

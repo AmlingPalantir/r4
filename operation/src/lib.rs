@@ -202,6 +202,7 @@ impl OptionTrait for ClumperOptions {
 impl ClumperOptions {
     fn options<'a>(opt: &mut OptParserView<'a, ClumperOptions>) {
         clumper::REGISTRY.single_options(&mut opt.sub(|p| &mut p.cws), &["c", "clumper"]);
+        clumper::REGISTRY.multiple_options(&mut opt.sub(|p| &mut p.cws), &["c", "clumper"]);
         opt.match_single(&["k", "key"], |p, a| {
             for a in a.split(',') {
                 p.cws.push(clumper::key::Impl::init(&[a]));
