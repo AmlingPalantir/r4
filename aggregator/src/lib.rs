@@ -14,6 +14,9 @@ registry! {
     array,
     concat,
     count,
+    distinct_array,
+    distinct_concat,
+    distinct_count,
     records,
 }
 
