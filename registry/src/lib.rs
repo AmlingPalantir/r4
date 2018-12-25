@@ -166,6 +166,7 @@ impl RegistryArgs for OneIntArgs {
 }
 
 
+
 pub enum TwoStringArgs {
 }
 
@@ -179,5 +180,23 @@ impl RegistryArgs for TwoStringArgs {
     fn parse(args: &[&str]) -> (Arc<str>, Arc<str>) {
         assert_eq!(2, args.len());
         return (Arc::from(&*args[0]), Arc::from(&*args[1]));
+    }
+}
+
+
+
+pub enum ThreeStringArgs {
+}
+
+impl RegistryArgs for ThreeStringArgs {
+    type Val = (Arc<str>, Arc<str>, Arc<str>);
+
+    fn argct() -> usize {
+        return 3;
+    }
+
+    fn parse(args: &[&str]) -> (Arc<str>, Arc<str>, Arc<str>) {
+        assert_eq!(3, args.len());
+        return (Arc::from(&*args[0]), Arc::from(&*args[1]), Arc::from(&*args[2]));
     }
 }

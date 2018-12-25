@@ -7,6 +7,7 @@ authors = ["Keith Amling <me@amling2.org>"]
 aggregator = { path = "../aggregator" }
 bgop = { path = "../bgop" }
 clumper = { path = "../clumper" }
+deaggregator = { path = "../deaggregator" }
 opts = { path = "../opts" }
 record = { path = "../record" }
 registry = { path = "../registry" }

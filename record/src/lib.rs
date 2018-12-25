@@ -80,6 +80,10 @@ impl Record {
         return Record(Arc::new(JsonPart::String(Arc::from(&*s))));
     }
 
+    pub fn from_arcstr(s: Arc<str>) -> Self {
+        return Record(Arc::new(JsonPart::String(s)));
+    }
+
     pub fn from_vec(arr: Vec<Record>) -> Self {
         return Record(Arc::new(JsonPart::Array(arr)));
     }
@@ -254,6 +258,20 @@ impl Record {
             JsonPart::NumberF64(ref f) => f.0,
             JsonPart::NumberI64(i) => i as f64,
             JsonPart::String(ref s) => s.parse().unwrap(),
+            _ => panic!(),
+        };
+    }
+
+    pub fn expect_array(&self) -> &Vec<Record> {
+        return match *self.0 {
+            JsonPart::Array(ref arr) => arr,
+            _ => panic!(),
+        };
+    }
+
+    pub fn expect_hash(&self) -> &BTreeMap<Arc<str>, Record> {
+        return match *self.0 {
+            JsonPart::Hash(ref hash) => hash,
             _ => panic!(),
         };
     }

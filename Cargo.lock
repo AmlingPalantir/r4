@@ -39,6 +39,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "deaggregator"
+version = "1.0.0"
+dependencies = [
+ "lazy_static 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "record 1.0.0",
+ "registry 1.0.0",
+]
+
+[[package]]
 name = "itoa"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -70,6 +79,7 @@ dependencies = [
  "aggregator 1.0.0",
  "bgop 1.0.0",
  "clumper 1.0.0",
+ "deaggregator 1.0.0",
  "lazy_static 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "opts 1.0.0",
  "record 1.0.0",
