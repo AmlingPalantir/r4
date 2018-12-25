@@ -84,6 +84,24 @@ pub fn parse() -> Stream {
     return Stream::new(ParseStream());
 }
 
+struct DeparseStream();
+
+impl StreamTrait for DeparseStream {
+    fn write(&mut self, e: Entry, w: &mut FnMut(Entry) -> bool) -> bool {
+        return w(match e {
+            Entry::Record(r) => Entry::Line(Arc::from(r.deparse())),
+            e => e,
+        });
+    }
+
+    fn close(self: Box<Self>, _w: &mut FnMut(Entry) -> bool) {
+    }
+}
+
+pub fn deparse() -> Stream {
+    return Stream::new(DeparseStream());
+}
+
 struct TransformRecordsStream(Box<FnMut(Record) -> Record>);
 
 impl StreamTrait for TransformRecordsStream {
