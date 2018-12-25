@@ -44,7 +44,8 @@ impl OperationBe2 for Impl {
                 (),
                 move |_s, e, w| {
                     match e {
-                        Entry::Bof(_file) => {
+                        Entry::Bof(file) => {
+                            w(Entry::Bof(file));
                         }
                         Entry::Record(_r) => {
                             panic!("Unexpected record in FromSplitStream");
