@@ -239,4 +239,11 @@ impl Record {
         _to_string_aux(self, &mut ret);
         return ret;
     }
+
+    pub fn expect_string(&self) -> Arc<str> {
+        return match *self.0 {
+            JsonPart::String(ref s) => s.clone(),
+            _ => panic!(),
+        };
+    }
 }
