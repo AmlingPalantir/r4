@@ -27,6 +27,7 @@ registry! {
     from_multi_regex,
     from_regex,
     from_split,
+    join,
     multiplex,
     test,
     with_files,
@@ -256,7 +257,7 @@ impl TwoRecordUnionOption {
 }
 
 impl TwoRecordUnionOptionValidated {
-    fn union(&self, r1: Record, r2: Record) -> Record {
+    fn union_maybe(&self, r1: Option<Record>, r2: Option<Record>) -> Record {
         fn _union_aux(r: &mut Record, prefix: &Option<Arc<str>>, r1: Record) {
             match prefix {
                 Some(prefix) => {
@@ -271,9 +272,16 @@ impl TwoRecordUnionOptionValidated {
         }
 
         let mut r = Record::empty_hash();
-        _union_aux(&mut r, &self.left_prefix, r1);
-        _union_aux(&mut r, &self.right_prefix, r2);
-
+        if let Some(r1) = r1 {
+            _union_aux(&mut r, &self.left_prefix, r1);
+        }
+        if let Some(r2) = r2 {
+            _union_aux(&mut r, &self.right_prefix, r2);
+        }
         return r;
+    }
+
+    fn union(&self, r1: Record, r2: Record) -> Record {
+        return self.union_maybe(Some(r1), Some(r2));
     }
 }

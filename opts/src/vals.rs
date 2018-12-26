@@ -75,6 +75,14 @@ impl RequiredStringOption {
         }
         self.0 = Some(a.to_string());
     }
+
+    pub fn maybe_set(&mut self, a: &str) -> bool {
+        if let Some(_) = self.0 {
+            return false;
+        }
+        self.0 = Some(a.to_string());
+        return true;
+    }
 }
 
 pub struct OptionalOption<T>(Option<T>);
@@ -128,6 +136,17 @@ impl OptionalStringOption {
             panic!("OptionalStringOption specified multiple times");
         }
         self.0 = Some(a.to_string());
+    }
+}
+
+#[derive(Default)]
+pub struct UnvalidatedRawOption<T>(pub T);
+
+impl<T> Validates for UnvalidatedRawOption<T> {
+    type Target = T;
+
+    fn validate(self) -> T {
+        return self.0;
     }
 }
 
