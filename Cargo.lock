@@ -86,6 +86,7 @@ dependencies = [
  "regex 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "registry 1.0.0",
  "serde_json 1.0.33 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sort 1.0.0",
  "stream 1.0.0",
  "stream_process 1.0.0",
  "validates 1.0.0",
@@ -176,6 +177,15 @@ dependencies = [
  "itoa 0.4.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "ryu 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.82 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "sort"
+version = "1.0.0"
+dependencies = [
+ "lazy_static 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "record 1.0.0",
+ "registry 1.0.0",
 ]
 
 [[package]]

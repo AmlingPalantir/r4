@@ -243,6 +243,15 @@ impl Record {
         };
     }
 
+    pub fn coerce_string(&self) -> Arc<str> {
+        return match *self.0 {
+            JsonPart::NumberF64(ref f) => Arc::from(f.0.to_string()),
+            JsonPart::NumberI64(i) => Arc::from(i.to_string()),
+            JsonPart::String(ref s) => s.clone(),
+            _ => panic!(),
+        };
+    }
+
     pub fn expect_array(&self) -> &Vec<Record> {
         return match *self.0 {
             JsonPart::Array(ref arr) => arr,
