@@ -5,30 +5,33 @@ use record::Record;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
+use validates::Validates;
 
 pub struct Impl();
 
-declare_opts! {
+#[derive(Default)]
+#[derive(Validates)]
+pub struct Options {
     lk: OptionalStringOption,
     lnk: OptionalStringOption,
     fk: OptionalStringOption,
 }
 
 impl OperationBe2 for Impl {
-    type PreOptions = PreOptions;
-    type PostOptions = PostOptions;
+    type PreOptions = Options;
+    type PostOptions = OptionsValidated;
 
     fn names() -> Vec<&'static str> {
         return vec!["from-lines"];
     }
 
-    fn options<'a>(opt: &mut OptParserView<'a, PreOptions>) {
+    fn options<'a>(opt: &mut OptParserView<'a, Options>) {
         opt.sub(|p| &mut p.lk).match_single(&["lk", "line-key"], OptionalStringOption::set);
         opt.sub(|p| &mut p.lnk).match_single(&["lnk", "lineno-key"], OptionalStringOption::set);
         opt.sub(|p| &mut p.fk).match_single(&["fk", "file-key"], OptionalStringOption::set);
     }
 
-    fn stream(o: &PostOptions) -> Stream {
+    fn stream(o: &OptionsValidated) -> Stream {
         let lk = o.lk.clone().unwrap_or_else(|| Arc::from("LINE"));
         let lnk = o.lnk.clone().unwrap_or_else(|| Arc::from("LINENO"));
         let fk = o.fk.clone().unwrap_or_else(|| Arc::from("FILE"));

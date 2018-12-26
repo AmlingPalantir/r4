@@ -32,23 +32,25 @@ impl DeaggregatorOptions {
     }
 }
 
-declare_opts! {
+#[derive(Default)]
+#[derive(Validates)]
+pub struct Options {
     deaggs: DeaggregatorOptions,
 }
 
 impl OperationBe2 for Impl {
-    type PreOptions = PreOptions;
-    type PostOptions = PostOptions;
+    type PreOptions = Options;
+    type PostOptions = OptionsValidated;
 
     fn names() -> Vec<&'static str> {
         return vec!["decollate"];
     }
 
-    fn options<'a>(opt: &mut OptParserView<'a, PreOptions>) {
+    fn options<'a>(opt: &mut OptParserView<'a, Options>) {
         DeaggregatorOptions::options(&mut opt.sub(|p| &mut p.deaggs));
     }
 
-    fn stream(o: &PostOptions) -> Stream {
+    fn stream(o: &OptionsValidated) -> Stream {
         return o.deaggs.deaggs().iter().fold(stream::parse(), |s, deagg| {
             let deagg = deagg.clone();
             return stream::compound(

@@ -8,10 +8,13 @@ use regex::Regex;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
+use validates::Validates;
 
 pub struct Impl();
 
-declare_opts! {
+#[derive(Default)]
+#[derive(Validates)]
+pub struct Options {
     res: UnvalidatedArcOption<Vec<(bool, bool, Vec<String>, Regex)>>,
 
     keep: StringVecOption,
@@ -21,15 +24,15 @@ declare_opts! {
 }
 
 impl OperationBe2 for Impl {
-    type PreOptions = PreOptions;
-    type PostOptions = PostOptions;
+    type PreOptions = Options;
+    type PostOptions = OptionsValidated;
 
     fn names() -> Vec<&'static str> {
         return vec!["from-multire"];
     }
 
-    fn options<'a>(opt: &mut OptParserView<'a, PreOptions>) {
-        fn _add_re(p: &mut PreOptions, pre_flush: bool, post_flush: bool, s: &str) {
+    fn options<'a>(opt: &mut OptParserView<'a, Options>) {
+        fn _add_re(p: &mut Options, pre_flush: bool, post_flush: bool, s: &str) {
             match s.find('=') {
                 Some(idx) => {
                     let keys = (&s[0..idx]).split(',').map(|s| s.to_string()).collect();
@@ -52,7 +55,7 @@ impl OperationBe2 for Impl {
         opt.sub(|p| &mut p.clobber).match_zero(&["clobber"], BooleanOption::set);
     }
 
-    fn stream(o: &PostOptions) -> Stream {
+    fn stream(o: &OptionsValidated) -> Stream {
         let res = o.res.clone();
         let clobber1 = o.clobber;
         let clobber2 = o.clobber;

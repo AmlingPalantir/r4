@@ -7,6 +7,7 @@ use regex::Regex;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
+use validates::Validates;
 
 pub struct Impl();
 
@@ -16,26 +17,28 @@ enum DelimiterOption {
     Regex(Arc<Regex>),
 }
 
-declare_opts! {
+#[derive(Default)]
+#[derive(Validates)]
+pub struct Options {
     delimiter: OptionalOption<DelimiterOption>,
     keys: StringVecOption,
 }
 
 impl OperationBe2 for Impl {
-    type PreOptions = PreOptions;
-    type PostOptions = PostOptions;
+    type PreOptions = Options;
+    type PostOptions = OptionsValidated;
 
     fn names() -> Vec<&'static str> {
         return vec!["from-split"];
     }
 
-    fn options<'a>(opt: &mut OptParserView<'a, PreOptions>) {
+    fn options<'a>(opt: &mut OptParserView<'a, Options>) {
         opt.match_single(&["d", "delim"], |p, a| p.delimiter.set(DelimiterOption::String(a.to_string())));
         opt.match_single(&["re", "regex"], |p, a| p.delimiter.set(DelimiterOption::Regex(Arc::new(Regex::new(a).unwrap()))));
         opt.sub(|p| &mut p.keys).match_single(&["k", "keys"], StringVecOption::push_split);
     }
 
-    fn stream(o: &PostOptions) -> Stream {
+    fn stream(o: &OptionsValidated) -> Stream {
         let keys = o.keys.clone();
         let delimiter = o.delimiter.clone().unwrap_or(DelimiterOption::String(",".to_string()));
 

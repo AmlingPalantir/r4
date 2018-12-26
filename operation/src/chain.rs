@@ -9,30 +9,32 @@ use validates::Validates;
 
 pub struct Impl();
 
-declare_opts! {
+#[derive(Default)]
+#[derive(Validates)]
+pub struct Options {
     keep_bof: BooleanOption,
     cmds: CmdsOption,
 }
 
 impl OperationBe for Impl {
-    type PreOptions = PreOptions;
-    type PostOptions = PostOptions;
+    type PreOptions = Options;
+    type PostOptions = OptionsValidated;
 
     fn names() -> Vec<&'static str> {
         return vec!["chain"];
     }
 
-    fn options<'a>(opt: &mut OptParserView<'a, PreOptions>) {
+    fn options<'a>(opt: &mut OptParserView<'a, Options>) {
         opt.sub(|p| &mut p.cmds).match_extra_hard(CmdsOption::push);
         opt.sub(|p| &mut p.keep_bof).match_zero(&["keep-bof"], BooleanOption::set);
         opt.sub(|p| &mut p.keep_bof).match_zero(&["no-keep-bof"], BooleanOption::clear);
     }
 
-    fn get_extra(o: &PostOptions) -> &Vec<String> {
+    fn get_extra(o: &OptionsValidated) -> &Vec<String> {
         return &o.cmds.extra;
     }
 
-    fn stream(o: &PostOptions) -> Stream {
+    fn stream(o: &OptionsValidated) -> Stream {
         let keep_bof = o.keep_bof;
         return o.cmds.wrs.iter().rev().fold(stream::id(), |mut s, wr| {
             if !keep_bof {

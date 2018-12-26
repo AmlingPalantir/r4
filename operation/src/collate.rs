@@ -3,32 +3,35 @@ use OperationBe;
 use opts::parser::OptParserView;
 use stream::Stream;
 use super::aggregate;
+use validates::Validates;
 
 pub struct Impl();
 
-declare_opts! {
+#[derive(Default)]
+#[derive(Validates)]
+pub struct Options {
     cl: ClumperOptions,
     ag: <aggregate::Impl as OperationBe>::PreOptions,
 }
 
 impl OperationBe for Impl {
-    type PreOptions = PreOptions;
-    type PostOptions = PostOptions;
+    type PreOptions = Options;
+    type PostOptions = OptionsValidated;
 
     fn names() -> Vec<&'static str> {
         return vec!["collate"];
     }
 
-    fn options<'a>(opt: &mut OptParserView<'a, PreOptions>) {
+    fn options<'a>(opt: &mut OptParserView<'a, Options>) {
         ClumperOptions::options(&mut opt.sub(|p| &mut p.cl));
         aggregate::Impl::options(&mut opt.sub(|p| &mut p.ag));
     }
 
-    fn get_extra(o: &PostOptions) -> &Vec<String> {
+    fn get_extra(o: &OptionsValidated) -> &Vec<String> {
         return aggregate::Impl::get_extra(&o.ag);
     }
 
-    fn stream(o: &PostOptions) -> Stream {
+    fn stream(o: &OptionsValidated) -> Stream {
         let ag_opt = o.ag.clone();
         return o.cl.stream(move |bucket| {
             let s = stream::transform_records(move |mut r| {

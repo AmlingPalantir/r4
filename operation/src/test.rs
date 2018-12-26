@@ -4,26 +4,29 @@ use opts::vals::RequiredStringOption;
 use record::Record;
 use std::sync::Arc;
 use stream::Stream;
+use validates::Validates;
 
 pub struct Impl();
 
-declare_opts! {
+#[derive(Default)]
+#[derive(Validates)]
+pub struct Options {
     msg: RequiredStringOption,
 }
 
 impl OperationBe2 for Impl {
-    type PreOptions = PreOptions;
-    type PostOptions = PostOptions;
+    type PreOptions = Options;
+    type PostOptions = OptionsValidated;
 
     fn names() -> Vec<&'static str> {
         return vec!["test"];
     }
 
-    fn options<'a>(opt: &mut OptParserView<'a, PreOptions>) {
+    fn options<'a>(opt: &mut OptParserView<'a, Options>) {
         opt.sub(|p| &mut p.msg).match_single(&["m", "msg"], RequiredStringOption::set);
     }
 
-    fn stream(o: &PostOptions) -> Stream {
+    fn stream(o: &OptionsValidated) -> Stream {
         let msg: Arc<str> = Arc::from(&*o.msg);
         let mut n = 0;
 

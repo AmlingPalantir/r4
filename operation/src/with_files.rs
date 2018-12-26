@@ -7,32 +7,35 @@ use record::Record;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
+use validates::Validates;
 
 pub struct Impl();
 
-declare_opts! {
+#[derive(Default)]
+#[derive(Validates)]
+pub struct Options {
     fk: OptionalStringOption,
     op: SubOperationOption,
 }
 
 impl OperationBe for Impl {
-    type PreOptions = PreOptions;
-    type PostOptions = PostOptions;
+    type PreOptions = Options;
+    type PostOptions = OptionsValidated;
 
     fn names() -> Vec<&'static str> {
         return vec!["with-files"];
     }
 
-    fn options<'a>(opt: &mut OptParserView<'a, PreOptions>) {
+    fn options<'a>(opt: &mut OptParserView<'a, Options>) {
         opt.sub(|p| &mut p.fk).match_single(&["fk", "file-key"], OptionalStringOption::set);
         opt.sub(|p| &mut p.op).match_extra_hard(SubOperationOption::push);
     }
 
-    fn get_extra(o: &PostOptions) -> &Vec<String> {
+    fn get_extra(o: &OptionsValidated) -> &Vec<String> {
         return &o.op.extra;
     }
 
-    fn stream(o: &PostOptions) -> Stream {
+    fn stream(o: &OptionsValidated) -> Stream {
         struct StreamState {
             fk: Arc<str>,
             sub_wr: Arc<StreamWrapper>,
