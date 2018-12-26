@@ -30,6 +30,7 @@ registry! {
     join,
     multiplex,
     test,
+    to_table,
     with_files,
     with_lines,
 }

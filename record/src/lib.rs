@@ -282,4 +282,11 @@ impl Record {
             _ => panic!(),
         };
     }
+
+    pub fn pretty_string(&self) -> String {
+        return match *self.0 {
+            JsonPart::String(ref s) => s.to_string(),
+            _ => self.deparse(),
+        };
+    }
 }
