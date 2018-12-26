@@ -33,23 +33,25 @@ impl AggregatorOptions {
     }
 }
 
-declare_opts! {
+#[derive(Default)]
+#[derive(Validates)]
+pub struct Options {
     aggs: AggregatorOptions,
 }
 
 impl OperationBe2 for Impl {
-    type PreOptions = PreOptions;
-    type PostOptions = PostOptions;
+    type PreOptions = Options;
+    type PostOptions = OptionsValidated;
 
     fn names() -> Vec<&'static str> {
         return vec!["aggregate"];
     }
 
-    fn options<'a>(opt: &mut OptParserView<'a, PreOptions>) {
+    fn options<'a>(opt: &mut OptParserView<'a, Options>) {
         AggregatorOptions::options(&mut opt.sub(|p| &mut p.aggs));
     }
 
-    fn stream(o: &PostOptions) -> Stream {
+    fn stream(o: &OptionsValidated) -> Stream {
         return stream::compound(
             stream::parse(),
             stream::closures(
