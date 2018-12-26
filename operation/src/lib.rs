@@ -9,6 +9,7 @@ extern crate record;
 extern crate regex;
 #[macro_use]
 extern crate registry;
+extern crate sorts;
 extern crate stream;
 extern crate stream_process;
 extern crate validates;
@@ -29,6 +30,7 @@ registry! {
     from_split,
     join,
     multiplex,
+    sort,
     test,
     to_table,
     with_files,

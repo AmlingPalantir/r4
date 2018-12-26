@@ -197,3 +197,11 @@ impl StringSetOption {
         }
     }
 }
+
+pub type OptionalUsizeOption = OptionalOption<usize>;
+
+impl OptionalUsizeOption {
+    pub fn parse(&mut self, a: &str) {
+        self.set(a.parse().unwrap());
+    }
+}
