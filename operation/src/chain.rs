@@ -3,9 +3,9 @@ use StreamWrapper;
 use SubOperationOption;
 use opts::parser::OptParserView;
 use opts::vals::BooleanOption;
-use opts::vals::Validates;
 use std::sync::Arc;
 use stream::Stream;
+use validates::Validates;
 
 pub struct Impl();
 

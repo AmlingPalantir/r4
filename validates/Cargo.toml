@@ -1,7 +1,4 @@
 [package]
-name = "opts"
+name = "validates"
 version = "1.0.0"
 authors = ["Keith Amling <me@amling2.org>"]
-
-[dependencies]
-validates = { path = "../validates" }

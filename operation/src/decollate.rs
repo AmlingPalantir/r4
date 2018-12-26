@@ -1,9 +1,9 @@
 use OperationBe2;
 use deaggregator::DeaggregatorState;
 use opts::parser::OptParserView;
-use opts::vals::Validates;
 use stream::Entry;
 use stream::Stream;
+use validates::Validates;
 
 pub struct Impl();
 

@@ -2,12 +2,12 @@ use OperationBe2;
 use opts::parser::OptParserView;
 use opts::vals::RequiredStringOption;
 use opts::vals::StringVecOption;
-use opts::vals::Validates;
 use record::Record;
 use regex::Regex;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
+use validates::Validates;
 
 pub struct Impl();
 

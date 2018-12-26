@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 use std::sync::Arc;
+use validates::Validates;
 
 #[macro_export]
 macro_rules! declare_opts {
@@ -11,13 +12,13 @@ macro_rules! declare_opts {
             )*
         }
 
-        impl $crate::vals::Validates for PreOptions {
+        impl validates::Validates for PreOptions {
             type Target = PostOptions;
 
             fn validate(self) -> PostOptions {
                 return PostOptions {
                     $(
-                        $name: <$type as $crate::vals::Validates>::validate(self.$name),
+                        $name: <$type as validates::Validates>::validate(self.$name),
                     )*
                 };
             }
@@ -26,16 +27,10 @@ macro_rules! declare_opts {
         #[derive(Clone)]
         pub struct PostOptions {
             $(
-                $name: <$type as $crate::vals::Validates>::Target,
+                $name: <$type as validates::Validates>::Target,
             )*
         }
     }
-}
-
-pub trait Validates {
-    type Target;
-
-    fn validate(self) -> Self::Target;
 }
 
 #[derive(Default)]

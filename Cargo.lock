@@ -88,11 +88,15 @@ dependencies = [
  "serde_json 1.0.33 (registry+https://github.com/rust-lang/crates.io-index)",
  "stream 1.0.0",
  "stream_process 1.0.0",
+ "validates 1.0.0",
 ]
 
 [[package]]
 name = "opts"
 version = "1.0.0"
+dependencies = [
+ "validates 1.0.0",
+]
 
 [[package]]
 name = "r4"
@@ -189,6 +193,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "utf8-ranges"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "validates"
+version = "1.0.0"
 
 [[package]]
 name = "version_check"

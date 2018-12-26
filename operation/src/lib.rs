@@ -12,6 +12,7 @@ extern crate regex;
 extern crate registry;
 extern crate stream;
 extern crate stream_process;
+extern crate validates;
 
 registry! {
     OperationFe,
@@ -36,11 +37,11 @@ use clumper::ClumperWrapper;
 use opts::parser::OptParser;
 use opts::parser::OptParserView;
 use opts::vals::OptionalStringOption;
-use opts::vals::Validates;
 use record::Record;
 use std::rc::Rc;
 use std::sync::Arc;
 use stream::Stream;
+use validates::Validates;
 
 pub trait OperationFe {
     fn names() -> Vec<&'static str>;
