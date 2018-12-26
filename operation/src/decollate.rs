@@ -1,41 +1,17 @@
 use OperationBe2;
 use deaggregator::DeaggregatorState;
 use opts::parser::OptParserView;
+use opts::vals::UnvalidatedRawOption;
 use stream::Entry;
 use stream::Stream;
 use validates::Validates;
 
 pub struct Impl();
 
-#[derive(Clone)]
-#[derive(Default)]
-struct DeaggregatorOptions {
-    deaggs: Vec<Box<DeaggregatorState>>,
-}
-
-impl Validates for DeaggregatorOptions {
-    type Target = DeaggregatorOptions;
-
-    fn validate(self) -> DeaggregatorOptions {
-        return self;
-    }
-}
-
-impl DeaggregatorOptions {
-    fn options<'a>(opt: &mut OptParserView<'a, DeaggregatorOptions>) {
-        deaggregator::REGISTRY.single_options(&mut opt.sub(|p| &mut p.deaggs), &["d", "deagg", "deaggregator"]);
-        deaggregator::REGISTRY.multiple_options(&mut opt.sub(|p| &mut p.deaggs), &["d", "deagg", "deaggregator"]);
-    }
-
-    fn deaggs(&self) -> Vec<Box<DeaggregatorState>> {
-        return self.deaggs.clone();
-    }
-}
-
 #[derive(Default)]
 #[derive(Validates)]
 pub struct Options {
-    deaggs: DeaggregatorOptions,
+    deaggs: UnvalidatedRawOption<Vec<Box<DeaggregatorState>>>
 }
 
 impl OperationBe2 for Impl {
@@ -47,11 +23,12 @@ impl OperationBe2 for Impl {
     }
 
     fn options<'a>(opt: &mut OptParserView<'a, Options>) {
-        DeaggregatorOptions::options(&mut opt.sub(|p| &mut p.deaggs));
+        deaggregator::REGISTRY.single_options(&mut opt.sub(|p| &mut p.deaggs.0), &["d", "deagg", "deaggregator"]);
+        deaggregator::REGISTRY.multiple_options(&mut opt.sub(|p| &mut p.deaggs.0), &["d", "deagg", "deaggregator"]);
     }
 
     fn stream(o: &OptionsValidated) -> Stream {
-        return o.deaggs.deaggs().iter().fold(stream::parse(), |s, deagg| {
+        return o.deaggs.iter().fold(stream::parse(), |s, deagg| {
             let deagg = deagg.clone();
             return stream::compound(
                 s,

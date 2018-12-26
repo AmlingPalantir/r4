@@ -51,7 +51,7 @@ pub fn derive_validates(input: TokenStream) -> TokenStream {
                         #vis <#ty as ::validates::Validates>::Target,
                     };
                 }).collect();
-                struct_args = quote! { ( #( #struct_fields )* ) };
+                struct_args = quote! { ( #( #struct_fields )* ); };
             },
             Fields::Unit => {
                 ctor_args = quote! { () };
