@@ -1,7 +1,7 @@
 use OperationBe2;
 use aggregator::AggregatorState;
 use opts::parser::OptParserView;
-use opts::vals::OptionTrait;
+use opts::vals::Validates;
 use record::Record;
 use stream::Entry;
 use stream::Stream;
@@ -14,8 +14,8 @@ struct AggregatorOptions {
     aggs: Vec<(String, Box<AggregatorState>)>,
 }
 
-impl OptionTrait for AggregatorOptions {
-    type ValidatesTo = AggregatorOptions;
+impl Validates for AggregatorOptions {
+    type Target = AggregatorOptions;
 
     fn validate(self) -> AggregatorOptions {
         return self;

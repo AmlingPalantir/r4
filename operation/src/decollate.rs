@@ -1,7 +1,7 @@
 use OperationBe2;
 use deaggregator::DeaggregatorState;
 use opts::parser::OptParserView;
-use opts::vals::OptionTrait;
+use opts::vals::Validates;
 use stream::Entry;
 use stream::Stream;
 
@@ -13,8 +13,8 @@ struct DeaggregatorOptions {
     deaggs: Vec<Box<DeaggregatorState>>,
 }
 
-impl OptionTrait for DeaggregatorOptions {
-    type ValidatesTo = DeaggregatorOptions;
+impl Validates for DeaggregatorOptions {
+    type Target = DeaggregatorOptions;
 
     fn validate(self) -> DeaggregatorOptions {
         return self;

@@ -11,13 +11,13 @@ macro_rules! declare_opts {
             )*
         }
 
-        impl $crate::vals::OptionTrait for PreOptions {
-            type ValidatesTo = PostOptions;
+        impl $crate::vals::Validates for PreOptions {
+            type Target = PostOptions;
 
             fn validate(self) -> PostOptions {
                 return PostOptions {
                     $(
-                        $name: <$type as $crate::vals::OptionTrait>::validate(self.$name),
+                        $name: <$type as $crate::vals::Validates>::validate(self.$name),
                     )*
                 };
             }
@@ -26,23 +26,23 @@ macro_rules! declare_opts {
         #[derive(Clone)]
         pub struct PostOptions {
             $(
-                $name: <$type as $crate::vals::OptionTrait>::ValidatesTo,
+                $name: <$type as $crate::vals::Validates>::Target,
             )*
         }
     }
 }
 
-pub trait OptionTrait {
-    type ValidatesTo;
+pub trait Validates {
+    type Target;
 
-    fn validate(self) -> Self::ValidatesTo;
+    fn validate(self) -> Self::Target;
 }
 
 #[derive(Default)]
 pub struct BooleanOption(bool);
 
-impl OptionTrait for BooleanOption {
-    type ValidatesTo = bool;
+impl Validates for BooleanOption {
+    type Target = bool;
 
     fn validate(self) -> bool {
         return self.0;
@@ -67,8 +67,8 @@ impl<T> Default for RequiredOption<T> {
     }
 }
 
-impl<T> OptionTrait for RequiredOption<T> {
-    type ValidatesTo = T;
+impl<T> Validates for RequiredOption<T> {
+    type Target = T;
 
     fn validate(self) -> T {
         return self.0.unwrap();
@@ -93,8 +93,8 @@ impl<T: Clone> RequiredOption<T> {
 #[derive(Default)]
 pub struct RequiredStringOption(Option<String>);
 
-impl OptionTrait for RequiredStringOption {
-    type ValidatesTo = Arc<str>;
+impl Validates for RequiredStringOption {
+    type Target = Arc<str>;
 
     fn validate(self) -> Arc<str> {
         return match self.0 {
@@ -121,8 +121,8 @@ impl<T> Default for OptionalOption<T> {
     }
 }
 
-impl<T> OptionTrait for OptionalOption<T> {
-    type ValidatesTo = Option<T>;
+impl<T> Validates for OptionalOption<T> {
+    type Target = Option<T>;
 
     fn validate(self) -> Option<T> {
         return self.0;
@@ -147,8 +147,8 @@ impl<T: Clone> OptionalOption<T> {
 #[derive(Default)]
 pub struct OptionalStringOption(Option<String>);
 
-impl OptionTrait for OptionalStringOption {
-    type ValidatesTo = Option<Arc<str>>;
+impl Validates for OptionalStringOption {
+    type Target = Option<Arc<str>>;
 
     fn validate(self) -> Option<Arc<str>> {
         return match self.0 {
@@ -170,8 +170,8 @@ impl OptionalStringOption {
 #[derive(Default)]
 pub struct UnvalidatedArcOption<T>(pub T);
 
-impl<T> OptionTrait for UnvalidatedArcOption<T> {
-    type ValidatesTo = Arc<T>;
+impl<T> Validates for UnvalidatedArcOption<T> {
+    type Target = Arc<T>;
 
     fn validate(self) -> Arc<T> {
         return Arc::new(self.0);
@@ -195,8 +195,8 @@ impl StringVecOption {
 #[derive(Default)]
 pub struct StringSetOption(Vec<String>);
 
-impl OptionTrait for StringSetOption {
-    type ValidatesTo = Arc<HashSet<String>>;
+impl Validates for StringSetOption {
+    type Target = Arc<HashSet<String>>;
 
     fn validate(self) -> Arc<HashSet<String>> {
         return Arc::new(self.0.into_iter().collect());

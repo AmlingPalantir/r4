@@ -3,7 +3,7 @@ use StreamWrapper;
 use SubOperationOption;
 use opts::parser::OptParserView;
 use opts::vals::BooleanOption;
-use opts::vals::OptionTrait;
+use opts::vals::Validates;
 use std::sync::Arc;
 use stream::Stream;
 
@@ -46,8 +46,8 @@ impl OperationBe for Impl {
 #[derive(Default)]
 struct CmdsOption(Vec<String>);
 
-impl OptionTrait for CmdsOption {
-    type ValidatesTo = CmdsOptions;
+impl Validates for CmdsOption {
+    type Target = CmdsOptions;
 
     fn validate(self) -> CmdsOptions {
         let mut iter = self.0.into_iter();

@@ -35,8 +35,8 @@ use clumper::ClumperFe;
 use clumper::ClumperWrapper;
 use opts::parser::OptParser;
 use opts::parser::OptParserView;
-use opts::vals::OptionTrait;
 use opts::vals::OptionalStringOption;
+use opts::vals::Validates;
 use record::Record;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -67,7 +67,7 @@ impl StreamWrapper {
 
 
 pub trait OperationBe {
-    type PreOptions: OptionTrait<ValidatesTo = Self::PostOptions> + Default + 'static;
+    type PreOptions: Validates<Target = Self::PostOptions> + Default + 'static;
     type PostOptions: Send + Sync + 'static;
 
     fn names() -> Vec<&'static str>;
@@ -100,7 +100,7 @@ impl<B: OperationBe> OperationFe for B {
 
 
 pub trait OperationBe2 {
-    type PreOptions: OptionTrait<ValidatesTo = Self::PostOptions> + Default + 'static;
+    type PreOptions: Validates<Target = Self::PostOptions> + Default + 'static;
     type PostOptions: Send + Sync + 'static;
 
     fn names() -> Vec<&'static str>;
@@ -115,10 +115,10 @@ pub struct AndArgsOptions<P> {
     args: Vec<String>,
 }
 
-impl<P: OptionTrait> OptionTrait for AndArgsOptions<P> {
-    type ValidatesTo = AndArgsOptions<<P as OptionTrait>::ValidatesTo>;
+impl<P: Validates> Validates for AndArgsOptions<P> {
+    type Target = AndArgsOptions<<P as Validates>::Target>;
 
-    fn validate(self) -> AndArgsOptions<<P as OptionTrait>::ValidatesTo> {
+    fn validate(self) -> AndArgsOptions<<P as Validates>::Target> {
         return AndArgsOptions {
             p: self.p.validate(),
             args: self.args,
@@ -164,8 +164,8 @@ impl SubOperationOption {
     }
 }
 
-impl OptionTrait for SubOperationOption {
-    type ValidatesTo = SubOperationOptions;
+impl Validates for SubOperationOption {
+    type Target = SubOperationOptions;
 
     fn validate(mut self) -> SubOperationOptions {
         if self.0.len() >= 2 && self.0[0] == "r4" {
@@ -200,8 +200,8 @@ struct ClumperOptions {
     cws: Vec<Box<ClumperWrapper>>,
 }
 
-impl OptionTrait for ClumperOptions {
-    type ValidatesTo = ClumperOptions;
+impl Validates for ClumperOptions {
+    type Target = ClumperOptions;
 
     fn validate(self) -> ClumperOptions {
         return self;
@@ -245,8 +245,8 @@ struct TwoRecordUnionOption {
     right_prefix: OptionalStringOption,
 }
 
-impl OptionTrait for TwoRecordUnionOption {
-    type ValidatesTo = TwoRecordUnionOptions;
+impl Validates for TwoRecordUnionOption {
+    type Target = TwoRecordUnionOptions;
 
     fn validate(self) -> TwoRecordUnionOptions {
         return TwoRecordUnionOptions {

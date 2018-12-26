@@ -1,8 +1,8 @@
 use OperationBe2;
 use opts::parser::OptParserView;
-use opts::vals::OptionTrait;
 use opts::vals::RequiredStringOption;
 use opts::vals::StringVecOption;
+use opts::vals::Validates;
 use record::Record;
 use regex::Regex;
 use std::sync::Arc;
@@ -14,8 +14,8 @@ pub struct Impl();
 #[derive(Default)]
 struct RegexOption(RequiredStringOption);
 
-impl OptionTrait for RegexOption {
-    type ValidatesTo = Arc<Regex>;
+impl Validates for RegexOption {
+    type Target = Arc<Regex>;
 
     fn validate(self) -> Arc<Regex> {
         return Arc::new(Regex::new(&self.0.validate()).unwrap());
