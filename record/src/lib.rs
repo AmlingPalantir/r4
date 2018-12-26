@@ -1,39 +1,13 @@
+use float::F64HashDishonorProxy;
 use std::collections::BTreeMap;
-use std::hash::Hash;
-use std::hash::Hasher;
 use std::ops::Deref;
 use std::sync::Arc;
 use std::vec::Vec;
 
+pub mod float;
+
 #[cfg(test)]
 mod tests;
-
-#[derive(Clone)]
-struct F64Wrapper(f64);
-
-impl F64Wrapper {
-    fn to_json_string(&self) -> String {
-        return serde_json::to_string(&serde_json::Number::from_f64(self.0)).unwrap();
-    }
-}
-
-// Ouch, if it comes down to Hash/Eq for F64Wrapper you've really asked for it,
-// but we do the least bad, least insane thing we can...
-
-impl Eq for F64Wrapper {
-}
-
-impl PartialEq for F64Wrapper {
-    fn eq(&self, other: &F64Wrapper) -> bool {
-        return self.to_json_string() == other.to_json_string();
-    }
-}
-
-impl Hash for F64Wrapper {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.to_json_string().hash(state);
-    }
-}
 
 #[derive(Clone)]
 #[derive(Eq)]
@@ -43,7 +17,7 @@ enum JsonPart {
     Null,
     Bool(bool),
     NumberI64(i64),
-    NumberF64(F64Wrapper),
+    NumberF64(F64HashDishonorProxy),
     String(Arc<str>),
     Array(Vec<Record>),
     Hash(BTreeMap<Arc<str>, Record>),
@@ -55,7 +29,7 @@ impl JsonPart {
             return JsonPart::NumberI64(n);
         }
         if let Some(n) = n.as_f64() {
-            return JsonPart::NumberF64(F64Wrapper(n));
+            return JsonPart::NumberF64(F64HashDishonorProxy(n));
         }
         panic!("Unhandled JSON number type: {}", n);
     }
@@ -97,7 +71,7 @@ impl Record {
     }
 
     pub fn from_f64(f: f64) -> Self {
-        return Record(Arc::new(JsonPart::NumberF64(F64Wrapper(f))));
+        return Record(Arc::new(JsonPart::NumberF64(F64HashDishonorProxy(f))));
     }
 
     pub fn get_hash(&self, key: &str) -> Option<Record> {
