@@ -11,7 +11,7 @@ deaggregator = { path = "../deaggregator" }
 opts = { path = "../opts" }
 record = { path = "../record" }
 registry = { path = "../registry" }
-sort = { path = "../sort" }
+sorts = { path = "../sorts" }
 stream = { path = "../stream" }
 stream_process = { path = "../stream_process" }
 validates = { path = "../validates" }
