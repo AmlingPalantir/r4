@@ -242,34 +242,20 @@ impl ClumperOptions {
 }
 
 #[derive(Default)]
+#[derive(Validates)]
 struct TwoRecordUnionOption {
     left_prefix: OptionalStringOption,
     right_prefix: OptionalStringOption,
 }
 
-impl Validates for TwoRecordUnionOption {
-    type Target = TwoRecordUnionOptions;
-
-    fn validate(self) -> TwoRecordUnionOptions {
-        return TwoRecordUnionOptions {
-            left_prefix: self.left_prefix.validate(),
-            right_prefix: self.right_prefix.validate(),
-        };
-    }
-}
-
-#[derive(Clone)]
-struct TwoRecordUnionOptions {
-    left_prefix: Option<Arc<str>>,
-    right_prefix: Option<Arc<str>>,
-}
-
-impl TwoRecordUnionOptions {
+impl TwoRecordUnionOption {
     fn options<'a>(opt: &mut OptParserView<'a, TwoRecordUnionOption>) {
         opt.sub(|p| &mut p.left_prefix).match_single(&["lp", "left-prefix"], OptionalStringOption::set);
         opt.sub(|p| &mut p.right_prefix).match_single(&["rp", "right-prefix"], OptionalStringOption::set);
     }
+}
 
+impl TwoRecordUnionOptionValidated {
     fn union(&self, r1: Record, r2: Record) -> Record {
         fn _union_aux(r: &mut Record, prefix: &Option<Arc<str>>, r1: Record) {
             match prefix {

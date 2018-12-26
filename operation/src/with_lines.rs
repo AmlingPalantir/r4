@@ -1,7 +1,6 @@
 use OperationBe2;
 use SubOperationOption;
 use TwoRecordUnionOption;
-use TwoRecordUnionOptions;
 use opts::parser::OptParserView;
 use opts::vals::OptionalStringOption;
 use std::sync::Arc;
@@ -28,7 +27,7 @@ impl OperationBe2 for Impl {
     }
 
     fn options<'a>(opt: &mut OptParserView<'a, Options>) {
-        TwoRecordUnionOptions::options(&mut opt.sub(|p| &mut p.tru));
+        TwoRecordUnionOption::options(&mut opt.sub(|p| &mut p.tru));
         opt.sub(|p| &mut p.lk).match_single(&["lk", "line-key"], OptionalStringOption::set);
         opt.sub(|p| &mut p.op).match_extra_hard(SubOperationOption::push);
     }
