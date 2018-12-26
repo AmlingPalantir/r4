@@ -2,37 +2,6 @@ use std::collections::HashSet;
 use std::sync::Arc;
 use validates::Validates;
 
-#[macro_export]
-macro_rules! declare_opts {
-    {$($name:ident: $type:ty,)*} => {
-        #[derive(Default)]
-        pub struct PreOptions {
-            $(
-                $name: $type,
-            )*
-        }
-
-        impl validates::Validates for PreOptions {
-            type Target = PostOptions;
-
-            fn validate(self) -> PostOptions {
-                return PostOptions {
-                    $(
-                        $name: <$type as validates::Validates>::validate(self.$name),
-                    )*
-                };
-            }
-        }
-
-        #[derive(Clone)]
-        pub struct PostOptions {
-            $(
-                $name: <$type as validates::Validates>::Target,
-            )*
-        }
-    }
-}
-
 #[derive(Default)]
 pub struct BooleanOption(bool);
 

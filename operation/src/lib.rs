@@ -4,7 +4,6 @@ extern crate clumper;
 extern crate deaggregator;
 #[macro_use]
 extern crate lazy_static;
-#[macro_use]
 extern crate opts;
 extern crate record;
 extern crate regex;
