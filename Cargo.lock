@@ -51,6 +51,7 @@ dependencies = [
 name = "executor"
 version = "1.0.0"
 dependencies = [
+ "misc 1.0.0",
  "record 1.0.0",
 ]
 
@@ -78,6 +79,10 @@ dependencies = [
  "libc 0.2.45 (registry+https://github.com/rust-lang/crates.io-index)",
  "version_check 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
+
+[[package]]
+name = "misc"
+version = "1.0.0"
 
 [[package]]
 name = "operation"
