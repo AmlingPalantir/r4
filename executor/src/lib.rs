@@ -6,6 +6,9 @@ extern crate record;
 mod ast;
 lalrpop_mod!(pub parse);
 
+#[cfg(test)]
+mod tests;
+
 use ast::BinaryOp;
 use ast::Expr;
 use ast::UnaryOp;
@@ -174,12 +177,4 @@ pub fn load(code: &str) -> Box<Fn(Record) -> Record> {
         }
         return st.r;
     });
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test1() {
-        //assert_eq!(super::parse::Expr1Parser::new().parse("1 + (1 + 2) * 3").unwrap(), 10);
-    }
 }

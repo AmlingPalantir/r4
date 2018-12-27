@@ -18,11 +18,12 @@ pub Stmt: Vec<Box<Expr>> = {
 
 Expr0: Box<Expr> = {
     <RecPath> "=" <Expr1> => Box::new(Expr::RecordWrite(<>)),
-    Expr1
+    Expr1,
 }
 
 Expr1: Box<Expr> = {
     <Expr2> "?" <Expr2> ":" <Expr2> => Box::new(Expr::Ternary(<>)),
+    Expr2,
 }
 
 Expr2: Box<Expr> = {
@@ -57,7 +58,7 @@ Expr3Op: BinaryOp = {
 
 Expr4: Box<Expr> = {
     Expr4 Expr4Op Expr5 => Box::new(Expr::Binary(<>)),
-    Expr5
+    Expr5,
 }
 
 Expr4Op: BinaryOp = {
@@ -68,7 +69,7 @@ Expr4Op: BinaryOp = {
 
 Expr5: Box<Expr> = {
     Expr5 Expr5Op Expr6 => Box::new(Expr::Binary(<>)),
-    Expr6
+    Expr6,
 }
 
 Expr5Op: BinaryOp = {
@@ -97,7 +98,7 @@ CSL<T>: Vec<T> = {
 Expr7: Box<Expr> = {
     "(" <Expr0> ")",
     "[" <CSL<Expr0>> "]" => Box::new(Expr::ArrayLiteral(<>)),
-    "{" <CSL<HashLiteralElement>> "]" => Box::new(Expr::HashLiteral(<>.into_iter().collect())),
+    "{" <CSL<HashLiteralElement>> "}" => Box::new(Expr::HashLiteral(<>.into_iter().collect())),
     IntLiteral,
     FloatLiteral,
     StringLiteral,
@@ -106,7 +107,7 @@ Expr7: Box<Expr> = {
 }
 
 HashLiteralElement: (Arc<str>, Box<Expr>) = {
-    <k:r"[_a-zA-Z][_a-zA-Z0-9]+"> ":" <v:Expr0> => (Arc::from(k), v),
+    <k:r"[_a-zA-Z][_a-zA-Z0-9]*"> ":" <v:Expr0> => (Arc::from(k), v),
 }
 
 IntLiteral: Box<Expr> = <s:r"-?[0-9]+"> => crate::ast::int_literal(s);
