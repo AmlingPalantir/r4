@@ -1,6 +1,7 @@
 use crate::ast::BinaryOp;
 use crate::ast::Expr;
 use crate::ast::UnaryOp;
+use record::Record;
 use std::sync::Arc;
 
 grammar;
@@ -102,6 +103,8 @@ Expr7: Box<Expr> = {
     IntLiteral,
     FloatLiteral,
     StringLiteral,
+    "true" => Box::new(Expr::Literal(Record::from(true))),
+    "false" => Box::new(Expr::Literal(Record::from(false))),
     RecPath => Box::new(Expr::RecordRead(<>)),
     RecPathDel => Box::new(Expr::RecordDelete(<>)),
 }
