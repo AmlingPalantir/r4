@@ -150,8 +150,14 @@ impl State {
                 return self.r.del_path(s);
             }
 
-            _ => {
-                unimplemented!();
+            Expr::Literal(r) => {
+                return r.clone();
+            }
+            Expr::ArrayLiteral(es) => {
+                return Record::from_vec(es.iter().map(|e| self.eval(e)).collect());
+            }
+            Expr::HashLiteral(es) => {
+                return Record::from_hash(es.iter().map(|(k, v)| (k.clone(), self.eval(v))).collect());
             }
         }
     }
