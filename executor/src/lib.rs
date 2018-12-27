@@ -37,12 +37,25 @@ impl ValueFe {
         }
     }
 
-    fn coerce_bool(&self) -> bool {
-        return self.to_record().coerce_bool();
+    fn with_be<R, F: FnOnce(&mut ValueBe) -> R>(&mut self, f: F) -> R {
+        let mut be = self.0.lock().unwrap();
+        return f((*be).convert_r_mut(|r| ValueBe::convert(r)));
     }
 
-    fn coerce_f64(&self) -> f64 {
-        return self.to_record().coerce_f64();
+    fn get_path(&mut self, path: &str) -> ValueFe {
+        return self.with_be(|be| be.get_path(path));
+    }
+
+    fn set_path(&mut self, path: &str, v: ValueFe) {
+        return self.with_be(|be| be.set_path(path, v));
+    }
+
+    fn del_path(&mut self, path: &str) -> ValueFe {
+        return self.with_be(|be| be.del_path(path));
+    }
+
+    fn coerce_bool(&self) -> bool {
+        return self.to_record().coerce_bool();
     }
 
     fn coerce_string(&self) -> Arc<str> {
@@ -90,6 +103,18 @@ impl ValueBe {
             }
         }
     }
+
+    fn get_path(&mut self, _path: &str) -> ValueFe {
+        unimplemented!();
+    }
+
+    fn set_path(&mut self, _path: &str, _v: ValueFe) {
+        unimplemented!();
+    }
+
+    fn del_path(&mut self, _path: &str) -> ValueFe {
+        unimplemented!();
+    }
 }
 
 struct State {
@@ -125,7 +150,7 @@ impl State {
     fn eval(&mut self, e: &Expr) -> ValueFe {
         match e {
             Expr::Ternary(e1, e2, e3) => {
-                if self.eval(e1).to_record().coerce_bool() {
+                if self.eval(e1).coerce_bool() {
                     return self.eval(e2);
                 }
                 return self.eval(e3);
@@ -216,6 +241,18 @@ impl State {
                     s.push_str(&s2);
                     return Arc::from(s);
                 });
+            }
+
+            Expr::RecordRead(s) => {
+                return self.r.get_path(s);
+            }
+            Expr::RecordWrite(s, e) => {
+                let v = self.eval(e);
+                self.r.set_path(s, v.clone());
+                return v;
+            }
+            Expr::RecordDelete(s) => {
+                return self.r.del_path(s);
             }
 
             _ => {
