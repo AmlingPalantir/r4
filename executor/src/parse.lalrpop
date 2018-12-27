@@ -1,22 +1,116 @@
-use std::str::FromStr;
+use crate::ast::BinaryOp;
+use crate::ast::Expr;
+use crate::ast::UnaryOp;
+use std::sync::Arc;
 
 grammar;
 
-pub Expr1: i32 = {
-    <l:Expr1> "+" <r:Expr2> => l + r,
-    <l:Expr1> "-" <r:Expr2> => l - r,
-    Expr2,
+pub Stmt: Vec<Box<Expr>> = {
+    <v:(<Expr0> ";")*> <e:Expr0?> => match e {
+        None => v,
+        Some(e) => {
+            let mut v = v;
+            v.push(e);
+            v
+        },
+    },
 }
 
-pub Expr2: i32 = {
-    <l:Expr2> "*" <r:Expr3> => l * r,
-    <l:Expr2> "/" <r:Expr3> => l / r,
+Expr0: Box<Expr> = {
+    <RecPath> "=" <Expr1> => Box::new(Expr::RecordWrite(<>)),
+    Expr1
+}
+
+Expr1: Box<Expr> = {
+    <Expr2> "?" <Expr2> ":" <Expr2> => Box::new(Expr::Ternary(<>)),
+}
+
+Expr2: Box<Expr> = {
+    Expr2 Expr2Op Expr3 => Box::new(Expr::Binary(<>)),
     Expr3,
 }
 
-pub Expr3: i32 = {
-    Num,
-    "(" <Expr1> ")",
+Expr2Op: BinaryOp = {
+    "||" => BinaryOp::LogOr(),
+    "&&" => BinaryOp::LogAnd(),
 }
 
-Num: i32 = <s:r"[0-9]+"> => i32::from_str(s).unwrap();
+Expr3: Box<Expr> = {
+    Expr4 Expr3Op Expr4 => Box::new(Expr::Binary(<>)),
+    Expr4,
+}
+
+Expr3Op: BinaryOp = {
+    "<" => BinaryOp::NumLt(),
+    "<=" => BinaryOp::NumLte(),
+    ">" => BinaryOp::NumGt(),
+    ">=" => BinaryOp::NumGte(),
+    "==" => BinaryOp::NumEq(),
+    "!=" => BinaryOp::NumNe(),
+    "lt" => BinaryOp::Lt(),
+    "lte" => BinaryOp::Lte(),
+    "gt" => BinaryOp::Gt(),
+    "gte" => BinaryOp::Gte(),
+    "eq" => BinaryOp::Eq(),
+    "ne" => BinaryOp::Ne(),
+}
+
+Expr4: Box<Expr> = {
+    Expr4 Expr4Op Expr5 => Box::new(Expr::Binary(<>)),
+    Expr5
+}
+
+Expr4Op: BinaryOp = {
+    "+" => BinaryOp::Add(),
+    "-" => BinaryOp::Sub(),
+    "." => BinaryOp::Cat(),
+}
+
+Expr5: Box<Expr> = {
+    Expr5 Expr5Op Expr6 => Box::new(Expr::Binary(<>)),
+    Expr6
+}
+
+Expr5Op: BinaryOp = {
+    "*" => BinaryOp::Mul(),
+    "/" => BinaryOp::Div(),
+    "%" => BinaryOp::Mod(),
+}
+
+Expr6: Box<Expr> = {
+    "-" <Expr7> => Box::new(Expr::Unary(UnaryOp::NumNeg(), <>)),
+    "!" <Expr6> => Box::new(Expr::Unary(UnaryOp::LogNeg(), <>)),
+    Expr7,
+}
+
+CSL<T>: Vec<T> = {
+    <v:(<T> ",")*> <e:T?> => match e {
+        None => v,
+        Some(e) => {
+            let mut v = v;
+            v.push(e);
+            v
+        },
+    },
+}
+
+Expr7: Box<Expr> = {
+    "(" <Expr0> ")",
+    "[" <CSL<Expr0>> "]" => Box::new(Expr::ArrayLiteral(<>)),
+    "{" <CSL<HashLiteralElement>> "]" => Box::new(Expr::HashLiteral(<>.into_iter().collect())),
+    IntLiteral,
+    FloatLiteral,
+    StringLiteral,
+    RecPath => Box::new(Expr::RecordRead(<>)),
+    RecPathDel => Box::new(Expr::RecordDelete(<>)),
+}
+
+HashLiteralElement: (Arc<str>, Box<Expr>) = {
+    <k:r"[_a-zA-Z][_a-zA-Z0-9]+"> ":" <v:Expr0> => (Arc::from(k), v),
+}
+
+IntLiteral: Box<Expr> = <s:r"-?[0-9]+"> => crate::ast::int_literal(s);
+FloatLiteral: Box<Expr> = <s:r"-?[0-9]+\.[0-9]+"> => crate::ast::float_literal(s);
+StringLiteral: Box<Expr> = <s:r#""([^"\\]|\\[\\nt"])*""#> => crate::ast::string_literal(s);
+RecPath: Arc<str> = <s:r#"\{\{[^{}]*\}\}"#> => crate::ast::path_literal(s);
+RecPathDel: Arc<str> = <s:r#"d\{\{[^{}]*\}\}"#> => crate::ast::path_literal(&s[1..]);
