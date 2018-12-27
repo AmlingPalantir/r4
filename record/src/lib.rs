@@ -81,6 +81,55 @@ pub enum JsonPart {
     Hash(BTreeMap<Arc<str>, Record>),
 }
 
+impl JsonPart {
+    fn get_hash_mut(&mut self, key: &str) -> &mut JsonPart {
+        if let JsonPart::Primitive(JsonPrimitive::Null()) = *self {
+            *self = JsonPart::Hash(BTreeMap::new());
+        }
+        if let JsonPart::Hash(ref mut map) = *self {
+            return Arc::make_mut(&mut map.entry(Arc::from(key)).or_insert(Record::null()).0);
+        }
+        panic!("JsonPart::get_hash_mut() on non-hash");
+    }
+
+    fn get_array_mut(&mut self, key: usize) -> &mut JsonPart {
+        if let JsonPart::Primitive(JsonPrimitive::Null()) = *self {
+            *self = JsonPart::Array(Vec::new());
+        }
+        if let JsonPart::Array(ref mut arr) = *self {
+            while key >= arr.len() {
+                arr.push(Record::null());
+            }
+            return Arc::make_mut(&mut arr[key].0);
+        }
+        panic!("JsonPart::get_array_mut() on non-array");
+    }
+
+    fn get_rpart_mut(&mut self, part: &Either<&str, usize>) -> &mut JsonPart {
+        return match part {
+            Either::Left(s) => self.get_hash_mut(s),
+            Either::Right(idx) => self.get_array_mut(*idx),
+        };
+    }
+
+    fn del_rpart(&mut self, part: &Either<&str, usize>) -> Record {
+        match *part {
+            Either::Left(s) => {
+                if let JsonPart::Primitive(JsonPrimitive::Null()) = *self {
+                    *self = JsonPart::Hash(BTreeMap::new());
+                }
+                if let JsonPart::Hash(ref mut map) = *self {
+                    return map.remove(&Arc::from(s)).unwrap_or_else(Record::null);
+                }
+                panic!();
+            }
+            Either::Right(_idx) => {
+                panic!();
+            }
+        }
+    }
+}
+
 #[derive(Clone)]
 #[derive(Eq)]
 #[derive(Hash)]
@@ -138,52 +187,54 @@ impl Record {
         return self.get_path_opt(path).unwrap_or_else(Record::null);
     }
 
+    pub fn get_rpart(&self, part: &Either<&str, usize>) -> Option<Record> {
+        return match part {
+            Either::Left(s) => self.get_hash(s),
+            Either::Right(idx) => self.get_array(*idx),
+        };
+    }
+
     pub fn get_path_opt(&self, path: &str) -> Option<Record> {
         return RefPath::new(path).0.iter().fold(Some(self.clone()), |r, part| {
             return match r {
-                Some(r) => match part {
-                    Either::Left(part) => r.get_hash(part),
-                    Either::Right(idx) => r.get_array(*idx),
-                },
+                Some(r) => r.get_rpart(part),
                 None => None,
             };
         });
     }
 
     fn get_path_mut(&mut self, path: &str) -> &mut JsonPart {
-        fn _get_hash_mut<'a>(r: &'a mut JsonPart, key: &str) -> &'a mut JsonPart {
-            if let JsonPart::Primitive(JsonPrimitive::Null()) = *r {
-                *r = JsonPart::Hash(BTreeMap::new());
-            }
-            if let JsonPart::Hash(ref mut map) = *r {
-                return Arc::make_mut(&mut map.entry(Arc::from(key)).or_insert(Record::null()).0);
-            }
-            panic!("Record::_get_hash_mut() on non-hash");
-        }
-
-        fn _get_array_mut(r: &mut JsonPart, key: usize) -> &mut JsonPart {
-            if let JsonPart::Primitive(JsonPrimitive::Null()) = *r {
-                *r = JsonPart::Array(Vec::new());
-            }
-            if let JsonPart::Array(ref mut arr) = *r {
-                while key >= arr.len() {
-                    arr.push(Record::null());
-                }
-                return Arc::make_mut(&mut arr[key].0);
-            }
-            panic!("Record::_get_array_mut() on non-array");
-        }
-
-        return RefPath::new(path).0.iter().fold(Arc::make_mut(&mut self.0), |r, part| {
-            return match part {
-                Either::Left(part) => _get_hash_mut(r, part),
-                Either::Right(idx) => _get_array_mut(r, *idx),
-            };
-        });
+        return RefPath::new(path).0.iter().fold(Arc::make_mut(&mut self.0), JsonPart::get_rpart_mut);
     }
 
     pub fn set_path(&mut self, path: &str, r: Record) {
         *self.get_path_mut(path) = (*r.0).clone();
+    }
+
+    pub fn del_path(&mut self, path: &str) -> Record {
+        let path = RefPath::new(path);
+        let x = path.0.iter().fold(
+            Either::Left(Arc::make_mut(&mut self.0)),
+            |e, part| {
+                match e {
+                    Either::Left(r) => {
+                        return Either::Right((r, part));
+                    }
+                    Either::Right((r, prev)) => {
+                        let r = r.get_rpart_mut(prev);
+                        return Either::Right((r, part));
+                    }
+                }
+            }
+        );
+        match x {
+            Either::Left(_) => {
+                panic!();
+            }
+            Either::Right((r, part)) => {
+                return r.del_rpart(part);
+            }
+        }
     }
 
     pub fn parse(s: &str) -> Self {
