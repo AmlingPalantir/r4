@@ -8,6 +8,7 @@ aggregator = { path = "../aggregator" }
 bgop = { path = "../bgop" }
 clumper = { path = "../clumper" }
 deaggregator = { path = "../deaggregator" }
+executor = { path = "../executor" }
 opts = { path = "../opts" }
 record = { path = "../record" }
 registry = { path = "../registry" }
