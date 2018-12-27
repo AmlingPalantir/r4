@@ -32,6 +32,7 @@ registry! {
     multiplex,
     sort,
     test,
+    to_ptable,
     to_table,
     with_files,
     with_lines,

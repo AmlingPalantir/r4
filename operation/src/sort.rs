@@ -17,14 +17,14 @@ pub struct Impl();
 pub struct SortOptions(UnvalidatedRawOption<Vec<Box<SortState>>>);
 
 impl SortOptions {
-    fn options<'a>(opt: &mut OptParserView<'a, SortOptions>, aliases: &[&str]) {
+    pub fn options<'a>(opt: &mut OptParserView<'a, SortOptions>, aliases: &[&str]) {
         sorts::REGISTRY.single_options(&mut opt.sub(|p| &mut (p.0).0), aliases);
         sorts::REGISTRY.multiple_options(&mut opt.sub(|p| &mut (p.0).0), aliases);
     }
 }
 
 impl SortOptionsValidated {
-    fn cmp(&self) -> Box<Fn(&Record, &Record) -> Ordering> {
+    pub fn cmp(&self) -> Box<Fn(&Record, &Record) -> Ordering> {
         let sorts = self.0.clone();
         return Box::new(move |r1, r2| {
             for sort in sorts.iter() {
