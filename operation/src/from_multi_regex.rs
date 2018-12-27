@@ -135,7 +135,7 @@ impl OperationBe2 for Impl {
                                     let gi = m.iter().skip(1);
                                     for (k, g) in ki.zip(gi) {
                                         if let Some(m) = g {
-                                            s.r.set_path(&k, Record::from_str(m.as_str()));
+                                            s.r.set_path(&k, Record::from(m.as_str()));
                                         }
                                     }
                                     if *post_flush {

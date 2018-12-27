@@ -19,6 +19,6 @@ impl AggregatorBe for Impl {
     }
 
     fn finish(state: Box<f64>, _a: &Arc<str>) -> Record {
-        return Record::from_f64(*state);
+        return Record::from(*state);
     }
 }

@@ -53,9 +53,9 @@ impl OperationBe2 for Impl {
                         Entry::Line(line) => {
                             let mut r = Record::empty_hash();
 
-                            r.set_path(&lk, Record::from_str(line));
-                            r.set_path(&lnk, Record::from_i64(s.1));
-                            r.set_path(&fk, s.0.clone().map(Record::from_str).unwrap_or_else(Record::null));
+                            r.set_path(&lk, Record::from(line));
+                            r.set_path(&lnk, Record::from(s.1));
+                            r.set_path(&fk, s.0.clone().map(Record::from).unwrap_or_else(Record::null));
 
                             return w(Entry::Record(r));
                         }

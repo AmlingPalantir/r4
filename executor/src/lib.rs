@@ -59,7 +59,7 @@ impl ValueBe {
     fn to_record(&self) -> Record {
         match self {
             ValueBe::Primitive(p) => {
-                return Record::from_json_primitive(p.clone());
+                return Record::from(p.clone());
             }
             ValueBe::Array(arr) => {
                 return Record::from_vec(arr.iter().map(|e| e.to_record()).collect());

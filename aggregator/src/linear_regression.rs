@@ -47,10 +47,10 @@ impl AggregatorBe for Impl {
 
         let mut hash = BTreeMap::new();
 
-        hash.insert(Arc::from("alpha"), Record::from_f64(alpha));
-        hash.insert(Arc::from("beta"), Record::from_f64(beta));
-        hash.insert(Arc::from("alpha_se"), Record::from_f64(salpha));
-        hash.insert(Arc::from("beta_se"), Record::from_f64(sbeta));
+        hash.insert(Arc::from("alpha"), Record::from(alpha));
+        hash.insert(Arc::from("beta"), Record::from(beta));
+        hash.insert(Arc::from("alpha_se"), Record::from(salpha));
+        hash.insert(Arc::from("beta_se"), Record::from(sbeta));
 
         return Record::from_hash(hash);
     }

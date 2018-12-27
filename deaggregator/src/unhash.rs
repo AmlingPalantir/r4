@@ -15,7 +15,7 @@ impl DeaggregatorBe for Impl {
     fn deaggregate(a: &(Arc<str>, Arc<str>, Arc<str>), r: Record) -> Vec<Vec<(Arc<str>, Record)>> {
         return r.get_path(&a.0).expect_hash().iter().map(|(k, v)| {
             return vec![
-                (a.1.clone(), Record::from_arcstr(k.clone())),
+                (a.1.clone(), Record::from(k.clone())),
                 (a.2.clone(), v.clone()),
             ];
         }).collect();

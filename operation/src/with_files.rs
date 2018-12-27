@@ -51,7 +51,7 @@ impl OperationBe for Impl {
             fn open(&mut self, file: Option<Arc<str>>) -> &mut Stream {
                 let fk = self.fk.clone();
                 let fv = match file {
-                    Some(file) => Record::from_arcstr(file),
+                    Some(file) => Record::from(file),
                     None => Record::null(),
                 };
                 let sub_wr = self.sub_wr.clone();

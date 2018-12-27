@@ -22,9 +22,9 @@ fn test_get_path() {
 fn test_set_path() {
     let mut r = Record::parse("{\"x\":[{\"y\":\"z\"}]}");
     let r2 = r.clone();
-    r.set_path("x/#0/y", Record::from_str("w"));
+    r.set_path("x/#0/y", Record::from("w"));
     assert_eq!(r.deparse(), "{\"x\":[{\"y\":\"w\"}]}");
     assert_eq!(r2.deparse(), "{\"x\":[{\"y\":\"z\"}]}");
-    r.set_path("a/#2/b", Record::from_str("c"));
+    r.set_path("a/#2/b", Record::from("c"));
     assert_eq!(r.deparse(), "{\"a\":[null,null,{\"b\":\"c\"}],\"x\":[{\"y\":\"w\"}]}");
 }

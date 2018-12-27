@@ -1,6 +1,5 @@
 use float::F64HashDishonorProxy;
 use std::collections::BTreeMap;
-use std::ops::Deref;
 use std::sync::Arc;
 use std::vec::Vec;
 
@@ -33,6 +32,42 @@ impl JsonPrimitive {
     }
 }
 
+impl From<bool> for JsonPrimitive {
+    fn from(b: bool) -> Self {
+        return JsonPrimitive::Bool(b);
+    }
+}
+
+impl From<i64> for JsonPrimitive {
+    fn from(n: i64) -> Self {
+        return JsonPrimitive::NumberI64(n);
+    }
+}
+
+impl From<f64> for JsonPrimitive {
+    fn from(n: f64) -> Self {
+        return JsonPrimitive::NumberF64(F64HashDishonorProxy(n));
+    }
+}
+
+impl From<Arc<str>> for JsonPrimitive {
+    fn from(s: Arc<str>) -> Self {
+        return JsonPrimitive::String(s);
+    }
+}
+
+impl From<String> for JsonPrimitive {
+    fn from(s: String) -> Self {
+        return JsonPrimitive::String(Arc::from(s));
+    }
+}
+
+impl<'a> From<&'a str> for JsonPrimitive {
+    fn from(s: &'a str) -> Self {
+        return JsonPrimitive::String(Arc::from(s));
+    }
+}
+
 #[derive(Clone)]
 #[derive(Eq)]
 #[derive(Hash)]
@@ -50,28 +85,12 @@ pub enum JsonPart {
 pub struct Record(pub Arc<JsonPart>);
 
 impl Record {
-    pub fn from_json_primitive(p: JsonPrimitive) -> Self {
-        return Record(Arc::new(JsonPart::Primitive(p)));
-    }
-
     pub fn null() -> Self {
-        return Record::from_json_primitive(JsonPrimitive::Null());
-    }
-
-    pub fn from_bool(b: bool) -> Self {
-        return Record::from_json_primitive(JsonPrimitive::Bool(b));
+        return Record::from(JsonPrimitive::Null());
     }
 
     pub fn empty_hash() -> Self {
         return Record(Arc::new(JsonPart::Hash(BTreeMap::new())));
-    }
-
-    pub fn from_str<S: Deref<Target = str>>(s: S) -> Self {
-        return Record::from_json_primitive(JsonPrimitive::String(Arc::from(&*s)));
-    }
-
-    pub fn from_arcstr(s: Arc<str>) -> Self {
-        return Record::from_json_primitive(JsonPrimitive::String(s));
     }
 
     pub fn from_vec(arr: Vec<Record>) -> Self {
@@ -80,14 +99,6 @@ impl Record {
 
     pub fn from_hash(hash: BTreeMap<Arc<str>, Record>) -> Self {
         return Record(Arc::new(JsonPart::Hash(hash)));
-    }
-
-    pub fn from_i64(n: i64) -> Self {
-        return Record::from_json_primitive(JsonPrimitive::NumberI64(n));
-    }
-
-    pub fn from_f64(f: f64) -> Self {
-        return Record::from_json_primitive(JsonPrimitive::NumberF64(F64HashDishonorProxy(f)));
     }
 
     pub fn get_hash(&self, key: &str) -> Option<Record> {
@@ -146,7 +157,7 @@ impl Record {
                 *r = JsonPart::Hash(BTreeMap::new());
             }
             if let JsonPart::Hash(ref mut map) = *r {
-                return Arc::make_mut(&mut map.entry(Arc::from(key)).or_insert(Record::from_json_primitive(JsonPrimitive::Null())).0);
+                return Arc::make_mut(&mut map.entry(Arc::from(key)).or_insert(Record::null()).0);
             }
             panic!("Record::_get_hash_mut() on non-hash");
         }
@@ -157,7 +168,7 @@ impl Record {
             }
             if let JsonPart::Array(ref mut arr) = *r {
                 while key >= arr.len() {
-                    arr.push(Record::from_json_primitive(JsonPrimitive::Null()));
+                    arr.push(Record::null());
                 }
                 return Arc::make_mut(&mut arr[key].0);
             }
@@ -270,6 +281,18 @@ impl Record {
         };
     }
 
+    pub fn coerce_bool(&self) -> bool {
+        return match *self.0 {
+            JsonPart::Primitive(JsonPrimitive::Null()) => false,
+            JsonPart::Primitive(JsonPrimitive::Bool(b)) => b,
+            JsonPart::Primitive(JsonPrimitive::NumberF64(ref f)) => f.0 != 0.0,
+            JsonPart::Primitive(JsonPrimitive::NumberI64(i)) => i != 0,
+            JsonPart::Primitive(JsonPrimitive::String(ref s)) => !s.is_empty(),
+            JsonPart::Array(_) => true,
+            JsonPart::Hash(_) => true,
+        }
+    }
+
     pub fn expect_array(&self) -> &Vec<Record> {
         return match *self.0 {
             JsonPart::Array(ref arr) => arr,
@@ -289,5 +312,26 @@ impl Record {
             JsonPart::Primitive(JsonPrimitive::String(ref s)) => s.to_string(),
             _ => self.deparse(),
         };
+    }
+
+    pub fn maybe_i64(&self) -> Option<i64> {
+        return match *self.0 {
+            JsonPart::Primitive(JsonPrimitive::NumberI64(n)) => Some(n),
+            _ => None,
+        }
+    }
+
+    pub fn maybe_num(&self) -> Option<f64> {
+        return match *self.0 {
+            JsonPart::Primitive(JsonPrimitive::NumberI64(n)) => Some(n as f64),
+            JsonPart::Primitive(JsonPrimitive::NumberF64(ref n)) => Some(n.0),
+            _ => None,
+        }
+    }
+}
+
+impl<T> From<T> for Record where JsonPrimitive: From<T> {
+    fn from(t: T) -> Self {
+        return Record(Arc::new(JsonPart::Primitive(JsonPrimitive::from(t))));
     }
 }

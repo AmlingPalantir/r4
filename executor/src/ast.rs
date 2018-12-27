@@ -47,12 +47,12 @@ pub enum BinaryOp {
 
 pub fn int_literal(s: &str) -> Box<Expr> {
     let n: i64 = s.parse().unwrap();
-    return Box::new(Expr::Literal(Record::from_i64(n)));
+    return Box::new(Expr::Literal(Record::from(n)));
 }
 
 pub fn float_literal(s: &str) -> Box<Expr> {
     let n: f64 = s.parse().unwrap();
-    return Box::new(Expr::Literal(Record::from_f64(n)));
+    return Box::new(Expr::Literal(Record::from(n)));
 }
 
 pub fn string_literal(s: &str) -> Box<Expr> {
@@ -90,7 +90,7 @@ pub fn string_literal(s: &str) -> Box<Expr> {
         }
     }
 
-    return Box::new(Expr::Literal(Record::from_str(s)));
+    return Box::new(Expr::Literal(Record::from(s)));
 }
 
 pub fn path_literal(s: &str) -> Arc<str> {

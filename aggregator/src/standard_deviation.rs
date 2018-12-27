@@ -22,6 +22,6 @@ impl AggregatorBe for Impl {
     }
 
     fn finish(state: Box<(f64, f64, f64)>, _a: &Arc<str>) -> Record {
-        return Record::from_f64(((state.2 / state.0) - (state.1 / state.0).powi(2)).sqrt());
+        return Record::from(((state.2 / state.0) - (state.1 / state.0).powi(2)).sqrt());
     }
 }

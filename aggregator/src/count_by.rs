@@ -19,6 +19,6 @@ impl AggregatorBe for Impl {
     }
 
     fn finish(state: Box<HashMap<Arc<str>, i64>>, _a: &Arc<str>) -> Record {
-        return Record::from_hash(state.into_iter().map(|(v, ct)| (v, Record::from_i64(ct))).collect());
+        return Record::from_hash(state.into_iter().map(|(v, ct)| (v, Record::from(ct))).collect());
     }
 }

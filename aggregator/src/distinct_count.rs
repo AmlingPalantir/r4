@@ -19,6 +19,6 @@ impl AggregatorBe for Impl {
     }
 
     fn finish(state: Box<DistinctSet<Record>>, _a: &Arc<str>) -> Record {
-        return Record::from_i64(state.into_iter().count() as i64);
+        return Record::from(state.into_iter().count() as i64);
     }
 }

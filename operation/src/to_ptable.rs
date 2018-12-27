@@ -106,7 +106,7 @@ impl OperationBe2 for Impl {
                                 for k in zk.iter() {
                                     let v;
                                     if k == "VALUE" {
-                                        v = Record::from_str(&vk as &str);
+                                        v = Record::from(&vk as &str);
                                     }
                                     else {
                                         v = r.get_path(&k);

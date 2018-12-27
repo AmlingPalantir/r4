@@ -17,6 +17,6 @@ impl AggregatorBe for Impl {
     }
 
     fn finish(state: Box<i64>, _a: &()) -> Record {
-        return Record::from_i64(*state);
+        return Record::from(*state);
     }
 }

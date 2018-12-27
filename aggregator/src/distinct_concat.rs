@@ -20,6 +20,6 @@ impl AggregatorBe for Impl {
 
     fn finish(state: Box<DistinctSet<String>>, a: &(Arc<str>, Arc<str>)) -> Record {
         let vs: Vec<String> = state.into_iter().collect();
-        return Record::from_str(vs.join(&a.1));
+        return Record::from(vs.join(&a.1));
     }
 }
