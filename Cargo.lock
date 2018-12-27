@@ -416,6 +416,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "record"
 version = "1.0.0"
 dependencies = [
+ "misc 1.0.0",
  "serde_json 1.0.33 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 

@@ -1,12 +1,15 @@
-use float::F64HashDishonorProxy;
-use std::collections::BTreeMap;
-use std::sync::Arc;
-use std::vec::Vec;
+extern crate misc;
 
 pub mod float;
 
 #[cfg(test)]
 mod tests;
+
+use float::F64HashDishonorProxy;
+use misc::Either;
+use std::collections::BTreeMap;
+use std::sync::Arc;
+use std::vec::Vec;
 
 #[derive(Clone)]
 #[derive(Eq)]
@@ -136,18 +139,14 @@ impl Record {
     }
 
     pub fn get_path_opt(&self, path: &str) -> Option<Record> {
-        return path.split('/').fold(Some(self.clone()), |r, part| {
-            match r {
-                Some(r) => {
-                    if part.starts_with('#') {
-                        return r.get_array(part[1..].parse().unwrap())
-                    }
-                    return r.get_hash(part);
-                }
-                None => {
-                    return None;
-                }
-            }
+        return RefPath::new(path).0.iter().fold(Some(self.clone()), |r, part| {
+            return match r {
+                Some(r) => match part {
+                    Either::Left(part) => r.get_hash(part),
+                    Either::Right(idx) => r.get_array(*idx),
+                },
+                None => None,
+            };
         });
     }
 
@@ -175,11 +174,11 @@ impl Record {
             panic!("Record::_get_array_mut() on non-array");
         }
 
-        return path.split('/').fold(Arc::make_mut(&mut self.0), |r, part| {
-            if part.starts_with('#') {
-                return _get_array_mut(r, part[1..].parse().unwrap());
-            }
-            return _get_hash_mut(r, part);
+        return RefPath::new(path).0.iter().fold(Arc::make_mut(&mut self.0), |r, part| {
+            return match part {
+                Either::Left(part) => _get_hash_mut(r, part),
+                Either::Right(idx) => _get_array_mut(r, *idx),
+            };
         });
     }
 
@@ -335,3 +334,22 @@ impl<T> From<T> for Record where JsonPrimitive: From<T> {
         return Record(Arc::new(JsonPart::Primitive(JsonPrimitive::from(t))));
     }
 }
+
+pub struct RefPath<'a>(pub Vec<Either<&'a str, usize>>);
+
+impl<'a> RefPath<'a> {
+    pub fn new(s: &'a str) -> RefPath<'a> {
+        return RefPath(s.split('/').map(|e| {
+            if e.starts_with('#') {
+                return Either::Right(e[1..].parse().unwrap());
+            }
+            return Either::Left(e);
+        }).collect());
+    }
+
+    pub fn to_owned(&self) -> OwnPath {
+        return OwnPath(self.0.iter().map(|e| e.clone().map_left(|s| s.to_string())).collect());
+    }
+}
+
+pub struct OwnPath(pub Vec<Either<String, usize>>);

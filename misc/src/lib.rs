@@ -1,3 +1,4 @@
+#[derive(Clone)]
 pub enum Either<L, R> {
     Right(R),
     Left(L),
@@ -24,5 +25,12 @@ impl<L, R> Either<L, R> {
                 unreachable!();
             }
         }
+    }
+
+    pub fn map_left<L2, F: FnOnce(L) -> L2>(self, f: F) -> Either<L2, R> {
+        return match self {
+            Either::Left(l) => Either::Left(f(l)),
+            Either::Right(r) => Either::Right(r),
+        };
     }
 }
