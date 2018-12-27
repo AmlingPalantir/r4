@@ -1,0 +1,22 @@
+use std::str::FromStr;
+
+grammar;
+
+pub Expr1: i32 = {
+    <l:Expr1> "+" <r:Expr2> => l + r,
+    <l:Expr1> "-" <r:Expr2> => l - r,
+    Expr2,
+}
+
+pub Expr2: i32 = {
+    <l:Expr2> "*" <r:Expr3> => l * r,
+    <l:Expr2> "/" <r:Expr3> => l / r,
+    Expr3,
+}
+
+pub Expr3: i32 = {
+    Num,
+    "(" <Expr1> ")",
+}
+
+Num: i32 = <s:r"[0-9]+"> => i32::from_str(s).unwrap();

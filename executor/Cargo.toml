@@ -3,6 +3,11 @@ name = "executor"
 version = "1.0.0"
 authors = ["Keith Amling <me@amling2.org>"]
 
+[build-dependencies]
+lalrpop = "0.16.2"
+
 [dependencies]
 misc = { path = "../misc" }
 record = { path = "../record" }
+lalrpop-util = "0.16.2"
+regex = "1"

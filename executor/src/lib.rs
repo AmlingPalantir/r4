@@ -1,5 +1,9 @@
+#[macro_use]
+extern crate lalrpop_util;
 extern crate misc;
 extern crate record;
+
+lalrpop_mod!(pub parse);
 
 use record::JsonPart;
 use record::JsonPrimitive;
@@ -70,4 +74,12 @@ pub fn load(_code: &str) -> Box<Fn(Record) -> Record> {
     return Box::new(move |r| {
         return r;
     });
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test1() {
+        assert_eq!(super::parse::Expr1Parser::new().parse("1 + (1 + 2) * 3").unwrap(), 10);
+    }
 }
