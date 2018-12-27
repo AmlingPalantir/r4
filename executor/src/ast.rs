@@ -29,6 +29,7 @@ pub enum BinaryOp {
     NumGte(),
     NumEq(),
     NumNe(),
+
     Lt(),
     Lte(),
     Gt(),
