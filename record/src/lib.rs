@@ -13,23 +13,21 @@ mod tests;
 #[derive(Eq)]
 #[derive(Hash)]
 #[derive(PartialEq)]
-enum JsonPart {
-    Null,
+pub enum JsonPrimitive {
+    Null(),
     Bool(bool),
     NumberI64(i64),
     NumberF64(F64HashDishonorProxy),
     String(Arc<str>),
-    Array(Vec<Record>),
-    Hash(BTreeMap<Arc<str>, Record>),
 }
 
-impl JsonPart {
-    fn from_serde_number(n: &serde_json::Number) -> JsonPart {
+impl JsonPrimitive {
+    fn from_serde_number(n: &serde_json::Number) -> JsonPrimitive {
         if let Some(n) = n.as_i64() {
-            return JsonPart::NumberI64(n);
+            return JsonPrimitive::NumberI64(n);
         }
         if let Some(n) = n.as_f64() {
-            return JsonPart::NumberF64(F64HashDishonorProxy(n));
+            return JsonPrimitive::NumberF64(F64HashDishonorProxy(n));
         }
         panic!("Unhandled JSON number type: {}", n);
     }
@@ -39,11 +37,29 @@ impl JsonPart {
 #[derive(Eq)]
 #[derive(Hash)]
 #[derive(PartialEq)]
-pub struct Record(Arc<JsonPart>);
+pub enum JsonPart {
+    Primitive(JsonPrimitive),
+    Array(Vec<Record>),
+    Hash(BTreeMap<Arc<str>, Record>),
+}
+
+#[derive(Clone)]
+#[derive(Eq)]
+#[derive(Hash)]
+#[derive(PartialEq)]
+pub struct Record(pub Arc<JsonPart>);
 
 impl Record {
+    pub fn from_json_primitive(p: JsonPrimitive) -> Self {
+        return Record(Arc::new(JsonPart::Primitive(p)));
+    }
+
     pub fn null() -> Self {
-        return Record(Arc::new(JsonPart::Null));
+        return Record::from_json_primitive(JsonPrimitive::Null());
+    }
+
+    pub fn from_bool(b: bool) -> Self {
+        return Record::from_json_primitive(JsonPrimitive::Bool(b));
     }
 
     pub fn empty_hash() -> Self {
@@ -51,11 +67,11 @@ impl Record {
     }
 
     pub fn from_str<S: Deref<Target = str>>(s: S) -> Self {
-        return Record(Arc::new(JsonPart::String(Arc::from(&*s))));
+        return Record::from_json_primitive(JsonPrimitive::String(Arc::from(&*s)));
     }
 
     pub fn from_arcstr(s: Arc<str>) -> Self {
-        return Record(Arc::new(JsonPart::String(s)));
+        return Record::from_json_primitive(JsonPrimitive::String(s));
     }
 
     pub fn from_vec(arr: Vec<Record>) -> Self {
@@ -67,15 +83,15 @@ impl Record {
     }
 
     pub fn from_i64(n: i64) -> Self {
-        return Record(Arc::new(JsonPart::NumberI64(n)));
+        return Record::from_json_primitive(JsonPrimitive::NumberI64(n));
     }
 
     pub fn from_f64(f: f64) -> Self {
-        return Record(Arc::new(JsonPart::NumberF64(F64HashDishonorProxy(f))));
+        return Record::from_json_primitive(JsonPrimitive::NumberF64(F64HashDishonorProxy(f)));
     }
 
     pub fn get_hash(&self, key: &str) -> Option<Record> {
-        if let JsonPart::Null = *self.0 {
+        if let JsonPart::Primitive(JsonPrimitive::Null()) = *self.0 {
             return None;
         }
         if let JsonPart::Hash(ref map) = *self.0 {
@@ -88,7 +104,7 @@ impl Record {
     }
 
     pub fn get_array(&self, key: usize) -> Option<Record> {
-        if let JsonPart::Null = *self.0 {
+        if let JsonPart::Primitive(JsonPrimitive::Null()) = *self.0 {
             return None;
         }
         if let JsonPart::Array(ref arr) = *self.0 {
@@ -126,22 +142,22 @@ impl Record {
 
     fn get_path_mut(&mut self, path: &str) -> &mut JsonPart {
         fn _get_hash_mut<'a>(r: &'a mut JsonPart, key: &str) -> &'a mut JsonPart {
-            if let JsonPart::Null = *r {
+            if let JsonPart::Primitive(JsonPrimitive::Null()) = *r {
                 *r = JsonPart::Hash(BTreeMap::new());
             }
             if let JsonPart::Hash(ref mut map) = *r {
-                return Arc::make_mut(&mut map.entry(Arc::from(key)).or_insert(Record(Arc::new(JsonPart::Null))).0);
+                return Arc::make_mut(&mut map.entry(Arc::from(key)).or_insert(Record::from_json_primitive(JsonPrimitive::Null())).0);
             }
             panic!("Record::_get_hash_mut() on non-hash");
         }
 
         fn _get_array_mut(r: &mut JsonPart, key: usize) -> &mut JsonPart {
-            if let JsonPart::Null = *r {
+            if let JsonPart::Primitive(JsonPrimitive::Null()) = *r {
                 *r = JsonPart::Array(Vec::new());
             }
             if let JsonPart::Array(ref mut arr) = *r {
                 while key >= arr.len() {
-                    arr.push(Record(Arc::new(JsonPart::Null)));
+                    arr.push(Record::from_json_primitive(JsonPrimitive::Null()));
                 }
                 return Arc::make_mut(&mut arr[key].0);
             }
@@ -163,10 +179,10 @@ impl Record {
     pub fn parse(s: &str) -> Self {
         fn convert_part(p: &serde_json::value::Value) -> Record {
             return Record(Arc::new(match p {
-                serde_json::value::Value::Null => JsonPart::Null,
-                serde_json::value::Value::Bool(b) => JsonPart::Bool(*b),
-                serde_json::value::Value::Number(n) => JsonPart::from_serde_number(n),
-                serde_json::value::Value::String(s) => JsonPart::String(Arc::from(s.clone())),
+                serde_json::value::Value::Null => JsonPart::Primitive(JsonPrimitive::Null()),
+                serde_json::value::Value::Bool(b) => JsonPart::Primitive(JsonPrimitive::Bool(*b)),
+                serde_json::value::Value::Number(n) => JsonPart::Primitive(JsonPrimitive::from_serde_number(n)),
+                serde_json::value::Value::String(s) => JsonPart::Primitive(JsonPrimitive::String(Arc::from(s.clone()))),
                 serde_json::value::Value::Array(arr) => JsonPart::Array(arr.iter().map(|v| convert_part(v)).collect()),
                 serde_json::value::Value::Object(map) => JsonPart::Hash(map.iter().map(|(k, v)| (Arc::from(k.clone()), convert_part(v))).collect()),
             }));
@@ -178,19 +194,19 @@ impl Record {
     pub fn deparse(&self) -> String {
         fn _to_string_aux(p: &Record, acc: &mut String) {
             match &*p.0 {
-                JsonPart::Null => {
+                JsonPart::Primitive(JsonPrimitive::Null()) => {
                     acc.push_str("null");
                 }
-                JsonPart::Bool(b) => {
+                JsonPart::Primitive(JsonPrimitive::Bool(b)) => {
                     acc.push_str(if *b { "true" } else { "false" });
                 }
-                JsonPart::NumberI64(n) => {
+                JsonPart::Primitive(JsonPrimitive::NumberI64(n)) => {
                     acc.push_str(&serde_json::to_string(&serde_json::Number::from(*n)).unwrap());
                 }
-                JsonPart::NumberF64(n) => {
+                JsonPart::Primitive(JsonPrimitive::NumberF64(n)) => {
                     acc.push_str(&n.to_json_string());
                 }
-                JsonPart::String(s) => {
+                JsonPart::Primitive(JsonPrimitive::String(s)) => {
                     let sr: &str = &*s;
                     acc.push_str(&serde_json::to_string(sr).unwrap());
                 }
@@ -229,26 +245,27 @@ impl Record {
 
     pub fn expect_string(&self) -> Arc<str> {
         return match *self.0 {
-            JsonPart::String(ref s) => s.clone(),
+            JsonPart::Primitive(JsonPrimitive::String(ref s)) => s.clone(),
             _ => panic!(),
         };
     }
 
     pub fn coerce_f64(&self) -> f64 {
         return match *self.0 {
-            JsonPart::NumberF64(ref f) => f.0,
-            JsonPart::NumberI64(i) => i as f64,
-            JsonPart::String(ref s) => s.parse().unwrap(),
+            JsonPart::Primitive(JsonPrimitive::NumberF64(ref f)) => f.0,
+            JsonPart::Primitive(JsonPrimitive::NumberI64(i)) => i as f64,
+            JsonPart::Primitive(JsonPrimitive::String(ref s)) => s.parse().unwrap(),
             _ => panic!(),
         };
     }
 
     pub fn coerce_string(&self) -> Arc<str> {
         return match *self.0 {
-            JsonPart::Null => Arc::from(""),
-            JsonPart::NumberF64(ref f) => Arc::from(f.0.to_string()),
-            JsonPart::NumberI64(i) => Arc::from(i.to_string()),
-            JsonPart::String(ref s) => s.clone(),
+            JsonPart::Primitive(JsonPrimitive::Null()) => Arc::from(""),
+            JsonPart::Primitive(JsonPrimitive::Bool(b)) => Arc::from(b.to_string()),
+            JsonPart::Primitive(JsonPrimitive::NumberF64(ref f)) => Arc::from(f.0.to_string()),
+            JsonPart::Primitive(JsonPrimitive::NumberI64(i)) => Arc::from(i.to_string()),
+            JsonPart::Primitive(JsonPrimitive::String(ref s)) => s.clone(),
             _ => panic!(),
         };
     }
@@ -269,7 +286,7 @@ impl Record {
 
     pub fn pretty_string(&self) -> String {
         return match *self.0 {
-            JsonPart::String(ref s) => s.to_string(),
+            JsonPart::Primitive(JsonPrimitive::String(ref s)) => s.to_string(),
             _ => self.deparse(),
         };
     }
