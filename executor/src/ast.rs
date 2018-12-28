@@ -100,22 +100,16 @@ pub fn string_literal(s: &str) -> Box<Expr> {
 }
 
 pub fn path_literal(s: &str) -> (Arc<str>, OwnPath) {
-    // Arggh rust, you are so very very bad at string manipulation...
-    let s: Vec<_> = s.chars().collect();
-    assert!(s[0] == '{');
-    assert!(s[1] == '{');
-    assert!(s[s.len() - 2] == '}');
-    assert!(s[s.len() - 1] == '}');
-    let mut s = &s[2..(s.len() - 2)];
+    assert!(s.starts_with("{{"));
+    assert!(s.ends_with("}}"));
+    let s = &s[2..(s.len() - 2)];
 
     let mut var = Arc::from("r");
-    let i = s.iter().enumerate().find(|e| *e.1 == ':').map(|e| e.0);
-    if let Some(i) = i {
-        let name: String = (&s[0..i]).iter().cloned().collect();
-        var = Arc::from(&name as &str);
+    let mut s = s;
+    if let Some(i) = s.find(':') {
+        var = Arc::from(&s[0..i]);
         s = &s[(i + 1)..];
     }
 
-    let s: String = s.into_iter().collect();
-    return (var, Path::new(&s).to_owned());
+    return (var, Path::new(s).to_owned());
 }
