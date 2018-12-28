@@ -508,7 +508,27 @@ impl MRecord {
         self._set_rpath(RefPath::new(path).0.iter(), v);
     }
 
-    pub fn del_path(&mut self, _path: &str) -> MRecord {
-        unimplemented!();
+    fn _del_rpath<'a>(&mut self, prev: &'a RefPathStep<'a>, mut path: impl Iterator<Item = &'a RefPathStep<'a>>) -> MRecord {
+        let mut n = self.0.lock().unwrap();
+        let n = (*n).convert_r_mut(|r| {
+            return (*r.0).clone().map(MRecord::wrap);
+        });
+        match path.next() {
+            Some(step) => {
+                return n.get_rstep_fill(prev)._del_rpath(step, path);
+            }
+            None => {
+                return n.del_rpart(prev);
+            }
+        }
+    }
+
+    pub fn del_path(&mut self, path: &str) -> MRecord {
+        let path = RefPath::new(path);
+        let mut path = path.0.iter();
+        if let Some(first) = path.next() {
+            return self._del_rpath(first, path);
+        }
+        panic!();
     }
 }
