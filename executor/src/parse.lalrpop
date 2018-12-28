@@ -18,7 +18,7 @@ pub Stmt: Vec<Box<Expr>> = {
 }
 
 Expr0: Box<Expr> = {
-    <RecPath> "=" <Expr1> => Box::new(Expr::RecordWrite(<>)),
+    <RecPath> "=" <Expr0> => Box::new(Expr::RecordWrite(<>)),
     Expr1,
 }
 

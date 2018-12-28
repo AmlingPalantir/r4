@@ -30,3 +30,13 @@ fn test_array_literal() {
 fn test_deep_index() {
     test_xform(r#"{"a":{"b":[{"c":"x"}]}}"#, r#"{{a}} = {{a/b/#0/c}}"#, r#"{"a":"x"}"#);
 }
+
+#[test]
+fn test_del() {
+    test_xform(r#"{"a":[{"b":"c"}]}"#, r#"{{x}} = d{{a/#0/b}}"#, r#"{"a":[{}],"x":"c"}"#);
+}
+
+#[test]
+fn test_diamond() {
+    test_xform("{}", r#"{{a}} = {{b}} = {}; {{a/c}} = "d""#, r#"{"a":{"c":"d"},"b":{"c":"d"}}"#);
+}
