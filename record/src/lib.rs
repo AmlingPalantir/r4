@@ -122,15 +122,21 @@ pub trait RecordTrait: std::marker::Sized {
 }
 
 impl<T: RecordTrait> RecordNode<T> {
-    fn get_rstep(&self, step: &RefPathStep) -> Option<&T> {
+    fn get_rstep(&self, step: &PathStep) -> Option<&T> {
         match step {
-            RefPathStep::Hash(s) => {
+            PathStep::RefHash(s) => {
                 if let RecordNode::Hash(hash) = self {
                     return hash.get(*s);
                 }
                 panic!("hash step on non-hash");
             }
-            RefPathStep::Array(n) => {
+            PathStep::OwnHash(s) => {
+                if let RecordNode::Hash(hash) = self {
+                    return hash.get(s);
+                }
+                panic!("hash step on non-hash");
+            }
+            PathStep::Array(n) => {
                 if let RecordNode::Array(arr) = self {
                     return arr.get(*n);
                 }
@@ -139,15 +145,21 @@ impl<T: RecordTrait> RecordNode<T> {
         }
     }
 
-    fn get_rstep_mut(&mut self, step: &RefPathStep) -> Option<&mut T> {
+    fn get_rstep_mut(&mut self, step: &PathStep) -> Option<&mut T> {
         match step {
-            RefPathStep::Hash(s) => {
+            PathStep::RefHash(s) => {
                 if let RecordNode::Hash(hash) = self {
                     return hash.get_mut(*s);
                 }
                 panic!("hash step on non-hash");
             }
-            RefPathStep::Array(n) => {
+            PathStep::OwnHash(s) => {
+                if let RecordNode::Hash(hash) = self {
+                    return hash.get_mut(s);
+                }
+                panic!("hash step on non-hash");
+            }
+            PathStep::Array(n) => {
                 if let RecordNode::Array(arr) = self {
                     return arr.get_mut(*n);
                 }
@@ -156,9 +168,9 @@ impl<T: RecordTrait> RecordNode<T> {
         }
     }
 
-    fn get_rstep_fill(&mut self, step: &RefPathStep) -> &mut T {
+    fn get_rstep_fill(&mut self, step: &PathStep) -> &mut T {
         match step {
-            RefPathStep::Hash(s) => {
+            PathStep::RefHash(s) => {
                 if let RecordNode::Primitive(JsonPrimitive::Null()) = self {
                     *self = RecordNode::Hash(BTreeMap::new());
                 }
@@ -167,7 +179,16 @@ impl<T: RecordTrait> RecordNode<T> {
                 }
                 panic!();
             }
-            RefPathStep::Array(n) => {
+            PathStep::OwnHash(s) => {
+                if let RecordNode::Primitive(JsonPrimitive::Null()) = self {
+                    *self = RecordNode::Hash(BTreeMap::new());
+                }
+                if let RecordNode::Hash(hash) = self {
+                    return hash.entry(s.clone()).or_insert_with(T::null);
+                }
+                panic!();
+            }
+            PathStep::Array(n) => {
                 if let RecordNode::Primitive(JsonPrimitive::Null()) = self {
                     *self = RecordNode::Array(Vec::new());
                 }
@@ -182,9 +203,9 @@ impl<T: RecordTrait> RecordNode<T> {
         }
     }
 
-    fn del_rpart(&mut self, step: &RefPathStep) -> T {
+    fn del_rpart(&mut self, step: &PathStep) -> T {
         match step {
-            RefPathStep::Hash(s) => {
+            PathStep::RefHash(s) => {
                 if let RecordNode::Primitive(JsonPrimitive::Null()) = self {
                     *self = RecordNode::Hash(BTreeMap::new());
                 }
@@ -193,7 +214,16 @@ impl<T: RecordTrait> RecordNode<T> {
                 }
                 panic!();
             }
-            RefPathStep::Array(_n) => {
+            PathStep::OwnHash(s) => {
+                if let RecordNode::Primitive(JsonPrimitive::Null()) = self {
+                    *self = RecordNode::Hash(BTreeMap::new());
+                }
+                if let RecordNode::Hash(hash) = self {
+                    return hash.remove(s).unwrap_or_else(T::null);
+                }
+                panic!();
+            }
+            PathStep::Array(_n) => {
                 panic!();
             }
         }
@@ -202,39 +232,35 @@ impl<T: RecordTrait> RecordNode<T> {
 
 
 
-enum RefPathStep<'a> {
-    Hash(&'a str),
+enum PathStep<'a> {
+    RefHash(&'a str),
+    OwnHash(Arc<str>),
     Array(usize),
 }
 
-struct RefPath<'a>(Vec<RefPathStep<'a>>);
+struct Path<'a>(Vec<PathStep<'a>>);
+type OwnPath = Path<'static>;
 
-impl<'a> RefPath<'a> {
-    fn new(s: &'a str) -> RefPath<'a> {
-        return RefPath(s.split('/').map(|e| {
+impl<'a> Path<'a> {
+    fn new(s: &'a str) -> Path<'a> {
+        return Path(s.split('/').map(|e| {
             if e.starts_with('#') {
-                return RefPathStep::Array(e[1..].parse().unwrap());
+                return PathStep::Array(e[1..].parse().unwrap());
             }
-            return RefPathStep::Hash(e);
+            return PathStep::RefHash(e);
         }).collect());
     }
 
-    fn to_owned(&self) -> OwnPath {
-        return OwnPath(self.0.iter().map(|e| {
+    fn to_owned(self) -> OwnPath {
+        return Path(self.0.into_iter().map(|e| {
             return match e {
-                RefPathStep::Hash(s) => OwnPathStep::Hash(s.to_string()),
-                RefPathStep::Array(n) => OwnPathStep::Array(*n),
+                PathStep::RefHash(s) => PathStep::OwnHash(Arc::from(s)),
+                PathStep::OwnHash(s) => PathStep::OwnHash(Arc::from(s)),
+                PathStep::Array(n) => PathStep::Array(n),
             };
         }).collect());
     }
 }
-
-enum OwnPathStep {
-    Hash(String),
-    Array(usize),
-}
-
-struct OwnPath(Vec<OwnPathStep>);
 
 
 
@@ -266,7 +292,7 @@ impl Record {
     }
 
     fn get_path_opt(&self, path: &str) -> Option<&Record> {
-        return RefPath::new(path).0.iter().fold(Some(self), |r, part| {
+        return Path::new(path).0.iter().fold(Some(self), |r, part| {
             return match r {
                 Some(r) => r.0.get_rstep(part),
                 None => None,
@@ -275,11 +301,11 @@ impl Record {
     }
 
     pub fn set_path(&mut self, path: &str, v: Record) {
-        *RefPath::new(path).0.iter().fold(self, |r, s| Arc::make_mut(&mut r.0).get_rstep_fill(s)) = v;
+        *Path::new(path).0.iter().fold(self, |r, s| Arc::make_mut(&mut r.0).get_rstep_fill(s)) = v;
     }
 
     pub fn del_path(&mut self, path: &str) -> Record {
-        let path = RefPath::new(path);
+        let path = Path::new(path);
         let x = path.0.iter().fold(
             Either::Left(self),
             |e, part| {
@@ -467,7 +493,7 @@ impl MRecord {
         return MRecord(Arc::new(Mutex::new(Either::Left(r))));
     }
 
-    fn _get_rpath<'a>(&mut self, mut path: impl Iterator<Item = &'a RefPathStep<'a>>) -> MRecord {
+    fn _get_path<'a>(&mut self, mut path: impl Iterator<Item = &'a PathStep<'a>>) -> MRecord {
         match path.next() {
             Some(step) => {
                 let mut n = self.0.lock().unwrap();
@@ -475,7 +501,7 @@ impl MRecord {
                     return (*r.0).clone().map(MRecord::wrap);
                 });
                 return match n.get_rstep_mut(step) {
-                    Some(r) => r._get_rpath(path),
+                    Some(r) => r._get_path(path),
                     None => return MRecord::null(),
                 };
             }
@@ -486,17 +512,17 @@ impl MRecord {
     }
 
     pub fn get_path(&mut self, path: &str) -> MRecord {
-        return self._get_rpath(RefPath::new(path).0.iter());
+        return self._get_path(Path::new(path).0.iter());
     }
 
-    fn _set_rpath<'a>(&mut self, mut path: impl Iterator<Item = &'a RefPathStep<'a>>, v: MRecord) {
+    fn _set_path<'a>(&mut self, mut path: impl Iterator<Item = &'a PathStep<'a>>, v: MRecord) {
         match path.next() {
             Some(step) => {
                 let mut n = self.0.lock().unwrap();
                 let n = (*n).convert_r_mut(|r| {
                     return (*r.0).clone().map(MRecord::wrap);
                 });
-                n.get_rstep_fill(step)._set_rpath(path, v);
+                n.get_rstep_fill(step)._set_path(path, v);
             }
             None => {
                 *self = v;
@@ -505,17 +531,17 @@ impl MRecord {
     }
 
     pub fn set_path(&mut self, path: &str, v: MRecord) {
-        self._set_rpath(RefPath::new(path).0.iter(), v);
+        self._set_path(Path::new(path).0.iter(), v);
     }
 
-    fn _del_rpath<'a>(&mut self, prev: &'a RefPathStep<'a>, mut path: impl Iterator<Item = &'a RefPathStep<'a>>) -> MRecord {
+    fn _del_path<'a>(&mut self, prev: &'a PathStep<'a>, mut path: impl Iterator<Item = &'a PathStep<'a>>) -> MRecord {
         let mut n = self.0.lock().unwrap();
         let n = (*n).convert_r_mut(|r| {
             return (*r.0).clone().map(MRecord::wrap);
         });
         match path.next() {
             Some(step) => {
-                return n.get_rstep_fill(prev)._del_rpath(step, path);
+                return n.get_rstep_fill(prev)._del_path(step, path);
             }
             None => {
                 return n.del_rpart(prev);
@@ -524,10 +550,10 @@ impl MRecord {
     }
 
     pub fn del_path(&mut self, path: &str) -> MRecord {
-        let path = RefPath::new(path);
+        let path = Path::new(path);
         let mut path = path.0.iter();
         if let Some(first) = path.next() {
-            return self._del_rpath(first, path);
+            return self._del_path(first, path);
         }
         panic!();
     }
