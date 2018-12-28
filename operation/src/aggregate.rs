@@ -3,6 +3,7 @@ use aggregator::AggregatorState;
 use opts::parser::OptParserView;
 use opts::vals::UnvalidatedRawOption;
 use record::Record;
+use record::RecordTrait;
 use stream::Entry;
 use stream::Stream;
 use validates::Validates;

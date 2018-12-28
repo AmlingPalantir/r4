@@ -3,6 +3,7 @@ use opts::parser::OptParserView;
 use opts::vals::StringVecOption;
 use opts::vals::UnvalidatedArcOption;
 use record::Record;
+use record::RecordTrait;
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use std::collections::HashMap;

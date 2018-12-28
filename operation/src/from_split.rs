@@ -3,6 +3,7 @@ use opts::parser::OptParserView;
 use opts::vals::OptionalOption;
 use opts::vals::StringVecOption;
 use record::Record;
+use record::RecordTrait;
 use regex::Regex;
 use std::sync::Arc;
 use stream::Entry;

@@ -45,6 +45,7 @@ use opts::parser::OptParserView;
 use opts::vals::OptionalStringOption;
 use opts::vals::UnvalidatedRawOption;
 use record::Record;
+use record::RecordTrait;
 use std::rc::Rc;
 use std::sync::Arc;
 use stream::Stream;

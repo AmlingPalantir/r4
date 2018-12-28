@@ -4,6 +4,7 @@ use opts::vals::BooleanOption;
 use opts::vals::StringVecOption;
 use opts::vals::UnvalidatedArcOption;
 use record::Record;
+use record::RecordTrait;
 use regex::Regex;
 use std::sync::Arc;
 use stream::Entry;

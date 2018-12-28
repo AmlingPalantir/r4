@@ -13,6 +13,7 @@ use ast::BinaryOp;
 use ast::Expr;
 use ast::UnaryOp;
 use record::Record;
+use record::RecordTrait;
 use std::sync::Arc;
 
 struct State {
