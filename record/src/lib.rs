@@ -542,6 +542,25 @@ impl MRecord {
         return self._get_path(Path::new(path).0.iter());
     }
 
+    fn _get_path_fill<'a>(&mut self, mut path: impl Iterator<Item = &'a PathStep<'a>>) -> MRecord {
+        match path.next() {
+            Some(step) => {
+                let mut n = self.0.lock().unwrap();
+                let n = (*n).convert_r_mut(|r| {
+                    return (*r.0).clone().map(MRecord::wrap);
+                });
+                return n.get_rstep_fill(step)._get_path_fill(path);
+            }
+            None => {
+                return self.clone();
+            }
+        }
+    }
+
+    pub fn get_path_fill(&mut self, path: &str) -> MRecord {
+        return self._get_path_fill(Path::new(path).0.iter());
+    }
+
     fn _set_path<'a>(&mut self, mut path: impl Iterator<Item = &'a PathStep<'a>>, v: MRecord) {
         match path.next() {
             Some(step) => {

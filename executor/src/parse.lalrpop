@@ -106,6 +106,7 @@ Expr7: Box<Expr> = {
     "true" => Box::new(Expr::Literal(Record::from(true))),
     "false" => Box::new(Expr::Literal(Record::from(false))),
     RecPath => Box::new(Expr::RecordRead(<>)),
+    "f" <RecPath> => Box::new(Expr::RecordReadFill(<>)),
     "d" <RecPath> => Box::new(Expr::RecordDelete(<>)),
 }
 

@@ -40,3 +40,9 @@ fn test_del() {
 fn test_diamond() {
     test_xform("{}", r#"{{a}} = {{b}} = {}; {{a/c}} = "d""#, r#"{"a":{"c":"d"},"b":{"c":"d"}}"#);
 }
+
+#[test]
+fn test_get_fill() {
+    test_xform("{}", r#"{{x}} = {{a/b}}; {{x/y}} = "z""#, r#"{"x":{"y":"z"}}"#);
+    test_xform("{}", r#"{{x}} = f{{a/b}}; {{x/y}} = "z""#, r#"{"a":{"b":{"y":"z"}},"x":{"y":"z"}}"#);
+}

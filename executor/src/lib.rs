@@ -146,6 +146,9 @@ impl State {
             Expr::RecordRead(s) => {
                 return self.r.get_path(s);
             }
+            Expr::RecordReadFill(s) => {
+                return self.r.get_path_fill(s);
+            }
             Expr::RecordWrite(s, e) => {
                 let v = self.eval(e);
                 self.r.set_path(s, v.clone());

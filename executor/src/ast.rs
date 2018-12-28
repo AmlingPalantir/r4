@@ -7,6 +7,7 @@ pub enum Expr {
     Binary(Box<Expr>, BinaryOp, Box<Expr>),
     Unary(UnaryOp, Box<Expr>),
     RecordRead(Arc<str>),
+    RecordReadFill(Arc<str>),
     RecordWrite(Arc<str>, Box<Expr>),
     RecordDelete(Arc<str>),
     Literal(Record),
