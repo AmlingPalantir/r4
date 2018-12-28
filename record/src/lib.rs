@@ -172,8 +172,21 @@ impl<T: RecordTrait> RecordNode<T> {
         }
     }
 
-    fn del_rpart(&mut self, _step: &RefPathStep) -> T {
-        unimplemented!();
+    fn del_rpart(&mut self, step: &RefPathStep) -> T {
+        match step {
+            RefPathStep::Hash(s) => {
+                if let RecordNode::Primitive(JsonPrimitive::Null()) = self {
+                    *self = RecordNode::Hash(BTreeMap::new());
+                }
+                if let RecordNode::Hash(hash) = self {
+                    return hash.remove(s as &str).unwrap_or_else(T::null);
+                }
+                panic!();
+            }
+            RefPathStep::Array(n) => {
+                panic!();
+            }
+        }
     }
 }
 
