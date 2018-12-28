@@ -539,7 +539,11 @@ impl MRecord {
     }
 
     pub fn get_path(&mut self, path: &str) -> MRecord {
-        return self._get_path(Path::new(path).0.iter());
+        return self.get_path_obj(&Path::new(path));
+    }
+
+    pub fn get_path_obj<'a>(&mut self, path: &Path<'a>) -> MRecord {
+        return self._get_path(path.0.iter());
     }
 
     fn _get_path_fill<'a>(&mut self, mut path: impl Iterator<Item = &'a PathStep<'a>>) -> MRecord {
@@ -558,7 +562,11 @@ impl MRecord {
     }
 
     pub fn get_path_fill(&mut self, path: &str) -> MRecord {
-        return self._get_path_fill(Path::new(path).0.iter());
+        return self.get_path_obj_fill(&Path::new(path));
+    }
+
+    pub fn get_path_obj_fill<'a>(&mut self, path: &Path<'a>) -> MRecord {
+        return self._get_path_fill(path.0.iter());
     }
 
     fn _set_path<'a>(&mut self, mut path: impl Iterator<Item = &'a PathStep<'a>>, v: MRecord) {
@@ -577,7 +585,11 @@ impl MRecord {
     }
 
     pub fn set_path(&mut self, path: &str, v: MRecord) {
-        self._set_path(Path::new(path).0.iter(), v);
+        self.set_path_obj(&Path::new(path), v);
+    }
+
+    pub fn set_path_obj<'a>(&mut self, path: &Path<'a>, v: MRecord) {
+        self._set_path(path.0.iter(), v);
     }
 
     fn _del_path<'a>(&mut self, prev: &'a PathStep<'a>, mut path: impl Iterator<Item = &'a PathStep<'a>>) -> MRecord {
@@ -596,7 +608,10 @@ impl MRecord {
     }
 
     pub fn del_path(&mut self, path: &str) -> MRecord {
-        let path = Path::new(path);
+        return self.del_path_obj(&Path::new(path));
+    }
+
+    pub fn del_path_obj<'a>(&mut self, path: &Path<'a>) -> MRecord {
         let mut path = path.0.iter();
         if let Some(first) = path.next() {
             return self._del_path(first, path);

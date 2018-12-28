@@ -144,18 +144,18 @@ impl State {
             }
 
             Expr::RecordRead(s) => {
-                return self.r.get_path(s);
+                return self.r.get_path_obj(s);
             }
             Expr::RecordReadFill(s) => {
-                return self.r.get_path_fill(s);
+                return self.r.get_path_obj_fill(s);
             }
             Expr::RecordWrite(s, e) => {
                 let v = self.eval(e);
-                self.r.set_path(s, v.clone());
+                self.r.set_path_obj(s, v.clone());
                 return v;
             }
             Expr::RecordDelete(s) => {
-                return self.r.del_path(s);
+                return self.r.del_path_obj(s);
             }
 
             Expr::Literal(r) => {

@@ -1,15 +1,17 @@
 use record::Record;
 use std::collections::HashMap;
 use std::sync::Arc;
+use record::Path;
+use record::OwnPath;
 
 pub enum Expr {
     Ternary(Box<Expr>, Box<Expr>, Box<Expr>),
     Binary(Box<Expr>, BinaryOp, Box<Expr>),
     Unary(UnaryOp, Box<Expr>),
-    RecordRead(Arc<str>),
-    RecordReadFill(Arc<str>),
-    RecordWrite(Arc<str>, Box<Expr>),
-    RecordDelete(Arc<str>),
+    RecordRead(OwnPath),
+    RecordReadFill(OwnPath),
+    RecordWrite(OwnPath, Box<Expr>),
+    RecordDelete(OwnPath),
     Literal(Record),
     ArrayLiteral(Vec<Box<Expr>>),
     HashLiteral(HashMap<Arc<str>, Box<Expr>>),
@@ -95,7 +97,7 @@ pub fn string_literal(s: &str) -> Box<Expr> {
     return Box::new(Expr::Literal(Record::from(s)));
 }
 
-pub fn path_literal(s: &str) -> Arc<str> {
+pub fn path_literal(s: &str) -> OwnPath {
     let s: Vec<_> = s.chars().collect();
     assert!(s[0] == '{');
     assert!(s[1] == '{');
@@ -104,5 +106,5 @@ pub fn path_literal(s: &str) -> Arc<str> {
     let s = &s[2..(s.len() - 2)];
 
     let s: String = s.into_iter().collect();
-    return Arc::from(s);
+    return Path::new(&s).to_owned();
 }
