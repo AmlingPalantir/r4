@@ -9,6 +9,7 @@ use float::F64HashDishonorProxy;
 use misc::Either;
 use std::collections::BTreeMap;
 use std::sync::Arc;
+use std::sync::Mutex;
 use std::vec::Vec;
 
 #[derive(Clone)]
@@ -70,6 +71,8 @@ impl<'a> From<&'a str> for JsonPrimitive {
         return JsonPrimitive::String(Arc::from(s));
     }
 }
+
+
 
 #[derive(Clone)]
 #[derive(Eq)]
@@ -169,10 +172,48 @@ impl<T: RecordTrait> RecordNode<T> {
         }
     }
 
-    fn del_rpart(&mut self, step: &RefPathStep) -> T {
+    fn del_rpart(&mut self, _step: &RefPathStep) -> T {
         unimplemented!();
     }
 }
+
+
+
+enum RefPathStep<'a> {
+    Hash(&'a str),
+    Array(usize),
+}
+
+struct RefPath<'a>(Vec<RefPathStep<'a>>);
+
+impl<'a> RefPath<'a> {
+    fn new(s: &'a str) -> RefPath<'a> {
+        return RefPath(s.split('/').map(|e| {
+            if e.starts_with('#') {
+                return RefPathStep::Array(e[1..].parse().unwrap());
+            }
+            return RefPathStep::Hash(e);
+        }).collect());
+    }
+
+    fn to_owned(&self) -> OwnPath {
+        return OwnPath(self.0.iter().map(|e| {
+            return match e {
+                RefPathStep::Hash(s) => OwnPathStep::Hash(s.to_string()),
+                RefPathStep::Array(n) => OwnPathStep::Array(*n),
+            };
+        }).collect());
+    }
+}
+
+enum OwnPathStep {
+    Hash(String),
+    Array(usize),
+}
+
+struct OwnPath(Vec<OwnPathStep>);
+
+
 
 #[derive(Clone)]
 #[derive(Eq)]
@@ -383,36 +424,31 @@ impl Record {
     }
 }
 
-enum RefPathStep<'a> {
-    Hash(&'a str),
-    Array(usize),
-}
+#[derive(Clone)]
+pub struct MRecord(Arc<Mutex<Either<Record, RecordNode<MRecord>>>>);
 
-struct RefPath<'a>(Vec<RefPathStep<'a>>);
-
-impl<'a> RefPath<'a> {
-    fn new(s: &'a str) -> RefPath<'a> {
-        return RefPath(s.split('/').map(|e| {
-            if e.starts_with('#') {
-                return RefPathStep::Array(e[1..].parse().unwrap());
-            }
-            return RefPathStep::Hash(e);
-        }).collect());
-    }
-
-    fn to_owned(&self) -> OwnPath {
-        return OwnPath(self.0.iter().map(|e| {
-            return match e {
-                RefPathStep::Hash(s) => OwnPathStep::Hash(s.to_string()),
-                RefPathStep::Array(n) => OwnPathStep::Array(*n),
-            };
-        }).collect());
+impl RecordTrait for MRecord {
+    fn new(n: RecordNode<Self>) -> Self {
+        return MRecord(Arc::new(Mutex::new(Either::Right(n))));
     }
 }
 
-enum OwnPathStep {
-    Hash(String),
-    Array(usize),
+impl<T> From<T> for MRecord where RecordNode<MRecord>: From<T> {
+    fn from(t: T) -> Self {
+        return MRecord::new(RecordNode::from(t));
+    }
 }
 
-struct OwnPath(Vec<OwnPathStep>);
+impl MRecord {
+    pub fn get_path(&mut self, _path: &str) -> MRecord {
+        unimplemented!();
+    }
+
+    pub fn set_path(&mut self, _path: &str, _v: MRecord) {
+        unimplemented!();
+    }
+
+    pub fn del_path(&mut self, _path: &str) -> MRecord {
+        unimplemented!();
+    }
+}
