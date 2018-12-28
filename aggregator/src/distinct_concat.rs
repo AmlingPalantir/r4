@@ -1,5 +1,6 @@
 use AggregatorBe;
 use record::Record;
+use record::RecordTrait;
 use registry::TwoStringArgs;
 use std::sync::Arc;
 use super::distinct_array::DistinctSet;

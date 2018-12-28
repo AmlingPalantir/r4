@@ -173,6 +173,13 @@ pub trait RecordTrait: std::marker::Sized {
             _ => panic!(),
         };
     }
+
+    fn expect_string(&self) -> Arc<str> {
+        return match self.maybe_primitive() {
+            Some(JsonPrimitive::String(ref s)) => s.clone(),
+            _ => panic!(),
+        };
+    }
 }
 
 impl<T: RecordTrait> RecordNode<T> {
@@ -453,13 +460,6 @@ impl Record {
         let mut ret = String::new();
         _to_string_aux(self, &mut ret);
         return ret;
-    }
-
-    pub fn expect_string(&self) -> Arc<str> {
-        return match *self.0 {
-            RecordNode::Primitive(JsonPrimitive::String(ref s)) => s.clone(),
-            _ => panic!(),
-        };
     }
 
     pub fn expect_array(&self) -> &Vec<Record> {

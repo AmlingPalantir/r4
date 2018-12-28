@@ -3,6 +3,7 @@ use SubOperationOption;
 use TwoRecordUnionOption;
 use opts::parser::OptParserView;
 use opts::vals::OptionalStringOption;
+use record::RecordTrait;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
