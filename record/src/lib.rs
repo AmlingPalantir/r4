@@ -90,6 +90,16 @@ impl<T, F> From<F> for RecordNode<T> where JsonPrimitive: From<F> {
     }
 }
 
+impl<T> RecordNode<T> {
+    fn map<S, F: Fn(T) -> S>(self, f: F) -> RecordNode<S> {
+        return match self {
+            RecordNode::Primitive(p) => RecordNode::Primitive(p),
+            RecordNode::Array(arr) => RecordNode::Array(arr.into_iter().map(f).collect()),
+            RecordNode::Hash(hash) => RecordNode::Hash(hash.into_iter().map(|(k, v)| (k, f(v))).collect()),
+        };
+    }
+}
+
 pub trait RecordTrait: std::marker::Sized {
     fn new(RecordNode<Self>) -> Self;
 
@@ -183,7 +193,7 @@ impl<T: RecordTrait> RecordNode<T> {
                 }
                 panic!();
             }
-            RefPathStep::Array(n) => {
+            RefPathStep::Array(_n) => {
                 panic!();
             }
         }
@@ -453,8 +463,30 @@ impl<T> From<T> for MRecord where RecordNode<MRecord>: From<T> {
 }
 
 impl MRecord {
-    pub fn get_path(&mut self, _path: &str) -> MRecord {
-        unimplemented!();
+    fn wrap(r: Record) -> Self {
+        return MRecord(Arc::new(Mutex::new(Either::Left(r))));
+    }
+
+    fn _get_rpath<'a>(&mut self, mut path: impl Iterator<Item = &'a RefPathStep<'a>>) -> MRecord {
+        match path.next() {
+            Some(step) => {
+                let mut n = self.0.lock().unwrap();
+                let n = (*n).convert_r_mut(|r| {
+                    return (*r.0).clone().map(MRecord::wrap);
+                });
+                return match n.get_rstep_mut(step) {
+                    Some(r) => r._get_rpath(path),
+                    None => return MRecord::null(),
+                };
+            }
+            None => {
+                return self.clone();
+            }
+        }
+    }
+
+    pub fn get_path(&mut self, path: &str) -> MRecord {
+        return self._get_rpath(RefPath::new(path).0.iter());
     }
 
     pub fn set_path(&mut self, _path: &str, _v: MRecord) {
