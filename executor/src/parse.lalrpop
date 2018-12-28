@@ -106,7 +106,7 @@ Expr7: Box<Expr> = {
     "true" => Box::new(Expr::Literal(Record::from(true))),
     "false" => Box::new(Expr::Literal(Record::from(false))),
     RecPath => Box::new(Expr::RecordRead(<>)),
-    RecPathDel => Box::new(Expr::RecordDelete(<>)),
+    "d" <RecPath> => Box::new(Expr::RecordDelete(<>)),
 }
 
 HashLiteralElement: (Arc<str>, Box<Expr>) = {
@@ -117,4 +117,3 @@ IntLiteral: Box<Expr> = <s:r"-?[0-9]+"> => crate::ast::int_literal(s);
 FloatLiteral: Box<Expr> = <s:r"-?[0-9]+\.[0-9]+"> => crate::ast::float_literal(s);
 StringLiteral: Box<Expr> = <s:r#""([^"\\]|\\[\\nt"])*""#> => crate::ast::string_literal(s);
 RecPath: Arc<str> = <s:r#"\{\{[^{}]*\}\}"#> => crate::ast::path_literal(s);
-RecPathDel: Arc<str> = <s:r#"d\{\{[^{}]*\}\}"#> => crate::ast::path_literal(&s[1..]);
