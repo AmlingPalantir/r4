@@ -50,6 +50,13 @@ impl State {
 
     fn eval(&mut self, e: &Expr) -> MRecord {
         match e {
+            Expr::Statement(es) => {
+                let mut ret = MRecord::null();
+                for e in es {
+                    ret = self.eval(e);
+                }
+                return ret;
+            }
             Expr::Ternary(e1, e2, e3) => {
                 if self.eval(e1).coerce_bool() {
                     return self.eval(e2);
@@ -182,16 +189,14 @@ impl State {
     }
 }
 
-pub fn load(code: &str) -> Box<Fn(Record) -> Record> {
-    let es = parse::StmtParser::new().parse(code).unwrap();
+pub fn load(code: &str) -> Box<Fn(Record) -> (Record, Record)> {
+    let e = parse::StatementParser::new().parse(code).unwrap();
     return Box::new(move |r| {
         let mut st = State {
             vars: HashMap::new(),
         };
         st.vars.insert(Arc::from("r"), MRecord::wrap(r));
-        for e in es.iter() {
-            st.eval(e);
-        }
-        return st.vars.get("r").unwrap().clone().to_record();
+        let ret = st.eval(&e);
+        return (ret.to_record(), st.vars.get("r").unwrap().clone().to_record());
     });
 }

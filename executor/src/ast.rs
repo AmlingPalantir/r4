@@ -5,6 +5,7 @@ use record::Path;
 use record::OwnPath;
 
 pub enum Expr {
+    Statement(Vec<Box<Expr>>),
     Ternary(Box<Expr>, Box<Expr>, Box<Expr>),
     Binary(Box<Expr>, BinaryOp, Box<Expr>),
     Unary(UnaryOp, Box<Expr>),

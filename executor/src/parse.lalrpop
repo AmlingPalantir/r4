@@ -7,15 +7,15 @@ use std::sync::Arc;
 
 grammar;
 
-pub Stmt: Vec<Box<Expr>> = {
-    <v:(<Expr0> ";")*> <e:Expr0?> => match e {
+pub Statement: Box<Expr> = {
+    <v:(<Expr0> ";")*> <e:Expr0?> => Box::new(Expr::Statement(match e {
         None => v,
         Some(e) => {
             let mut v = v;
             v.push(e);
             v
         },
-    },
+    })),
 }
 
 Expr0: Box<Expr> = {
