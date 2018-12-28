@@ -1,6 +1,7 @@
 use SortSimpleBe;
 use SortSimpleBeImpl;
 use record::Record;
+use record::RecordTrait;
 use std::sync::Arc;
 
 pub type Impl = SortSimpleBeImpl<SimpleImpl>;

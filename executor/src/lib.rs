@@ -12,41 +12,42 @@ mod tests;
 use ast::BinaryOp;
 use ast::Expr;
 use ast::UnaryOp;
+use record::MRecord;
 use record::Record;
 use record::RecordTrait;
 use std::sync::Arc;
 
 struct State {
-    r: Record,
+    r: MRecord,
 }
 
 impl State {
-    fn eval_binary_number_op<RI, FI: FnOnce(i64, i64) -> RI, RF, FF: FnOnce(f64, f64) -> RF>(&mut self, e1: &Expr, e2: &Expr, fi: FI, ff: FF) -> Record where Record: From<RI> + From<RF> {
+    fn eval_binary_number_op<RI, FI: FnOnce(i64, i64) -> RI, RF, FF: FnOnce(f64, f64) -> RF>(&mut self, e1: &Expr, e2: &Expr, fi: FI, ff: FF) -> MRecord where MRecord: From<RI> + From<RF> {
         let r1 = self.eval(e1);
         let r2 = self.eval(e2);
 
         if let Some(i1) = r1.maybe_i64() {
             if let Some(i2) = r2.maybe_i64() {
-                return Record::from(fi(i1, i2));
+                return MRecord::from(fi(i1, i2));
             }
         }
         if let Some(f1) = r1.maybe_num() {
             if let Some(f2) = r2.maybe_num() {
-                return Record::from(ff(f1, f2));
+                return MRecord::from(ff(f1, f2));
             }
         }
 
         panic!();
     }
 
-    fn eval_binary_string_op<R, F: FnOnce(Arc<str>, Arc<str>) -> R>(&mut self, e1: &Expr, e2: &Expr, f: F) -> Record where Record: From<R> {
+    fn eval_binary_string_op<R, F: FnOnce(Arc<str>, Arc<str>) -> R>(&mut self, e1: &Expr, e2: &Expr, f: F) -> MRecord where MRecord: From<R> {
         let s1 = self.eval(e1).coerce_string();
         let s2 = self.eval(e2).coerce_string();
 
-        return Record::from(f(s1, s2));
+        return MRecord::from(f(s1, s2));
     }
 
-    fn eval(&mut self, e: &Expr) -> Record {
+    fn eval(&mut self, e: &Expr) -> MRecord {
         match e {
             Expr::Ternary(e1, e2, e3) => {
                 if self.eval(e1).coerce_bool() {
@@ -57,18 +58,18 @@ impl State {
 
             Expr::Binary(e1, BinaryOp::LogOr(), e2) => {
                 if self.eval(e1).coerce_bool() {
-                    return Record::from(true);
+                    return MRecord::from(true);
                 }
                 return self.eval(e2);
             }
             Expr::Binary(e1, BinaryOp::LogAnd(), e2) => {
                 if !self.eval(e1).coerce_bool() {
-                    return Record::from(false);
+                    return MRecord::from(false);
                 }
                 return self.eval(e2);
             }
             Expr::Unary(UnaryOp::LogNeg(), e1) => {
-                return Record::from(!self.eval(e1).coerce_bool());
+                return MRecord::from(!self.eval(e1).coerce_bool());
             }
 
             Expr::Binary(e1, BinaryOp::NumLt(), e2) => {
@@ -128,9 +129,9 @@ impl State {
             Expr::Unary(UnaryOp::NumNeg(), e1) => {
                 let r1 = self.eval(e1);
                 if let Some(i) = r1.maybe_i64() {
-                    return Record::from(-i);
+                    return MRecord::from(-i);
                 }
-                return Record::from(-r1.coerce_f64());
+                return MRecord::from(-r1.coerce_f64());
             }
 
             Expr::Binary(e1, BinaryOp::Cat(), e2) => {
@@ -155,13 +156,13 @@ impl State {
             }
 
             Expr::Literal(r) => {
-                return r.clone();
+                return MRecord::wrap(r.clone());
             }
             Expr::ArrayLiteral(es) => {
-                return Record::from_vec(es.iter().map(|e| self.eval(e)).collect());
+                return MRecord::from_vec(es.iter().map(|e| self.eval(e)).collect());
             }
             Expr::HashLiteral(es) => {
-                return Record::from_hash(es.iter().map(|(k, v)| (k.clone(), self.eval(v))).collect());
+                return MRecord::from_hash(es.iter().map(|(k, v)| (k.clone(), self.eval(v))).collect());
             }
         }
     }
@@ -171,11 +172,11 @@ pub fn load(code: &str) -> Box<Fn(Record) -> Record> {
     let es = parse::StmtParser::new().parse(code).unwrap();
     return Box::new(move |r| {
         let mut st = State {
-            r: r,
+            r: MRecord::wrap(r),
         };
         for e in es.iter() {
             st.eval(e);
         }
-        return st.r;
+        return st.r.to_record();
     });
 }

@@ -1,5 +1,6 @@
 use AggregatorBe;
 use record::Record;
+use record::RecordTrait;
 use record::float::F64SortDishonorProxy;
 use registry::OneStringArgs;
 use std::sync::Arc;

@@ -98,6 +98,13 @@ impl<T> RecordNode<T> {
             RecordNode::Hash(hash) => RecordNode::Hash(hash.into_iter().map(|(k, v)| (k, f(v))).collect()),
         };
     }
+
+    fn maybe_primitive(&self) -> Option<JsonPrimitive> {
+        return match self {
+            RecordNode::Primitive(p) => Some(p.clone()),
+            _ => None,
+        };
+    }
 }
 
 pub trait RecordTrait: std::marker::Sized {
@@ -119,6 +126,53 @@ pub trait RecordTrait: std::marker::Sized {
         return Self::new(RecordNode::Hash(hash));
     }
 
+    fn maybe_primitive(&self) -> Option<JsonPrimitive>;
+
+    fn maybe_i64(&self) -> Option<i64> {
+        return match self.maybe_primitive() {
+            Some(JsonPrimitive::NumberI64(n)) => Some(n),
+            _ => None,
+        };
+    }
+
+    fn maybe_num(&self) -> Option<f64> {
+        return match self.maybe_primitive() {
+            Some(JsonPrimitive::NumberI64(n)) => Some(n as f64),
+            Some(JsonPrimitive::NumberF64(ref n)) => Some(n.0),
+            _ => None,
+        };
+    }
+
+    fn coerce_string(&self) -> Arc<str> {
+        return match self.maybe_primitive() {
+            Some(JsonPrimitive::Null()) => Arc::from(""),
+            Some(JsonPrimitive::Bool(b)) => Arc::from(b.to_string()),
+            Some(JsonPrimitive::NumberF64(ref f)) => Arc::from(f.0.to_string()),
+            Some(JsonPrimitive::NumberI64(i)) => Arc::from(i.to_string()),
+            Some(JsonPrimitive::String(ref s)) => s.clone(),
+            _ => panic!(),
+        };
+    }
+
+    fn coerce_bool(&self) -> bool {
+        return match self.maybe_primitive() {
+            Some(JsonPrimitive::Null()) => false,
+            Some(JsonPrimitive::Bool(b)) => b,
+            Some(JsonPrimitive::NumberF64(ref f)) => f.0 != 0.0,
+            Some(JsonPrimitive::NumberI64(i)) => i != 0,
+            Some(JsonPrimitive::String(ref s)) => !s.is_empty(),
+            None => true,
+        };
+    }
+
+    fn coerce_f64(&self) -> f64 {
+        return match self.maybe_primitive() {
+            Some(JsonPrimitive::NumberF64(ref f)) => f.0,
+            Some(JsonPrimitive::NumberI64(i)) => i as f64,
+            Some(JsonPrimitive::String(ref s)) => s.parse().unwrap(),
+            _ => panic!(),
+        };
+    }
 }
 
 impl<T: RecordTrait> RecordNode<T> {
@@ -238,11 +292,11 @@ enum PathStep<'a> {
     Array(usize),
 }
 
-struct Path<'a>(Vec<PathStep<'a>>);
-type OwnPath = Path<'static>;
+pub struct Path<'a>(Vec<PathStep<'a>>);
+pub type OwnPath = Path<'static>;
 
 impl<'a> Path<'a> {
-    fn new(s: &'a str) -> Path<'a> {
+    pub fn new(s: &'a str) -> Path<'a> {
         return Path(s.split('/').map(|e| {
             if e.starts_with('#') {
                 return PathStep::Array(e[1..].parse().unwrap());
@@ -251,7 +305,7 @@ impl<'a> Path<'a> {
         }).collect());
     }
 
-    fn to_owned(self) -> OwnPath {
+    pub fn to_owned(self) -> OwnPath {
         return Path(self.0.into_iter().map(|e| {
             return match e {
                 PathStep::RefHash(s) => PathStep::OwnHash(Arc::from(s)),
@@ -273,6 +327,10 @@ pub struct Record(Arc<RecordNode<Record>>);
 impl RecordTrait for Record {
     fn new(n: RecordNode<Self>) -> Self {
         return Record(Arc::new(n));
+    }
+
+    fn maybe_primitive(&self) -> Option<JsonPrimitive> {
+        return self.0.maybe_primitive();
     }
 }
 
@@ -404,38 +462,6 @@ impl Record {
         };
     }
 
-    pub fn coerce_f64(&self) -> f64 {
-        return match *self.0 {
-            RecordNode::Primitive(JsonPrimitive::NumberF64(ref f)) => f.0,
-            RecordNode::Primitive(JsonPrimitive::NumberI64(i)) => i as f64,
-            RecordNode::Primitive(JsonPrimitive::String(ref s)) => s.parse().unwrap(),
-            _ => panic!(),
-        };
-    }
-
-    pub fn coerce_string(&self) -> Arc<str> {
-        return match *self.0 {
-            RecordNode::Primitive(JsonPrimitive::Null()) => Arc::from(""),
-            RecordNode::Primitive(JsonPrimitive::Bool(b)) => Arc::from(b.to_string()),
-            RecordNode::Primitive(JsonPrimitive::NumberF64(ref f)) => Arc::from(f.0.to_string()),
-            RecordNode::Primitive(JsonPrimitive::NumberI64(i)) => Arc::from(i.to_string()),
-            RecordNode::Primitive(JsonPrimitive::String(ref s)) => s.clone(),
-            _ => panic!(),
-        };
-    }
-
-    pub fn coerce_bool(&self) -> bool {
-        return match *self.0 {
-            RecordNode::Primitive(JsonPrimitive::Null()) => false,
-            RecordNode::Primitive(JsonPrimitive::Bool(b)) => b,
-            RecordNode::Primitive(JsonPrimitive::NumberF64(ref f)) => f.0 != 0.0,
-            RecordNode::Primitive(JsonPrimitive::NumberI64(i)) => i != 0,
-            RecordNode::Primitive(JsonPrimitive::String(ref s)) => !s.is_empty(),
-            RecordNode::Array(_) => true,
-            RecordNode::Hash(_) => true,
-        }
-    }
-
     pub fn expect_array(&self) -> &Vec<Record> {
         return match *self.0 {
             RecordNode::Array(ref arr) => arr,
@@ -456,21 +482,6 @@ impl Record {
             _ => self.deparse(),
         };
     }
-
-    pub fn maybe_i64(&self) -> Option<i64> {
-        return match *self.0 {
-            RecordNode::Primitive(JsonPrimitive::NumberI64(n)) => Some(n),
-            _ => None,
-        }
-    }
-
-    pub fn maybe_num(&self) -> Option<f64> {
-        return match *self.0 {
-            RecordNode::Primitive(JsonPrimitive::NumberI64(n)) => Some(n as f64),
-            RecordNode::Primitive(JsonPrimitive::NumberF64(ref n)) => Some(n.0),
-            _ => None,
-        }
-    }
 }
 
 #[derive(Clone)]
@@ -479,6 +490,14 @@ pub struct MRecord(Arc<Mutex<Either<Record, RecordNode<MRecord>>>>);
 impl RecordTrait for MRecord {
     fn new(n: RecordNode<Self>) -> Self {
         return MRecord(Arc::new(Mutex::new(Either::Right(n))));
+    }
+
+    fn maybe_primitive(&self) -> Option<JsonPrimitive> {
+        let n = self.0.lock().unwrap();
+        return match *n {
+            Either::Left(ref r) => r.maybe_primitive(),
+            Either::Right(ref n) => n.maybe_primitive(),
+        };
     }
 }
 
@@ -489,8 +508,16 @@ impl<T> From<T> for MRecord where RecordNode<MRecord>: From<T> {
 }
 
 impl MRecord {
-    fn wrap(r: Record) -> Self {
+    pub fn wrap(r: Record) -> Self {
         return MRecord(Arc::new(Mutex::new(Either::Left(r))));
+    }
+
+    pub fn to_record(self) -> Record {
+        let n = self.0.lock().unwrap();
+        return match *n {
+            Either::Left(ref r) => r.clone(),
+            Either::Right(ref n) => Record::new(n.clone().map(MRecord::to_record)),
+        };
     }
 
     fn _get_path<'a>(&mut self, mut path: impl Iterator<Item = &'a PathStep<'a>>) -> MRecord {
