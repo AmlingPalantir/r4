@@ -176,7 +176,7 @@ impl State {
                 return v;
             }
             Expr::ReadVar(s) => {
-                return self.vars.get(s).unwrap().clone();
+                return self.vars.entry(s.clone()).or_insert_with(MRecord::null).clone();
             }
         }
     }

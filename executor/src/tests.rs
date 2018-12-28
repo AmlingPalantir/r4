@@ -46,3 +46,8 @@ fn test_get_fill() {
     test_xform("{}", r#"{{x}} = {{a/b}}; {{x/y}} = "z""#, r#"{"x":{"y":"z"}}"#);
     test_xform("{}", r#"{{x}} = f{{a/b}}; {{x/y}} = "z""#, r#"{"a":{"b":{"y":"z"}},"x":{"y":"z"}}"#);
 }
+
+#[test]
+fn test_vars() {
+    test_xform("{}", r#" $a = {}; {{a:b}} = "c"; {{x}} = $a; {{r:y/z}} = $a; {{a:d/e}} = "f"; "#, r#"{"x":{"b":"c","d":{"e":"f"}},"y":{"z":{"b":"c","d":{"e":"f"}}}}"#);
+}
