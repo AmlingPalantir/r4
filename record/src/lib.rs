@@ -153,7 +153,7 @@ impl<T: RecordTrait> RecordNode<T> {
                     *self = RecordNode::Hash(BTreeMap::new());
                 }
                 if let RecordNode::Hash(hash) = self {
-                    return hash.entry(Arc::from(*s)).or_insert_with(|| T::new(RecordNode::Primitive(JsonPrimitive::Null())));
+                    return hash.entry(Arc::from(*s)).or_insert_with(T::null);
                 }
                 panic!();
             }
@@ -163,7 +163,7 @@ impl<T: RecordTrait> RecordNode<T> {
                 }
                 if let RecordNode::Array(arr) = self {
                     while *n >= arr.len() {
-                        arr.push(T::new(RecordNode::Primitive(JsonPrimitive::Null())));
+                        arr.push(T::null());
                     }
                     return &mut arr[*n];
                 }
