@@ -19,7 +19,8 @@ pub Stmt: Vec<Box<Expr>> = {
 }
 
 Expr0: Box<Expr> = {
-    <RecPath> "=" <Expr0> => Box::new(Expr::RecordWrite(<>)),
+    <Var> "=" <Expr0> => Box::new(Expr::WriteVar(<>)),
+    <p:RecPath> "=" <e:Expr0> => Box::new(Expr::RecordWrite(Box::new(Expr::ReadVar(p.0)), p.1, e)),
     Expr1,
 }
 
@@ -106,9 +107,10 @@ Expr7: Box<Expr> = {
     StringLiteral,
     "true" => Box::new(Expr::Literal(Record::from(true))),
     "false" => Box::new(Expr::Literal(Record::from(false))),
-    RecPath => Box::new(Expr::RecordRead(<>)),
-    "f" <RecPath> => Box::new(Expr::RecordReadFill(<>)),
-    "d" <RecPath> => Box::new(Expr::RecordDelete(<>)),
+    <p:RecPath> => Box::new(Expr::RecordRead(Box::new(Expr::ReadVar(p.0)), p.1)),
+    "f" <p:RecPath> => Box::new(Expr::RecordReadFill(Box::new(Expr::ReadVar(p.0)), p.1)),
+    "d" <p:RecPath> => Box::new(Expr::RecordDelete(Box::new(Expr::ReadVar(p.0)), p.1)),
+    <Var> => Box::new(Expr::ReadVar(<>)),
 }
 
 HashLiteralElement: (Arc<str>, Box<Expr>) = {
@@ -118,4 +120,5 @@ HashLiteralElement: (Arc<str>, Box<Expr>) = {
 IntLiteral: Box<Expr> = <s:r"-?[0-9]+"> => crate::ast::int_literal(s);
 FloatLiteral: Box<Expr> = <s:r"-?[0-9]+\.[0-9]+"> => crate::ast::float_literal(s);
 StringLiteral: Box<Expr> = <s:r#""([^"\\]|\\[\\nt"])*""#> => crate::ast::string_literal(s);
-RecPath: OwnPath = <s:r#"\{\{[^{}]*\}\}"#> => crate::ast::path_literal(s);
+RecPath: (Arc<str>, OwnPath) = <s:r#"\{\{([_a-zA-Z][_a-zA-Z0-9]*)?[^:{}]*\}\}"#> => crate::ast::path_literal(s);
+Var: Arc<str> = <s:r"\$[_a-zA-Z][_a-zA-Z0-9]*"> => Arc::from(&s[1..]);

@@ -8,13 +8,15 @@ pub enum Expr {
     Ternary(Box<Expr>, Box<Expr>, Box<Expr>),
     Binary(Box<Expr>, BinaryOp, Box<Expr>),
     Unary(UnaryOp, Box<Expr>),
-    RecordRead(OwnPath),
-    RecordReadFill(OwnPath),
-    RecordWrite(OwnPath, Box<Expr>),
-    RecordDelete(OwnPath),
+    RecordRead(Box<Expr>, OwnPath),
+    RecordReadFill(Box<Expr>, OwnPath),
+    RecordWrite(Box<Expr>, OwnPath, Box<Expr>),
+    RecordDelete(Box<Expr>, OwnPath),
     Literal(Record),
     ArrayLiteral(Vec<Box<Expr>>),
     HashLiteral(HashMap<Arc<str>, Box<Expr>>),
+    WriteVar(Arc<str>, Box<Expr>),
+    ReadVar(Arc<str>),
 }
 
 pub enum UnaryOp {
@@ -97,14 +99,23 @@ pub fn string_literal(s: &str) -> Box<Expr> {
     return Box::new(Expr::Literal(Record::from(s)));
 }
 
-pub fn path_literal(s: &str) -> OwnPath {
+pub fn path_literal(s: &str) -> (Arc<str>, OwnPath) {
+    // Arggh rust, you are so very very bad at string manipulation...
     let s: Vec<_> = s.chars().collect();
     assert!(s[0] == '{');
     assert!(s[1] == '{');
     assert!(s[s.len() - 2] == '}');
     assert!(s[s.len() - 1] == '}');
-    let s = &s[2..(s.len() - 2)];
+    let mut s = &s[2..(s.len() - 2)];
+
+    let mut var = Arc::from("r");
+    let i = s.iter().enumerate().find(|e| *e.1 == ':').map(|e| e.0);
+    if let Some(i) = i {
+        let name: String = (&s[0..i]).iter().cloned().collect();
+        var = Arc::from(&name as &str);
+        s = &s[(i + 1)..];
+    }
 
     let s: String = s.into_iter().collect();
-    return Path::new(&s).to_owned();
+    return (var, Path::new(&s).to_owned());
 }

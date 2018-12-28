@@ -15,10 +15,11 @@ use ast::UnaryOp;
 use record::MRecord;
 use record::Record;
 use record::RecordTrait;
+use std::collections::HashMap;
 use std::sync::Arc;
 
 struct State {
-    r: MRecord,
+    vars: HashMap<Arc<str>, MRecord>,
 }
 
 impl State {
@@ -143,19 +144,20 @@ impl State {
                 });
             }
 
-            Expr::RecordRead(s) => {
-                return self.r.get_path_obj(s);
+            Expr::RecordRead(e, s) => {
+                return self.eval(e).get_path_obj(s);
             }
-            Expr::RecordReadFill(s) => {
-                return self.r.get_path_obj_fill(s);
+            Expr::RecordReadFill(e, s) => {
+                return self.eval(e).get_path_obj_fill(s);
             }
-            Expr::RecordWrite(s, e) => {
-                let v = self.eval(e);
-                self.r.set_path_obj(s, v.clone());
+            Expr::RecordWrite(e, s, e2) => {
+                let mut r = self.eval(e);
+                let v = self.eval(e2);
+                r.set_path_obj(s, v.clone());
                 return v;
             }
-            Expr::RecordDelete(s) => {
-                return self.r.del_path_obj(s);
+            Expr::RecordDelete(e, s) => {
+                return self.eval(e).del_path_obj(s);
             }
 
             Expr::Literal(r) => {
@@ -167,6 +169,15 @@ impl State {
             Expr::HashLiteral(es) => {
                 return MRecord::from_hash(es.iter().map(|(k, v)| (k.clone(), self.eval(v))).collect());
             }
+
+            Expr::WriteVar(s, e) => {
+                let v = self.eval(e);
+                self.vars.insert(s.clone(), v.clone());
+                return v;
+            }
+            Expr::ReadVar(s) => {
+                return self.vars.get(s).unwrap().clone();
+            }
         }
     }
 }
@@ -175,11 +186,12 @@ pub fn load(code: &str) -> Box<Fn(Record) -> Record> {
     let es = parse::StmtParser::new().parse(code).unwrap();
     return Box::new(move |r| {
         let mut st = State {
-            r: MRecord::wrap(r),
+            vars: HashMap::new(),
         };
+        st.vars.insert(Arc::from("r"), MRecord::wrap(r));
         for e in es.iter() {
             st.eval(e);
         }
-        return st.r.to_record();
+        return st.vars.get("r").unwrap().clone().to_record();
     });
 }
