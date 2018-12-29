@@ -138,10 +138,10 @@ impl OperationBe2 for Impl {
                         cells[y][x] = (v.pretty_string(), ' ');
                     }
 
-                    let mut cells2: Vec<Vec<_>> = (0..(2 * height + 1)).map(|_| (0..(2 * width + 1)).map(|_| ("".to_string(), ' ')).collect()).collect();
+                    let mut cells2: Vec<Vec<_>> = (0..=(2 * height)).map(|_| (0..=(2 * width)).map(|_| ("".to_string(), ' ')).collect()).collect();
 
-                    for x in 0..(width + 1) {
-                        for y in 0..(height + 1) {
+                    for x in 0..=width {
+                        for y in 0..=height {
                             cells2[2 * y][2 * x] = ("+".to_string(), ' ');
                             if x < width {
                                 cells2[2 * y][2 * x + 1] = ("".to_string(), '-');
