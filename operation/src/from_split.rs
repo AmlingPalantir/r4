@@ -1,6 +1,6 @@
 use OperationBe2;
 use opts::parser::OptParserView;
-use opts::vals::OptionalOption;
+use opts::vals::DefaultedOption;
 use opts::vals::StringVecOption;
 use record::Record;
 use record::RecordTrait;
@@ -18,10 +18,14 @@ enum DelimiterOption {
     Regex(Arc<Regex>),
 }
 
+option_defaulters! {
+    CommaDefaulter: DelimiterOption => DelimiterOption::String(",".to_string()),
+}
+
 #[derive(Default)]
 #[derive(Validates)]
 pub struct Options {
-    delimiter: OptionalOption<DelimiterOption>,
+    delimiter: DefaultedOption<DelimiterOption, CommaDefaulter>,
     keys: StringVecOption,
 }
 
@@ -39,8 +43,6 @@ impl OperationBe2 for Impl {
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {
-        let delimiter = o.delimiter.clone().unwrap_or(DelimiterOption::String(",".to_string()));
-
         return stream::compound(
             stream::deparse(),
             stream::closures(
@@ -55,7 +57,7 @@ impl OperationBe2 for Impl {
                         }
                         Entry::Line(line) => {
                             let mut r = Record::empty_hash();
-                            let vals: Vec<&str> = match &delimiter {
+                            let vals: Vec<&str> = match o.delimiter {
                                 DelimiterOption::String(ref s) => line.split(s).collect(),
                                 DelimiterOption::Regex(ref re) => re.split(&line).collect(),
                             };

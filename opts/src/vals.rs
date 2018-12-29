@@ -27,6 +27,22 @@ pub trait OptionDefaulter<T> {
     fn default() -> T;
 }
 
+#[macro_export]
+macro_rules! option_defaulters {
+    {$($id:ident: $r:ty => $e:expr,)*} => {
+        $(
+            enum $id {
+            }
+
+            impl $crate::vals::OptionDefaulter<$r> for $id {
+                fn default() -> $r {
+                    return $e;
+                }
+            }
+        )*
+    }
+}
+
 pub struct DefaultedOption<T, P>(Option<T>, std::marker::PhantomData<P>);
 
 impl<T, P> Default for DefaultedOption<T, P> {
