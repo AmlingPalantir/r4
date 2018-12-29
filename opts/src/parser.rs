@@ -64,7 +64,7 @@ impl<P: 'static> OptParser<P> {
         return OptParserView(Box::new(self));
     }
 
-    pub fn parse_mut(&self, args: &Vec<String>, p: &mut P) {
+    pub fn parse_mut(&self, args: &[String], p: &mut P) {
         let mut next_index = 0;
         let mut refuse_opt = false;
         'arg: loop {
@@ -121,7 +121,7 @@ impl<P: 'static> OptParser<P> {
 }
 
 impl<P: Default + 'static> OptParser<P> {
-    pub fn parse(&self, args: &Vec<String>) -> P {
+    pub fn parse(&self, args: &[String]) -> P {
         let mut p = P::default();
         self.parse_mut(args, &mut p);
         return p;
