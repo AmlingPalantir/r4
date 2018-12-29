@@ -64,14 +64,16 @@ impl State {
             }
 
             Expr::Binary(e1, BinaryOp::LogOr(), e2) => {
-                if self.eval(e1).coerce_bool() {
-                    return MRecord::from(true);
+                let v1 = self.eval(e1);
+                if v1.coerce_bool() {
+                    return v1;
                 }
                 return self.eval(e2);
             }
             Expr::Binary(e1, BinaryOp::LogAnd(), e2) => {
-                if !self.eval(e1).coerce_bool() {
-                    return MRecord::from(false);
+                let v1 = self.eval(e1);
+                if !v1.coerce_bool() {
+                    return v1;
                 }
                 return self.eval(e2);
             }
