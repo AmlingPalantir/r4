@@ -3,7 +3,6 @@ use StreamWrapper;
 use SubOperationOption;
 use opts::parser::OptParserView;
 use opts::vals::BooleanOption;
-use std::ops::Deref;
 use std::sync::Arc;
 use stream::Stream;
 use validates::Validates;
@@ -30,11 +29,11 @@ impl OperationBe for Impl {
         opt.sub(|p| &mut p.keep_bof).match_zero(&["no-keep-bof"], BooleanOption::clear);
     }
 
-    fn get_extra(o: impl Deref<Target = OptionsValidated>) -> Vec<String> {
+    fn get_extra(o: Arc<OptionsValidated>) -> Vec<String> {
         return o.cmds.extra.clone();
     }
 
-    fn stream(o: impl Deref<Target = OptionsValidated>) -> Stream {
+    fn stream(o: Arc<OptionsValidated>) -> Stream {
         let keep_bof = o.keep_bof;
         return o.cmds.wrs.iter().rev().fold(stream::id(), |mut s, wr| {
             if !keep_bof {

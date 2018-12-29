@@ -187,6 +187,11 @@ impl StringVecOption {
             self.0.push(a.clone());
         }
     }
+
+    pub fn maybe_push(&mut self, a: &str) -> bool {
+        self.push(a);
+        return true;
+    }
 }
 
 #[derive(Default)]
@@ -217,5 +222,17 @@ pub type OptionalUsizeOption = OptionalOption<usize>;
 impl OptionalUsizeOption {
     pub fn parse(&mut self, a: &str) {
         self.set(a.parse().unwrap());
+    }
+}
+
+#[derive(Clone)]
+#[derive(Default)]
+pub struct IntoArcOption<P>(pub P);
+
+impl<P: Validates> Validates for IntoArcOption<P> {
+    type Target = Arc<<P as Validates>::Target>;
+
+    fn validate(self) -> Arc<<P as Validates>::Target> {
+        return Arc::new(self.0.validate());
     }
 }

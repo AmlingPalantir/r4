@@ -8,7 +8,6 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufRead;
 use std::io::BufReader;
-use std::ops::Deref;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
@@ -88,7 +87,7 @@ impl OperationBe2 for Impl {
         opt.sub(|p| &mut p.db.file).match_extra_soft(RequiredStringOption::maybe_set);
     }
 
-    fn stream(o: impl Deref<Target = OptionsValidated>) -> Stream {
+    fn stream(o: Arc<OptionsValidated>) -> Stream {
         let db = (*o.db).clone();
         let tru = o.tru.clone();
         let fill_left = o.fills.0;

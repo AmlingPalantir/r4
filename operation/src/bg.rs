@@ -1,7 +1,7 @@
 use OperationBe;
 use SubOperationOption;
 use opts::parser::OptParserView;
-use std::ops::Deref;
+use std::sync::Arc;
 use std::thread;
 use stream::Stream;
 use validates::Validates;
@@ -25,11 +25,11 @@ impl OperationBe for Impl {
         opt.sub(|p| &mut p.op).match_extra_hard(SubOperationOption::push);
     }
 
-    fn get_extra(o: impl Deref<Target = OptionsValidated>) -> Vec<String> {
+    fn get_extra(o: Arc<OptionsValidated>) -> Vec<String> {
         return o.op.extra.clone();
     }
 
-    fn stream(o: impl Deref<Target = OptionsValidated>) -> Stream {
+    fn stream(o: Arc<OptionsValidated>) -> Stream {
         let (fe, rbe, mut wbe) = bgop::new();
 
         let sub_wr = o.op.wr.clone();

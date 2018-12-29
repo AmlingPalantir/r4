@@ -5,7 +5,6 @@ use opts::vals::StringVecOption;
 use record::Record;
 use record::RecordTrait;
 use regex::Regex;
-use std::ops::Deref;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
@@ -43,7 +42,7 @@ impl OperationBe2 for Impl {
         opt.sub(|p| &mut p.keys).match_single(&["k", "keys"], StringVecOption::push_split);
     }
 
-    fn stream(o: impl Deref<Target = OptionsValidated>) -> Stream {
+    fn stream(o: Arc<OptionsValidated>) -> Stream {
         let re = o.re.clone();
         let keys = o.keys.clone();
 

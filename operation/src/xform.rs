@@ -1,6 +1,6 @@
 use OperationBe2;
 use opts::parser::OptParserView;
-use std::ops::Deref;
+use std::sync::Arc;
 use stream::Stream;
 use super::eval::InputType;
 use super::eval::Options;
@@ -20,7 +20,7 @@ impl OperationBe2 for Impl {
         super::eval::Impl::options(opt);
     }
 
-    fn stream(o: impl Deref<Target = OptionsValidated>) -> Stream {
+    fn stream(o: Arc<OptionsValidated>) -> Stream {
         return super::eval::stream1(o, InputType::Records(), OutputType::Records(), false);
     }
 }

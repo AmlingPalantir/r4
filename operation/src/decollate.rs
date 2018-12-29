@@ -2,7 +2,7 @@ use OperationBe2;
 use deaggregator::DeaggregatorState;
 use opts::parser::OptParserView;
 use opts::vals::UnvalidatedRawOption;
-use std::ops::Deref;
+use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
 use validates::Validates;
@@ -27,7 +27,7 @@ impl OperationBe2 for Impl {
         deaggregator::REGISTRY.multiple_options(&mut opt.sub(|p| &mut p.deaggs.0), &["d", "deagg", "deaggregator"]);
     }
 
-    fn stream(o: impl Deref<Target = OptionsValidated>) -> Stream {
+    fn stream(o: Arc<OptionsValidated>) -> Stream {
         return o.deaggs.iter().fold(stream::parse(), |s, deagg| {
             let deagg = deagg.clone();
             return stream::compound(

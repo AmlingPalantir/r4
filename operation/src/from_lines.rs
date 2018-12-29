@@ -3,7 +3,6 @@ use opts::parser::OptParserView;
 use opts::vals::OptionalStringOption;
 use record::Record;
 use record::RecordTrait;
-use std::ops::Deref;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
@@ -32,7 +31,7 @@ impl OperationBe2 for Impl {
         opt.sub(|p| &mut p.fk).match_single(&["fk", "file-key"], OptionalStringOption::set);
     }
 
-    fn stream(o: impl Deref<Target = OptionsValidated>) -> Stream {
+    fn stream(o: Arc<OptionsValidated>) -> Stream {
         let lk = o.lk.clone().unwrap_or_else(|| Arc::from("LINE"));
         let lnk = o.lnk.clone().unwrap_or_else(|| Arc::from("LINENO"));
         let fk = o.fk.clone().unwrap_or_else(|| Arc::from("FILE"));

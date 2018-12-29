@@ -6,7 +6,7 @@ use record::Record;
 use sorts::SortFe;
 use sorts::SortState;
 use std::cmp::Ordering;
-use std::ops::Deref;
+use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
 use validates::Validates;
@@ -69,7 +69,7 @@ impl OperationBe2 for Impl {
         opt.sub(|p| &mut p.partial).match_single(&["p", "partial"], OptionalUsizeOption::parse);
     }
 
-    fn stream(o: impl Deref<Target = OptionsValidated>) -> Stream {
+    fn stream(o: Arc<OptionsValidated>) -> Stream {
         struct State {
             cmp: Box<Fn(&Record, &Record) -> Ordering>,
             partial: Option<usize>,

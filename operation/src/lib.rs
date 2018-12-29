@@ -53,7 +53,8 @@ registry! {
 
 use opts::parser::OptParser;
 use opts::parser::OptParserView;
-use std::ops::Deref;
+use opts::vals::IntoArcOption;
+use opts::vals::StringVecOption;
 use std::sync::Arc;
 use stream::Stream;
 use validates::Validates;
@@ -87,8 +88,8 @@ pub trait OperationBe {
 
     fn names() -> Vec<&'static str>;
     fn options<'a>(&mut OptParserView<'a, Self::Options>);
-    fn get_extra(impl Deref<Target = <Self::Options as Validates>::Target>) -> Vec<String>;
-    fn stream(impl Deref<Target = <Self::Options as Validates>::Target>) -> Stream;
+    fn get_extra(Arc<<Self::Options as Validates>::Target>) -> Vec<String>;
+    fn stream(Arc<<Self::Options as Validates>::Target>) -> Stream;
 }
 
 impl<B: OperationBe> OperationFe for B where <B::Options as Validates>::Target: Send + Sync {
@@ -120,25 +121,14 @@ pub trait OperationBe2 {
 
     fn names() -> Vec<&'static str>;
     fn options<'a>(&mut OptParserView<'a, Self::Options>);
-    fn stream(impl Deref<Target = <Self::Options as Validates>::Target>) -> Stream;
+    fn stream(Arc<<Self::Options as Validates>::Target>) -> Stream;
 }
 
-#[derive(Clone)]
 #[derive(Default)]
-pub struct AndArgsOptions<P> {
-    p: P,
-    args: Vec<String>,
-}
-
-impl<P: Validates> Validates for AndArgsOptions<P> {
-    type Target = AndArgsOptions<<P as Validates>::Target>;
-
-    fn validate(self) -> AndArgsOptions<<P as Validates>::Target> {
-        return AndArgsOptions {
-            p: self.p.validate(),
-            args: self.args,
-        };
-    }
+#[derive(Validates)]
+pub struct AndArgsOptions<P: Validates> {
+    p: IntoArcOption<P>,
+    args: StringVecOption,
 }
 
 impl<B: OperationBe2> OperationBe for B {
@@ -149,18 +139,15 @@ impl<B: OperationBe2> OperationBe for B {
     }
 
     fn options<'a>(opt: &mut OptParserView<'a, AndArgsOptions<B::Options>>) {
-        B::options(&mut opt.sub(|p| &mut p.p));
-        opt.sub(|p| &mut p.args).match_extra_soft(|p, a| {
-            p.push(a.to_string());
-            return true;
-        });
+        B::options(&mut opt.sub(|p| &mut p.p.0));
+        opt.sub(|p| &mut p.args).match_extra_soft(StringVecOption::maybe_push);
     }
 
-    fn get_extra(p: impl Deref<Target = AndArgsOptions<<B::Options as Validates>::Target>>) -> Vec<String> {
-        return p.args.clone();
+    fn get_extra(p: Arc<AndArgsOptionsValidated<B::Options>>) -> Vec<String> {
+        return (*p.args).clone();
     }
 
-    fn stream(p: impl Deref<Target = AndArgsOptions<<B::Options as Validates>::Target>>) -> Stream {
-        return B::stream(&p.p);
+    fn stream(p: Arc<AndArgsOptionsValidated<B::Options>>) -> Stream {
+        return B::stream(p.p.clone());
     }
 }
