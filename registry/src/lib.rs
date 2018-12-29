@@ -2,6 +2,8 @@ extern crate opts;
 
 use opts::parser::OptParserView;
 use std::collections::HashMap;
+use std::fmt::Debug;
+use std::str::FromStr;
 use std::sync::Arc;
 
 pub struct Registry<R> {
@@ -149,21 +151,27 @@ impl RegistryArgs for OneStringArgs {
 
 
 
-pub enum OneIntArgs {
+pub struct OneFromStrArgs<T: FromStr> {
+    _x: std::marker::PhantomData<T>,
 }
 
-impl RegistryArgs for OneIntArgs {
-    type Val = i64;
+impl<T: FromStr + Send + Sync> RegistryArgs for OneFromStrArgs<T> where <T as FromStr>::Err: Debug {
+    type Val = T;
 
     fn argct() -> usize {
         return 1;
     }
 
-    fn parse(args: &[&str]) -> i64 {
+    fn parse(args: &[&str]) -> T {
         assert_eq!(1, args.len());
-        return args[0].parse().unwrap();
+        return T::from_str(args[0]).unwrap();
     }
 }
+
+
+
+pub type OneIntArgs = OneFromStrArgs<i64>;
+pub type OneUsizeArgs = OneFromStrArgs<usize>;
 
 
 
