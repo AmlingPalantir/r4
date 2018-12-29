@@ -55,6 +55,7 @@ impl OperationBe2 for Impl {
 
                             r.set_path(&lk, Record::from(line));
                             r.set_path(&lnk, Record::from(s.1));
+                            s.1 += 1;
                             r.set_path(&fk, s.0.clone().map(Record::from).unwrap_or_else(Record::null));
 
                             return w(Entry::Record(r));
