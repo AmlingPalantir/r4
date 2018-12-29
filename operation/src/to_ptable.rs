@@ -114,11 +114,11 @@ impl OperationBe2 for Impl {
                     let s = *s;
                     let (o, cell_tuples) = s;
 
-                    let xh = HeaderTree::build(&o.xk, &o.xs.cmp(), cell_tuples.iter().map(|(xs, _ys, _v)| xs));
-                    let yh = HeaderTree::build(&o.yk, &o.ys.cmp(), cell_tuples.iter().map(|(_xs, ys, _v)| ys));
+                    let (xh, xh_width) = HeaderTree::build(&o.xk, &o.xs.cmp(), cell_tuples.iter().map(|(xs, _ys, _v)| xs));
+                    let (yh, yh_width) = HeaderTree::build(&o.yk, &o.ys.cmp(), cell_tuples.iter().map(|(_xs, ys, _v)| ys));
 
-                    let width = o.yk.len() + 1 + xh.width1;
-                    let height = o.xk.len() + 1 + yh.width1;
+                    let width = o.yk.len() + 1 + xh_width;
+                    let height = o.xk.len() + 1 + yh_width;
 
                     let mut cells: Vec<Vec<_>> = (0..height).map(|_| (0..width).map(|_| ("".to_string(), ' ')).collect()).collect();
 
@@ -169,21 +169,18 @@ struct PreHeaderTree {
 }
 
 impl PreHeaderTree {
-    fn rebuild(self, width0: usize) -> HeaderTree {
-        let mut width1 = width0;
+    fn rebuild(self, width: &mut usize) -> HeaderTree {
+        let width0 = *width;
         let arr: Vec<_> = self.arr.into_iter().map(|(v, pht)| {
-            let ht = pht.rebuild(width1);
-            width1 = ht.width1;
-            return (v, ht);
+            return (v, pht.rebuild(width));
         }).collect();
         if arr.is_empty() {
-            width1 += 1;
+            *width += 1;
         }
         return HeaderTree {
             arr: arr,
             idxs: self.idxs,
             width0: width0,
-            width1: width1,
         };
     }
 }
@@ -192,11 +189,10 @@ struct HeaderTree {
     arr: Vec<(Record, HeaderTree)>,
     idxs: HashMap<Record, usize>,
     width0: usize,
-    width1: usize,
 }
 
 impl HeaderTree {
-    fn build<'a>(zk: &Vec<String>, zcmp: &Box<Fn(&Record, &Record) -> Ordering>, zss: impl Iterator<Item = &'a Vec<Record>>) -> HeaderTree {
+    fn build<'a>(zk: &Vec<String>, zcmp: &Box<Fn(&Record, &Record) -> Ordering>, zss: impl Iterator<Item = &'a Vec<Record>>) -> (HeaderTree, usize) {
         let mut srs = Vec::new();
         let mut already = HashSet::new();
         for zs in zss {
@@ -226,7 +222,9 @@ impl HeaderTree {
             });
         }
 
-        return pht.rebuild(0);
+        let mut width = 0;
+        let ht = pht.rebuild(&mut width);
+        return (ht, width);
     }
 
     fn visit_cells<F: FnMut(usize, usize, &Record)>(&self, depth: usize, f: &mut F) {
