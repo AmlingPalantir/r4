@@ -127,9 +127,8 @@ impl RegistryArgs for ZeroArgs {
         return 0;
     }
 
-    fn parse(args: &[&str]) -> () {
+    fn parse(args: &[&str]) {
         assert_eq!(0, args.len());
-        return ();
     }
 }
 
