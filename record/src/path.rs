@@ -24,7 +24,7 @@ impl<'a> Path<'a> {
         return Path(self.0.into_iter().map(|e| {
             return match e {
                 PathStep::RefHash(s) => PathStep::OwnHash(Arc::from(s)),
-                PathStep::OwnHash(s) => PathStep::OwnHash(Arc::from(s)),
+                PathStep::OwnHash(s) => PathStep::OwnHash(s),
                 PathStep::Array(n) => PathStep::Array(n),
             };
         }).collect());
