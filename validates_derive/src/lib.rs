@@ -63,19 +63,19 @@ pub fn derive_validates(input: TokenStream) -> TokenStream {
 
     let vis = &ast.vis;
     let ident = &ast.ident;
-    let generics = &ast.generics;
+    let (impl_generics, ty_generics, where_clause) = ast.generics.split_for_impl();
     let ident_validated = Ident::new(&format!("{}Validated", ident), Span::call_site());
     let gen = quote! {
-        impl #generics Validates for #ident {
-            type Target = #ident_validated;
+        impl #impl_generics Validates for #ident #ty_generics #where_clause {
+            type Target = #ident_validated #ty_generics;
 
-            fn validate(self) -> #ident_validated {
+            fn validate(self) -> Self::Target {
                 return #ident_validated #ctor_args;
             }
         }
 
         #[derive(Clone)]
-        #vis struct #ident_validated #generics #struct_args
+        #vis struct #ident_validated #impl_generics #struct_args #where_clause
     };
 
     return TokenStream::from(gen);
