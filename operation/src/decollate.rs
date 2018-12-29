@@ -1,7 +1,7 @@
 use OperationBe2;
 use deaggregator::DeaggregatorState;
 use opts::parser::OptParserView;
-use opts::vals::UnvalidatedRawOption;
+use opts::vals::UnvalidatedOption;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
@@ -12,7 +12,7 @@ pub struct Impl();
 #[derive(Default)]
 #[derive(Validates)]
 pub struct Options {
-    deaggs: UnvalidatedRawOption<Vec<Box<DeaggregatorState>>>
+    deaggs: UnvalidatedOption<Vec<Box<DeaggregatorState>>>
 }
 
 impl OperationBe2 for Impl {

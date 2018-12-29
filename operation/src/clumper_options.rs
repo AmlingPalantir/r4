@@ -1,7 +1,7 @@
 use clumper::ClumperFe;
 use clumper::ClumperWrapper;
 use opts::parser::OptParserView;
-use opts::vals::UnvalidatedRawOption;
+use opts::vals::UnvalidatedOption;
 use record::Record;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -10,7 +10,7 @@ use validates::Validates;
 
 #[derive(Default)]
 #[derive(Validates)]
-pub struct ClumperOptions(UnvalidatedRawOption<Vec<Box<ClumperWrapper>>>);
+pub struct ClumperOptions(UnvalidatedOption<Vec<Box<ClumperWrapper>>>);
 
 impl ClumperOptions {
     pub fn options<'a>(opt: &mut OptParserView<'a, ClumperOptions>) {

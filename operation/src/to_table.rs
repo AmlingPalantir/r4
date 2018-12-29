@@ -27,8 +27,6 @@ impl OperationBe2 for Impl {
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {
-        let keys = o.keys.clone();
-
         return stream::compound(
             stream::parse(),
             stream::closures(
@@ -47,7 +45,7 @@ impl OperationBe2 for Impl {
                     return true;
                 },
                 move |s, w| {
-                    let mut keys = (*keys).clone();
+                    let mut keys = o.keys.clone();
 
                     if keys.is_empty() {
                         let mut acc = HashSet::new();

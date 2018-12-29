@@ -2,7 +2,7 @@ use OperationBe2;
 use TwoRecordUnionOption;
 use opts::parser::OptParserView;
 use opts::vals::RequiredStringOption;
-use opts::vals::UnvalidatedRawOption;
+use opts::vals::UnvalidatedOption;
 use record::Record;
 use std::collections::HashMap;
 use std::fs::File;
@@ -17,7 +17,7 @@ pub struct Impl();
 
 #[derive(Default)]
 struct DbOption {
-    pairs: UnvalidatedRawOption<Vec<(String, String)>>,
+    pairs: UnvalidatedOption<Vec<(String, String)>>,
     file: RequiredStringOption,
 }
 
@@ -36,7 +36,7 @@ struct Db {
 }
 
 impl Db {
-    fn new(file: Arc<str>, pairs: Vec<(String, String)>) -> Db {
+    fn new(file: String, pairs: Vec<(String, String)>) -> Db {
         let mut db = Db {
             db: HashMap::new(),
             rks: Arc::new(pairs.iter().map(|(_lk, rk)| rk.clone()).collect()),
@@ -66,7 +66,7 @@ impl Db {
 #[derive(Validates)]
 pub struct Options {
     tru: TwoRecordUnionOption,
-    fills: UnvalidatedRawOption<(bool, bool)>,
+    fills: UnvalidatedOption<(bool, bool)>,
     db: DbOption,
 }
 
@@ -84,7 +84,7 @@ impl OperationBe2 for Impl {
         opt.match_zero(&["right"], |p| p.fills.0 = (false, true));
         opt.match_zero(&["outer"], |p| p.fills.0 = (true, true));
         opt.match_n(&["on"], 2, |p, a| p.db.pairs.0.push((a[0].to_string(), a[1].to_string())));
-        opt.sub(|p| &mut p.db.file).match_extra_soft(RequiredStringOption::maybe_set);
+        opt.sub(|p| &mut p.db.file).match_extra_soft(RequiredStringOption::maybe_set_str);
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {

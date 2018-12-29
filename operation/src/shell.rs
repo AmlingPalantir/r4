@@ -25,13 +25,12 @@ impl OperationBe for Impl {
         opt.match_extra_hard(StringVecOption::push_all);
     }
 
-    fn get_extra(_o: Arc<Arc<Vec<String>>>) -> Vec<String> {
+    fn get_extra(_o: Arc<Vec<String>>) -> Vec<String> {
         return vec![];
     }
 
-    fn stream(o: Arc<Arc<Vec<String>>>) -> Stream {
-        let args: Vec<String> = (**o).clone();
-        let mut args = args.into_iter();
+    fn stream(o: Arc<Vec<String>>) -> Stream {
+        let mut args = o.iter();
         let mut p = Command::new(args.next().unwrap())
             .args(args)
             .stdin(Stdio::piped())

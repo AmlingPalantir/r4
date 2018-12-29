@@ -2,7 +2,6 @@ use opts::parser::OptParserView;
 use opts::vals::OptionalStringOption;
 use record::Record;
 use record::RecordTrait;
-use std::sync::Arc;
 use validates::Validates;
 
 #[derive(Default)]
@@ -14,14 +13,14 @@ pub struct TwoRecordUnionOption {
 
 impl TwoRecordUnionOption {
     pub fn options<'a>(opt: &mut OptParserView<'a, TwoRecordUnionOption>) {
-        opt.sub(|p| &mut p.left_prefix).match_single(&["lp", "left-prefix"], OptionalStringOption::set);
-        opt.sub(|p| &mut p.right_prefix).match_single(&["rp", "right-prefix"], OptionalStringOption::set);
+        opt.sub(|p| &mut p.left_prefix).match_single(&["lp", "left-prefix"], OptionalStringOption::set_str);
+        opt.sub(|p| &mut p.right_prefix).match_single(&["rp", "right-prefix"], OptionalStringOption::set_str);
     }
 }
 
 impl TwoRecordUnionOptionValidated {
     pub fn union_maybe(&self, r1: Option<Record>, r2: Option<Record>) -> Record {
-        fn _union_aux(r: &mut Record, prefix: &Option<Arc<str>>, r1: Record) {
+        fn _union_aux(r: &mut Record, prefix: &Option<String>, r1: Record) {
             match prefix {
                 Some(prefix) => {
                     r.set_path(&prefix, r1);

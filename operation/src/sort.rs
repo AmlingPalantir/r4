@@ -1,7 +1,7 @@
 use OperationBe2;
 use opts::parser::OptParserView;
 use opts::vals::OptionalUsizeOption;
-use opts::vals::UnvalidatedRawOption;
+use opts::vals::UnvalidatedOption;
 use record::Record;
 use sorts::SortFe;
 use sorts::SortState;
@@ -15,7 +15,7 @@ pub struct Impl();
 
 #[derive(Default)]
 #[derive(Validates)]
-pub struct SortOptions(UnvalidatedRawOption<Vec<Box<SortState>>>);
+pub struct SortOptions(UnvalidatedOption<Vec<Box<SortState>>>);
 
 impl SortOptions {
     pub fn options<'a>(opt: &mut OptParserView<'a, SortOptions>, aliases: &[&str]) {

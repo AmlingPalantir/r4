@@ -38,7 +38,7 @@ impl OperationBe2 for Impl {
     }
 
     fn options<'a>(opt: &mut OptParserView<'a, Options>) {
-        opt.sub(|p| &mut p.re.0).match_single(&["re", "regex"], RequiredStringOption::set);
+        opt.sub(|p| &mut p.re.0).match_single(&["re", "regex"], RequiredStringOption::set_str);
         opt.sub(|p| &mut p.keys).match_single(&["k", "keys"], StringVecOption::push_split);
     }
 

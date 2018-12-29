@@ -1,7 +1,7 @@
 use OperationBe2;
 use aggregator::AggregatorState;
 use opts::parser::OptParserView;
-use opts::vals::UnvalidatedRawOption;
+use opts::vals::UnvalidatedOption;
 use record::Record;
 use record::RecordTrait;
 use std::sync::Arc;
@@ -14,7 +14,7 @@ pub struct Impl();
 #[derive(Default)]
 #[derive(Validates)]
 pub struct Options {
-    aggs: UnvalidatedRawOption<Vec<(String, Box<AggregatorState>)>>,
+    aggs: UnvalidatedOption<Vec<(String, Box<AggregatorState>)>>,
 }
 
 impl OperationBe2 for Impl {

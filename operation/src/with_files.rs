@@ -27,7 +27,7 @@ impl OperationBe for Impl {
     }
 
     fn options<'a>(opt: &mut OptParserView<'a, Options>) {
-        opt.sub(|p| &mut p.fk).match_single(&["fk", "file-key"], OptionalStringOption::set);
+        opt.sub(|p| &mut p.fk).match_single(&["fk", "file-key"], OptionalStringOption::set_str);
         opt.sub(|p| &mut p.op).match_extra_hard(SubOperationOption::push);
     }
 

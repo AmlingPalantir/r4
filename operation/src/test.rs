@@ -22,7 +22,7 @@ impl OperationBe2 for Impl {
     }
 
     fn options<'a>(opt: &mut OptParserView<'a, Options>) {
-        opt.sub(|p| &mut p.msg).match_single(&["m", "msg"], RequiredStringOption::set);
+        opt.sub(|p| &mut p.msg).match_single(&["m", "msg"], RequiredStringOption::set_str);
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {

@@ -1,7 +1,7 @@
 use OperationBe2;
 use opts::parser::OptParserView;
 use opts::vals::StringVecOption;
-use opts::vals::UnvalidatedArcOption;
+use opts::vals::UnvalidatedOption;
 use record::Record;
 use record::RecordTrait;
 use std::cmp::Ordering;
@@ -21,7 +21,7 @@ pub struct Impl();
 pub struct Options {
     xk: StringVecOption,
     yk: StringVecOption,
-    pins: UnvalidatedArcOption<HashMap<String, String>>,
+    pins: UnvalidatedOption<HashMap<String, String>>,
     vk: StringVecOption,
     xs: SortOptions,
     ys: SortOptions,
@@ -46,13 +46,6 @@ impl OperationBe2 for Impl {
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {
-        let xk = o.xk.clone();
-        let yk = o.yk.clone();
-        let pins = o.pins.clone();
-        let vk = o.vk.clone();
-        let xcmp = o.xs.cmp();
-        let ycmp = o.ys.cmp();
-
         return stream::compound(
             stream::parse(),
             stream::closures(
@@ -74,7 +67,7 @@ impl OperationBe2 for Impl {
                     let mut cell_tuples = Vec::new();
 
                     'record: for r in s.iter() {
-                        for (k, ve) in pins.iter() {
+                        for (k, ve) in o.pins.iter() {
                             let vo = r.get_path(k).coerce_string();
                             let vo = &vo as &str;
                             if ve != vo {
@@ -82,19 +75,19 @@ impl OperationBe2 for Impl {
                             }
                         }
 
-                        let mut rvk = (*vk).clone();
+                        let mut rvk = o.vk.clone();
                         if rvk.is_empty() {
                             let mut unused = BTreeSet::new();
                             for k in r.expect_hash().keys() {
                                 unused.insert(k.to_string());
                             }
-                            for k in xk.iter() {
+                            for k in o.xk.iter() {
                                 unused.remove(k);
                             }
-                            for k in yk.iter() {
+                            for k in o.yk.iter() {
                                 unused.remove(k);
                             }
-                            for k in pins.keys() {
+                            for k in o.pins.keys() {
                                 unused.remove(k);
                             }
                             rvk = unused.into_iter().collect();
@@ -103,7 +96,7 @@ impl OperationBe2 for Impl {
                         for vk in rvk {
                             let mut xs = Vec::new();
                             let mut ys = Vec::new();
-                            for (zk, zs) in vec![(&xk, &mut xs), (&yk, &mut ys)] {
+                            for (zk, zs) in vec![(&o.xk, &mut xs), (&o.yk, &mut ys)] {
                                 for k in zk.iter() {
                                     let v;
                                     if k == "VALUE" {
@@ -122,27 +115,30 @@ impl OperationBe2 for Impl {
                         }
                     }
 
-                    let xh = HeaderTree::build(&xk, &xcmp, cell_tuples.iter().map(|(xs, _ys, _v)| xs));
-                    let yh = HeaderTree::build(&yk, &ycmp, cell_tuples.iter().map(|(_xs, ys, _v)| ys));
+                    let xcmp = o.xs.cmp();
+                    let ycmp = o.ys.cmp();
 
-                    let width = yk.len() + 1 + xh.width1;
-                    let height = xk.len() + 1 + yh.width1;
+                    let xh = HeaderTree::build(&o.xk, &xcmp, cell_tuples.iter().map(|(xs, _ys, _v)| xs));
+                    let yh = HeaderTree::build(&o.yk, &ycmp, cell_tuples.iter().map(|(_xs, ys, _v)| ys));
+
+                    let width = o.yk.len() + 1 + xh.width1;
+                    let height = o.xk.len() + 1 + yh.width1;
 
                     let mut cells: Vec<Vec<_>> = (0..height).map(|_| (0..width).map(|_| ("".to_string(), ' ')).collect()).collect();
 
-                    for (i, k) in xk.iter().enumerate() {
-                        cells[i][yk.len()] = (k.to_string(), ' ');
+                    for (i, k) in o.xk.iter().enumerate() {
+                        cells[i][o.yk.len()] = (k.to_string(), ' ');
                     }
-                    for (i, k) in yk.iter().enumerate() {
-                        cells[xk.len()][i] = (k.to_string(), ' ');
+                    for (i, k) in o.yk.iter().enumerate() {
+                        cells[o.xk.len()][i] = (k.to_string(), ' ');
                     }
 
-                    xh.visit_cells(0, &mut |width, depth, v| cells[depth][yk.len() + 1 + width] = (v.pretty_string(), ' '));
-                    yh.visit_cells(0, &mut |width, depth, v| cells[xk.len() + 1 + width][depth] = (v.pretty_string(), ' '));
+                    xh.visit_cells(0, &mut |width, depth, v| cells[depth][o.yk.len() + 1 + width] = (v.pretty_string(), ' '));
+                    yh.visit_cells(0, &mut |width, depth, v| cells[o.xk.len() + 1 + width][depth] = (v.pretty_string(), ' '));
 
                     for (xs, ys, v) in cell_tuples {
-                        let x = yk.len() + 1 + xh.width(&xs);
-                        let y = xk.len() + 1 + yh.width(&ys);
+                        let x = o.yk.len() + 1 + xh.width(&xs);
+                        let y = o.xk.len() + 1 + yh.width(&ys);
                         cells[y][x] = (v.pretty_string(), ' ');
                     }
 

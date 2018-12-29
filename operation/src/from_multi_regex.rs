@@ -2,7 +2,7 @@ use OperationBe2;
 use opts::parser::OptParserView;
 use opts::vals::BooleanOption;
 use opts::vals::StringVecOption;
-use opts::vals::UnvalidatedArcOption;
+use opts::vals::UnvalidatedOption;
 use record::Record;
 use record::RecordTrait;
 use regex::Regex;
@@ -16,7 +16,7 @@ pub struct Impl();
 #[derive(Default)]
 #[derive(Validates)]
 pub struct Options {
-    res: UnvalidatedArcOption<Vec<(bool, bool, Vec<String>, Regex)>>,
+    res: UnvalidatedOption<Vec<(bool, bool, Vec<String>, Regex)>>,
 
     keep: StringVecOption,
     keep_all: BooleanOption,
@@ -56,56 +56,44 @@ impl OperationBe2 for Impl {
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {
-        let res = o.res.clone();
-        let clobber1 = o.clobber;
-        let clobber2 = o.clobber;
-
-        struct State {
-            r: Record,
-            keep: Arc<Vec<String>>,
-            keep_all: bool,
-        }
+        struct State(Record);
 
         impl State {
-            fn flush(&mut self, w: &mut FnMut(Entry) -> bool) {
-                if !self.r.expect_hash().is_empty() {
+            fn flush(&mut self, o: &OptionsValidated, w: &mut FnMut(Entry) -> bool) {
+                if !self.0.expect_hash().is_empty() {
                     // We ignore the flow hint, but that's okay as the
                     // surrounding Stream will remember it and at worst we do
                     // the rest of our process for the line.
-                    w(Entry::Record(self.r.clone()));
+                    w(Entry::Record(self.0.clone()));
                 }
 
-                if self.keep_all {
+                if o.keep_all {
                     return;
                 }
 
                 let mut r2 = Record::empty_hash();
-                for path in self.keep.iter() {
-                    if self.r.has_path(path) {
-                        r2.set_path(path, self.r.get_path(path));
+                for path in o.keep.iter() {
+                    if self.0.has_path(path) {
+                        r2.set_path(path, self.0.get_path(path));
                     }
                 }
 
-                self.r = r2;
+                self.0 = r2;
             }
         }
 
         return stream::compound(
             stream::deparse(),
             stream::closures(
-                State {
-                    r: Record::empty_hash(),
-                    keep: o.keep.clone(),
-                    keep_all: o.keep_all,
-                },
+                (State(Record::empty_hash()), o),
                 move |s, e, w| {
                     match e {
                         Entry::Bof(file) => {
-                            if !clobber1 {
-                                s.flush(w);
+                            if !s.1.clobber {
+                                s.0.flush(&s.1, w);
                             }
 
-                            s.r = Record::empty_hash();
+                            (s.0).0 = Record::empty_hash();
 
                             return w(Entry::Bof(file));
                         }
@@ -113,15 +101,15 @@ impl OperationBe2 for Impl {
                             panic!("Unexpected record in FromMultiRegexStream");
                         }
                         Entry::Line(line) => {
-                            for (pre_flush, post_flush, keys, re) in res.iter() {
+                            for (pre_flush, post_flush, keys, re) in s.1.res.iter() {
                                 let mut pre_flush = *pre_flush;
                                 if let Some(m) = re.captures(&line) {
-                                    if !clobber1 {
+                                    if !s.1.clobber {
                                         let ki = keys.iter();
                                         let gi = m.iter().skip(1);
                                         for (k, g) in ki.zip(gi) {
                                             if let Some(_) = g {
-                                                if s.r.has_path(&k) {
+                                                if (s.0).0.has_path(&k) {
                                                     pre_flush = true;
                                                     break;
                                                 }
@@ -129,17 +117,17 @@ impl OperationBe2 for Impl {
                                         }
                                     }
                                     if pre_flush {
-                                        s.flush(w);
+                                        s.0.flush(&s.1, w);
                                     }
                                     let ki = keys.iter();
                                     let gi = m.iter().skip(1);
                                     for (k, g) in ki.zip(gi) {
                                         if let Some(m) = g {
-                                            s.r.set_path(&k, Record::from(m.as_str()));
+                                            (s.0).0.set_path(&k, Record::from(m.as_str()));
                                         }
                                     }
                                     if *post_flush {
-                                        s.flush(w);
+                                        s.0.flush(&s.1, w);
                                     }
                                 }
                             }
@@ -147,9 +135,10 @@ impl OperationBe2 for Impl {
                         }
                     }
                 },
-                move |mut s, w| {
-                    if !clobber2 {
-                        (*s).flush(w);
+                move |s, w| {
+                    let mut s = *s;
+                    if !s.1.clobber {
+                        s.0.flush(&s.1, w);
                     }
                 },
             ),

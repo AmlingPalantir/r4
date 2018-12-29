@@ -26,16 +26,12 @@ impl OperationBe2 for Impl {
     }
 
     fn options<'a>(opt: &mut OptParserView<'a, Options>) {
-        opt.sub(|p| &mut p.lk).match_single(&["lk", "line-key"], OptionalStringOption::set);
-        opt.sub(|p| &mut p.lnk).match_single(&["lnk", "lineno-key"], OptionalStringOption::set);
-        opt.sub(|p| &mut p.fk).match_single(&["fk", "file-key"], OptionalStringOption::set);
+        opt.sub(|p| &mut p.lk).match_single(&["lk", "line-key"], OptionalStringOption::set_str);
+        opt.sub(|p| &mut p.lnk).match_single(&["lnk", "lineno-key"], OptionalStringOption::set_str);
+        opt.sub(|p| &mut p.fk).match_single(&["fk", "file-key"], OptionalStringOption::set_str);
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {
-        let lk = o.lk.clone().unwrap_or_else(|| Arc::from("LINE"));
-        let lnk = o.lnk.clone().unwrap_or_else(|| Arc::from("LINENO"));
-        let fk = o.fk.clone().unwrap_or_else(|| Arc::from("FILE"));
-
         return stream::compound(
             stream::deparse(),
             stream::closures(
@@ -52,6 +48,10 @@ impl OperationBe2 for Impl {
                         }
                         Entry::Line(line) => {
                             let mut r = Record::empty_hash();
+
+                            let lk = o.lk.as_ref().map(|s| s as &str).unwrap_or("LINE");
+                            let lnk = o.lnk.as_ref().map(|s| s as &str).unwrap_or("LINENO");
+                            let fk = o.fk.as_ref().map(|s| s as &str).unwrap_or("FILE");
 
                             r.set_path(&lk, Record::from(line));
                             r.set_path(&lnk, Record::from(s.1));

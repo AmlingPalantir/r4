@@ -47,6 +47,14 @@ impl<T> RequiredOption<T> {
         self.0 = Some(t);
     }
 
+    pub fn maybe_set(&mut self, t: T) -> bool {
+        if let Some(_) = self.0 {
+            return false;
+        }
+        self.0 = Some(t);
+        return true;
+    }
+
     pub fn maybe_set_with<F: FnOnce() -> T>(&mut self, f: F) -> bool {
         if let Some(_) = self.0 {
             return false;
@@ -62,34 +70,15 @@ impl<T: Clone> RequiredOption<T> {
     }
 }
 
-#[derive(Default)]
-pub struct RequiredStringOption(Option<String>);
-
-impl Validates for RequiredStringOption {
-    type Target = Arc<str>;
-
-    fn validate(self) -> Arc<str> {
-        return match self.0 {
-            Some(s) => Arc::from(&s as &str),
-            None => panic!("RequiredStringOption not specified"),
-        };
-    }
-}
+pub type RequiredStringOption = RequiredOption<String>;
 
 impl RequiredStringOption {
-    pub fn set(&mut self, a: &str) {
-        if let Some(_) = self.0 {
-            panic!("RequiredStringOption specified multiple times");
-        }
-        self.0 = Some(a.to_string());
+    pub fn set_str(&mut self, a: &str) {
+        self.set(a.to_string());
     }
 
-    pub fn maybe_set(&mut self, a: &str) -> bool {
-        if let Some(_) = self.0 {
-            return false;
-        }
-        self.0 = Some(a.to_string());
-        return true;
+    pub fn maybe_set_str(&mut self, a: &str) -> bool {
+        return self.maybe_set(a.to_string());
     }
 }
 
@@ -124,33 +113,18 @@ impl<T: Clone> OptionalOption<T> {
     }
 }
 
-#[derive(Default)]
-pub struct OptionalStringOption(Option<String>);
-
-impl Validates for OptionalStringOption {
-    type Target = Option<Arc<str>>;
-
-    fn validate(self) -> Option<Arc<str>> {
-        return match self.0 {
-            Some(s) => Some(Arc::from(&s as &str)),
-            None => None,
-        };
-    }
-}
+pub type OptionalStringOption = OptionalOption<String>;
 
 impl OptionalStringOption {
-    pub fn set(&mut self, a: &str) {
-        if let Some(_) = self.0 {
-            panic!("OptionalStringOption specified multiple times");
-        }
-        self.0 = Some(a.to_string());
+    pub fn set_str(&mut self, a: &str) {
+        self.set(a.to_string());
     }
 }
 
 #[derive(Default)]
-pub struct UnvalidatedRawOption<T>(pub T);
+pub struct UnvalidatedOption<T>(pub T);
 
-impl<T> Validates for UnvalidatedRawOption<T> {
+impl<T> Validates for UnvalidatedOption<T> {
     type Target = T;
 
     fn validate(self) -> T {
@@ -158,18 +132,7 @@ impl<T> Validates for UnvalidatedRawOption<T> {
     }
 }
 
-#[derive(Default)]
-pub struct UnvalidatedArcOption<T>(pub T);
-
-impl<T> Validates for UnvalidatedArcOption<T> {
-    type Target = Arc<T>;
-
-    fn validate(self) -> Arc<T> {
-        return Arc::new(self.0);
-    }
-}
-
-pub type StringVecOption = UnvalidatedArcOption<Vec<String>>;
+pub type StringVecOption = UnvalidatedOption<Vec<String>>;
 
 impl StringVecOption {
     pub fn push(&mut self, s: &str) {
@@ -198,10 +161,10 @@ impl StringVecOption {
 pub struct StringSetOption(Vec<String>);
 
 impl Validates for StringSetOption {
-    type Target = Arc<HashSet<String>>;
+    type Target = HashSet<String>;
 
-    fn validate(self) -> Arc<HashSet<String>> {
-        return Arc::new(self.0.into_iter().collect());
+    fn validate(self) -> HashSet<String> {
+        return self.0.into_iter().collect();
     }
 }
 

@@ -144,7 +144,7 @@ impl<B: OperationBe2> OperationBe for B {
     }
 
     fn get_extra(p: Arc<AndArgsOptionsValidated<B::Options>>) -> Vec<String> {
-        return (*p.args).clone();
+        return p.args.clone();
     }
 
     fn stream(p: Arc<AndArgsOptionsValidated<B::Options>>) -> Stream {
