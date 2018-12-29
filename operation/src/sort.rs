@@ -53,7 +53,7 @@ impl OperationBe2 for Impl {
     }
 
     fn options<'a>(opt: &mut OptParserView<'a, Options>) {
-        SortOptions::options(&mut opt.sub(|p| &mut p.sorts), &["k", "key"]);
+        SortOptions::options(&mut opt.sub(|p| &mut p.sorts), &["s", "sort"]);
         opt.match_single(&["l", "lex", "lexical"], |p, a| {
             for a in a.split(',') {
                 (p.sorts.0).0.push(sorts::lexical::Impl::init(&[a]));
