@@ -108,8 +108,7 @@ impl Record {
                     acc.push_str(&n.to_json_string());
                 }
                 RecordNode::Primitive(JsonPrimitive::String(s)) => {
-                    let sr: &str = &*s;
-                    acc.push_str(&serde_json::to_string(sr).unwrap());
+                    acc.push_str(&serde_json::to_string(s as &str).unwrap());
                 }
                 RecordNode::Array(arr) => {
                     acc.push_str("[");
@@ -129,8 +128,7 @@ impl Record {
                         if i > 0 {
                             acc.push_str(",");
                         }
-                        let kr: &str = &*k;
-                        acc.push_str(&serde_json::to_string(kr).unwrap());
+                        acc.push_str(&serde_json::to_string(k as &str).unwrap());
                         acc.push_str(":");
                         _to_string_aux(v, acc);
                     }
