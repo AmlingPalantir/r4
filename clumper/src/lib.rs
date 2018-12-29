@@ -51,7 +51,7 @@ impl<B: ClumperBe + 'static> ClumperFe for B {
     }
 }
 
-struct ClumperWrapperImpl<B: ClumperBe>(Arc<<<B as ClumperBe>::Args as RegistryArgs>::Val>);
+struct ClumperWrapperImpl<B: ClumperBe>(Arc<<B::Args as RegistryArgs>::Val>);
 
 impl<B: ClumperBe + 'static> ClumperWrapper for ClumperWrapperImpl<B> {
     fn stream(&self, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream {

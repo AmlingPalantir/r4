@@ -48,7 +48,7 @@ impl<B: DeaggregatorBe + 'static> DeaggregatorFe for B {
     }
 }
 
-struct DeaggregatorStateImpl<B: DeaggregatorBe>(Arc<<<B as DeaggregatorBe>::Args as RegistryArgs>::Val>);
+struct DeaggregatorStateImpl<B: DeaggregatorBe>(Arc<<B::Args as RegistryArgs>::Val>);
 
 impl<B: DeaggregatorBe + 'static> DeaggregatorState for DeaggregatorStateImpl<B> {
     fn deaggregate(&self, r: Record) -> Vec<Vec<(Arc<str>, Record)>> {

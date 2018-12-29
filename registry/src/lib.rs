@@ -155,7 +155,7 @@ pub struct OneFromStrArgs<T: FromStr> {
     _x: std::marker::PhantomData<T>,
 }
 
-impl<T: FromStr + Send + Sync> RegistryArgs for OneFromStrArgs<T> where <T as FromStr>::Err: Debug {
+impl<T: FromStr + Send + Sync> RegistryArgs for OneFromStrArgs<T> where T::Err: Debug {
     type Val = T;
 
     fn argct() -> usize {

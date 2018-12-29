@@ -52,7 +52,7 @@ impl<B: SortBe + 'static> SortFe for B {
 }
 
 struct SortStateImpl<B: SortBe> {
-    a: Arc<<<B as SortBe>::Args as RegistryArgs>::Val>,
+    a: Arc<<B::Args as RegistryArgs>::Val>,
 }
 
 impl<B: SortBe + 'static> SortState for SortStateImpl<B> {

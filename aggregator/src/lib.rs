@@ -81,7 +81,7 @@ impl<B: AggregatorBe + 'static> AggregatorFe for B {
 }
 
 struct AggregatorStateImpl<B: AggregatorBe> {
-    a: Arc<<<B as AggregatorBe>::Args as RegistryArgs>::Val>,
+    a: Arc<<B::Args as RegistryArgs>::Val>,
     s: B::State,
 }
 

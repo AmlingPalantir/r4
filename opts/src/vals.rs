@@ -231,9 +231,9 @@ impl OptionalUsizeOption {
 pub struct IntoArcOption<P>(pub P);
 
 impl<P: Validates> Validates for IntoArcOption<P> {
-    type Target = Arc<<P as Validates>::Target>;
+    type Target = Arc<P::Target>;
 
-    fn validate(self) -> Arc<<P as Validates>::Target> {
+    fn validate(self) -> Arc<P::Target> {
         return Arc::new(self.0.validate());
     }
 }
