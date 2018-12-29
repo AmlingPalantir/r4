@@ -130,6 +130,9 @@ pub trait RecordTrait: std::marker::Sized {
 
     fn coerce_num(&self) -> Either<i64, f64> {
         match self.maybe_primitive() {
+            Some(JsonPrimitive::Null()) => {
+                return Either::Left(0);
+            }
             Some(JsonPrimitive::NumberI64(n)) => {
                 return Either::Left(n);
             }
