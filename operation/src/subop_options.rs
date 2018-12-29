@@ -16,13 +16,13 @@ impl SubOperationOption {
 }
 
 impl Validates for SubOperationOption {
-    type Target = SubOperationOptions;
+    type Target = SubOperationOptionValidated;
 
-    fn validate(mut self) -> SubOperationOptions {
+    fn validate(mut self) -> SubOperationOptionValidated {
         let name = self.0.remove(0);
         let op = super::REGISTRY.find(&name, &[]);
         let wr = op(&mut self.0);
-        return SubOperationOptions {
+        return SubOperationOptionValidated {
             extra: self.0,
             wr: Arc::new(wr),
         };
@@ -30,7 +30,7 @@ impl Validates for SubOperationOption {
 }
 
 #[derive(Clone)]
-pub struct SubOperationOptions {
+pub struct SubOperationOptionValidated {
     pub extra: Vec<String>,
     pub wr: Arc<StreamWrapper>,
 }
