@@ -42,7 +42,7 @@ impl<T> NameTrie<T> {
         if let Some(ref t) = self.t {
             acc.push(t);
         }
-        for (_, n) in &self.children {
+        for n in self.children.values() {
             n.collect(acc);
         }
     }
