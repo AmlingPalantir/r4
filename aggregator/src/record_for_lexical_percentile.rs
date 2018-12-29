@@ -1,7 +1,7 @@
-use AggregatorBe;
 use record::Record;
 use record::RecordTrait;
 use std::sync::Arc;
+use super::AggregatorBe;
 use super::lexical_percentile::PercentileArgs;
 use super::lexical_percentile::PercentileState;
 

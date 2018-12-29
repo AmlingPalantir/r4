@@ -1,10 +1,10 @@
-use OperationBe;
-use StreamWrapper;
-use SubOperationOption;
 use opts::parser::OptParserView;
 use opts::vals::BooleanOption;
 use std::sync::Arc;
 use stream::Stream;
+use super::OperationBe;
+use super::StreamWrapper;
+use super::SubOperationOption;
 use validates::Validates;
 
 pub struct Impl();

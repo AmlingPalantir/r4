@@ -1,5 +1,3 @@
-use OperationBe;
-use SubOperationOption;
 use opts::parser::OptParserView;
 use opts::vals::DefaultedStringOption;
 use record::Record;
@@ -7,6 +5,8 @@ use record::RecordTrait;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
+use super::OperationBe;
+use super::SubOperationOption;
 use validates::Validates;
 
 pub struct Impl();

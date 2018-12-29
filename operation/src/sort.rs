@@ -1,4 +1,3 @@
-use OperationBe2;
 use opts::parser::OptParserView;
 use opts::vals::OptionalUsizeOption;
 use opts::vals::UnvalidatedOption;
@@ -9,6 +8,7 @@ use std::cmp::Ordering;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
+use super::OperationBe2;
 use validates::Validates;
 
 pub struct Impl();

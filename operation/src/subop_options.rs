@@ -1,5 +1,5 @@
-use StreamWrapper;
 use std::sync::Arc;
+use super::StreamWrapper;
 use validates::Validates;
 
 #[derive(Default)]

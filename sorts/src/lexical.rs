@@ -1,8 +1,8 @@
-use SortSimpleBe;
-use SortSimpleBeImpl;
 use record::Record;
 use record::RecordTrait;
 use std::sync::Arc;
+use super::SortSimpleBe;
+use super::SortSimpleBeImpl;
 
 pub type Impl = SortSimpleBeImpl<SimpleImpl>;
 

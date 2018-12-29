@@ -1,10 +1,10 @@
-use AggregatorBe;
 use record::Record;
 use record::RecordTrait;
 use registry::OneStringArgs;
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::sync::Arc;
+use super::AggregatorBe;
 
 pub struct Impl();
 

@@ -1,7 +1,7 @@
-use AggregatorBe;
 use record::Record;
 use registry::OneStringArgs;
 use std::sync::Arc;
+use super::AggregatorBe;
 use super::distinct_array::DistinctSet;
 
 pub struct Impl();

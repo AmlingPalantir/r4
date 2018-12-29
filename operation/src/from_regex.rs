@@ -1,4 +1,3 @@
-use OperationBe2;
 use opts::parser::OptParserView;
 use opts::vals::RequiredStringOption;
 use opts::vals::StringVecOption;
@@ -8,6 +7,7 @@ use regex::Regex;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
+use super::OperationBe2;
 use validates::Validates;
 
 pub struct Impl();

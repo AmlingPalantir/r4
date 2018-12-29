@@ -1,9 +1,9 @@
-use OperationBe;
-use SubOperationOption;
 use opts::parser::OptParserView;
 use std::sync::Arc;
 use std::thread;
 use stream::Stream;
+use super::OperationBe;
+use super::SubOperationOption;
 use validates::Validates;
 
 pub struct Impl();

@@ -1,4 +1,3 @@
-use OperationBe2;
 use executor::Code;
 use opts::parser::OptParserView;
 use opts::vals::BooleanOption;
@@ -10,6 +9,7 @@ use record::RecordTrait;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
+use super::OperationBe2;
 use validates::Validates;
 
 option_defaulters! {

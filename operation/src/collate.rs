@@ -1,9 +1,9 @@
-use ClumperOptions;
-use OperationBe;
 use opts::parser::OptParserView;
 use opts::vals::IntoArcOption;
 use std::sync::Arc;
 use stream::Stream;
+use super::ClumperOptions;
+use super::OperationBe;
 use super::aggregate;
 use validates::Validates;
 

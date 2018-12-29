@@ -1,9 +1,9 @@
-use AggregatorBe;
 use record::F64SortDishonorProxy;
 use record::Record;
 use record::RecordTrait;
 use registry::OneStringArgs;
 use std::sync::Arc;
+use super::AggregatorBe;
 use super::lexical_max::MaxState;
 use super::lexical_min::ReverseOrd;
 

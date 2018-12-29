@@ -1,12 +1,12 @@
-use OperationBe2;
-use SubOperationOption;
-use TwoRecordUnionOption;
 use opts::parser::OptParserView;
 use opts::vals::DefaultedStringOption;
 use record::RecordTrait;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
+use super::OperationBe2;
+use super::SubOperationOption;
+use super::TwoRecordUnionOption;
 use validates::Validates;
 
 pub struct Impl();

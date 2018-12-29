@@ -1,7 +1,7 @@
-use AggregatorBe;
 use record::Record;
 use record::RecordTrait;
 use registry::ZeroArgs;
+use super::AggregatorBe;
 
 pub struct Impl();
 

@@ -1,6 +1,6 @@
-use AggregatorBe;
 use record::Record;
 use registry::ZeroArgs;
+use super::AggregatorBe;
 
 pub struct Impl();
 

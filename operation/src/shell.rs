@@ -1,4 +1,3 @@
-use OperationBe;
 use opts::parser::OptParserView;
 use opts::vals::StringVecOption;
 use std::io::BufRead;
@@ -11,6 +10,7 @@ use std::sync::Arc;
 use std::thread;
 use stream::Entry;
 use stream::Stream;
+use super::OperationBe;
 
 pub struct Impl();
 

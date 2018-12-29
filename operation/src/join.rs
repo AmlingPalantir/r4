@@ -1,5 +1,3 @@
-use OperationBe2;
-use TwoRecordUnionOption;
 use opts::parser::OptParserView;
 use opts::vals::RequiredStringOption;
 use opts::vals::UnvalidatedOption;
@@ -11,6 +9,8 @@ use std::io::BufReader;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
+use super::OperationBe2;
+use super::TwoRecordUnionOption;
 use validates::Validates;
 
 pub struct Impl();

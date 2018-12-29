@@ -1,7 +1,7 @@
-use DeaggregatorBe;
 use record::Record;
 use registry::TwoStringArgs;
 use std::sync::Arc;
+use super::DeaggregatorBe;
 
 pub struct Impl();
 

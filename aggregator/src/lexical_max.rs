@@ -1,9 +1,9 @@
-use AggregatorBe;
 use record::Record;
 use record::RecordTrait;
 use registry::OneStringArgs;
 use std::cmp::Ord;
 use std::sync::Arc;
+use super::AggregatorBe;
 
 pub struct Impl();
 

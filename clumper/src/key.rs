@@ -1,10 +1,10 @@
-use ClumperBe;
 use record::Record;
 use registry::OneStringArgs;
 use std::collections::HashMap;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
+use super::ClumperBe;
 
 pub struct Impl();
 
