@@ -15,6 +15,7 @@ registry! {
     ClumperFe,
     Box<ClumperWrapper>,
     key,
+    round_robin,
     window,
 }
 
