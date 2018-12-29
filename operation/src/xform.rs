@@ -1,26 +1,20 @@
-use OperationBe2;
-use opts::parser::OptParserView;
-use std::sync::Arc;
-use stream::Stream;
-use super::eval::InputType;
-use super::eval::Options;
-use super::eval::OptionsValidated;
-use super::eval::OutputType;
+use super::eval::EvalBe;
+use super::eval::EvalImpl;
+use super::eval::InputRecordsDefaulter;
+use super::eval::OutputRecordsDefaulter;
+use super::eval::FalseDefaulter;
 
-pub struct Impl();
+pub enum EvalBeImpl {
+}
 
-impl OperationBe2 for Impl {
-    type Options = Options;
+impl EvalBe for EvalBeImpl {
+    type I = InputRecordsDefaulter;
+    type O = OutputRecordsDefaulter;
+    type R = FalseDefaulter;
 
     fn names() -> Vec<&'static str> {
         return vec!["xform"];
     }
-
-    fn options<'a>(opt: &mut OptParserView<'a, Options>) {
-        super::eval::Impl::options(opt);
-    }
-
-    fn stream(o: Arc<OptionsValidated>) -> Stream {
-        return super::eval::stream1(o, InputType::Records(), OutputType::Records(), false);
-    }
 }
+
+pub type Impl = EvalImpl<EvalBeImpl>;

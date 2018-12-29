@@ -31,8 +31,10 @@ pub trait OptionDefaulter<T> {
 macro_rules! option_defaulters {
     {$($id:ident: $r:ty => $e:expr,)*} => {
         $(
-            enum $id {
-            }
+            // arggh, can't derive Default on stuff templated on this
+            // otherwise...
+            #[derive(Default)]
+            pub struct $id();
 
             impl $crate::vals::OptionDefaulter<$r> for $id {
                 fn default() -> $r {

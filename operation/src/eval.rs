@@ -2,7 +2,8 @@ use OperationBe2;
 use executor::Code;
 use opts::parser::OptParserView;
 use opts::vals::BooleanOption;
-use opts::vals::OptionalOption;
+use opts::vals::DefaultedOption;
+use opts::vals::OptionDefaulter;
 use opts::vals::RequiredOption;
 use record::Record;
 use record::RecordTrait;
@@ -11,7 +12,17 @@ use stream::Entry;
 use stream::Stream;
 use validates::Validates;
 
-pub struct Impl();
+option_defaulters! {
+    InputRecordsDefaulter: InputType => InputType::Records(),
+    InputLinesDefaulter: InputType => InputType::Lines(),
+
+    OutputRecordsDefaulter: OutputType => OutputType::Records(),
+    OutputLinesDefaulter: OutputType => OutputType::Lines(),
+    OutputGrepDefaulter: OutputType => OutputType::Grep(),
+
+    FalseDefaulter: bool => false,
+    TrueDefaulter: bool => true,
+}
 
 #[derive(Clone)]
 pub enum InputType {
@@ -28,22 +39,34 @@ pub enum OutputType {
 
 #[derive(Default)]
 #[derive(Validates)]
-pub struct Options {
+pub struct EvalOptions<I: OptionDefaulter<InputType>, O: OptionDefaulter<OutputType>, R: OptionDefaulter<bool>> {
     invert: BooleanOption,
     code: RequiredOption<Code>,
-    input: OptionalOption<InputType>,
-    output: OptionalOption<OutputType>,
-    ret: OptionalOption<bool>,
+    input: DefaultedOption<InputType, I>,
+    output: DefaultedOption<OutputType, O>,
+    ret: DefaultedOption<bool, R>,
 }
 
-impl OperationBe2 for Impl {
-    type Options = Options;
+pub struct EvalImpl<B: EvalBe> {
+    _b: std::marker::PhantomData<B>,
+}
+
+pub trait EvalBe {
+    type I: OptionDefaulter<InputType> + Default;
+    type O: OptionDefaulter<OutputType> + Default;
+    type R: OptionDefaulter<bool> + Default;
+
+    fn names() -> Vec<&'static str>;
+}
+
+impl<B: EvalBe + 'static> OperationBe2 for EvalImpl<B> {
+    type Options = EvalOptions<B::I, B::O, B::R>;
 
     fn names() -> Vec<&'static str> {
-        return vec!["eval"];
+        return B::names();
     }
 
-    fn options<'a>(opt: &mut OptParserView<'a, Options>) {
+    fn options<'a>(opt: &mut OptParserView<'a, Self::Options>) {
         opt.sub(|p| &mut p.invert).match_zero(&["v", "invert"], BooleanOption::set);
         opt.sub(|p| &mut p.invert).match_zero(&["no-invert"], BooleanOption::clear);
         opt.match_extra_soft(|p, a| p.code.maybe_set_with(|| Code::parse(a)));
@@ -56,48 +79,54 @@ impl OperationBe2 for Impl {
         opt.match_zero(&["no-return"], |p| p.ret.set(false));
     }
 
-    fn stream(o: Arc<OptionsValidated>) -> Stream {
-        return stream1(o, InputType::Records(), OutputType::Lines(), true);
+    fn stream(o: Arc<EvalOptionsValidated<B::I, B::O, B::R>>) -> Stream {
+        return stream::closures(
+            o.code.clone().stream(),
+            move |s, e, w| {
+                let ri;
+                match e.clone() {
+                    Entry::Bof(file) => {
+                        return w(Entry::Bof(file));
+                    }
+                    Entry::Record(r) => {
+                        ri = match o.input {
+                            InputType::Records() => r,
+                            InputType::Lines() => Record::from(r.deparse()),
+                        };
+                    }
+                    Entry::Line(line) => {
+                        ri = match o.input {
+                            InputType::Records() => Record::parse(&line),
+                            InputType::Lines() => Record::from(line),
+                        };
+                    }
+                }
+                let (rr, ro) = s(ri);
+                let ro = if o.ret { rr } else { ro };
+                let ro = if o.invert { Record::from(!ro.coerce_bool()) } else { ro };
+                return match o.output {
+                    OutputType::Records() => w(Entry::Record(ro)),
+                    OutputType::Lines() => w(Entry::Line(ro.coerce_string())),
+                    OutputType::Grep() => !ro.coerce_bool() || w(e),
+                };
+            },
+            |_s, _w| {
+            },
+        );
     }
 }
 
-pub fn stream1(o: Arc<OptionsValidated>, def_input: InputType, def_output: OutputType, def_ret: bool) -> Stream {
-    let invert = o.invert;
-    let input = o.input.clone().unwrap_or(def_input);
-    let output = o.output.clone().unwrap_or(def_output);
-    let ret = o.ret.clone().unwrap_or(def_ret);
-
-    return stream::closures(
-        o.code.clone().stream(),
-        move |s, e, w| {
-            let ri;
-            match e.clone() {
-                Entry::Bof(file) => {
-                    return w(Entry::Bof(file));
-                }
-                Entry::Record(r) => {
-                    ri = match input {
-                        InputType::Records() => r,
-                        InputType::Lines() => Record::from(r.deparse()),
-                    };
-                }
-                Entry::Line(line) => {
-                    ri = match input {
-                        InputType::Records() => Record::parse(&line),
-                        InputType::Lines() => Record::from(line),
-                    };
-                }
-            }
-            let (rr, ro) = s(ri);
-            let ro = if ret { rr } else { ro };
-            let ro = if invert { Record::from(!ro.coerce_bool()) } else { ro };
-            return match output {
-                OutputType::Records() => w(Entry::Record(ro)),
-                OutputType::Lines() => w(Entry::Line(ro.coerce_string())),
-                OutputType::Grep() => !ro.coerce_bool() || w(e),
-            };
-        },
-        |_s, _w| {
-        },
-    );
+pub enum EvalBeImpl {
 }
+
+impl EvalBe for EvalBeImpl {
+    type I = InputRecordsDefaulter;
+    type O = OutputLinesDefaulter;
+    type R = TrueDefaulter;
+
+    fn names() -> Vec<&'static str> {
+        return vec!["eval"];
+    }
+}
+
+pub type Impl = EvalImpl<EvalBeImpl>;
