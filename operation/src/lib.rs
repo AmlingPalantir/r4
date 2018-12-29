@@ -65,10 +65,6 @@ pub trait OperationFe {
     fn init(args: &[&str]) -> Box<Fn(&mut Vec<String>) -> StreamWrapper>;
 }
 
-pub trait OperationFe2 {
-    fn validate(&self, &mut Vec<String>) -> StreamWrapper;
-}
-
 pub struct StreamWrapper(Box<Fn() -> Stream + Send + Sync>);
 
 impl StreamWrapper {
