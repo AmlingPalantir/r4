@@ -83,9 +83,9 @@ pub trait OperationBe {
     type Options: Validates + Default + 'static;
 
     fn names() -> Vec<&'static str>;
-    fn options<'a>(&mut OptParserView<'a, Self::Options>);
-    fn get_extra(Arc<<Self::Options as Validates>::Target>) -> Vec<String>;
-    fn stream(Arc<<Self::Options as Validates>::Target>) -> Stream;
+    fn options<'a>(opt: &mut OptParserView<'a, Self::Options>);
+    fn get_extra(o: Arc<<Self::Options as Validates>::Target>) -> Vec<String>;
+    fn stream(o: Arc<<Self::Options as Validates>::Target>) -> Stream;
 }
 
 impl<B: OperationBe> OperationFe for B where <B::Options as Validates>::Target: Send + Sync {
@@ -116,8 +116,8 @@ pub trait OperationBe2 {
     type Options: Validates + Default + 'static;
 
     fn names() -> Vec<&'static str>;
-    fn options<'a>(&mut OptParserView<'a, Self::Options>);
-    fn stream(Arc<<Self::Options as Validates>::Target>) -> Stream;
+    fn options<'a>(opt: &mut OptParserView<'a, Self::Options>);
+    fn stream(o: Arc<<Self::Options as Validates>::Target>) -> Stream;
 }
 
 #[derive(Default)]

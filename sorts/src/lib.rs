@@ -18,21 +18,21 @@ registry! {
 }
 
 pub trait SortState: Send + Sync {
-    fn cmp(&self, &Record, &Record) -> Ordering;
+    fn cmp(&self, r1: &Record, r2: &Record) -> Ordering;
     fn box_clone(&self) -> Box<SortState>;
 }
 
 pub trait SortFe {
     fn names() -> Vec<&'static str>;
     fn argct() -> usize;
-    fn init(&[&str]) -> Box<SortState>;
+    fn init(args: &[&str]) -> Box<SortState>;
 }
 
 pub trait SortBe {
     type Args: RegistryArgs;
 
     fn names() -> Vec<&'static str>;
-    fn cmp(&<Self::Args as RegistryArgs>::Val, &Record, &Record) -> Ordering;
+    fn cmp(a: &<Self::Args as RegistryArgs>::Val, r1: &Record, r2: &Record) -> Ordering;
 }
 
 impl<B: SortBe + 'static> SortFe for B {
@@ -77,7 +77,7 @@ pub trait SortSimpleBe {
     type T: Ord;
 
     fn names() -> Vec<&'static str>;
-    fn get(Record) -> Self::T;
+    fn get(r: Record) -> Self::T;
 }
 
 pub struct SortSimpleBeImpl<B: SortSimpleBe> {

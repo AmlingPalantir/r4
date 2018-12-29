@@ -39,7 +39,7 @@ impl<T> RecordNode<T> {
 }
 
 pub trait RecordTrait: std::marker::Sized {
-    fn new(RecordNode<Self>) -> Self;
+    fn new(n: RecordNode<Self>) -> Self;
 
     fn null() -> Self {
         return Self::new(RecordNode::from(JsonPrimitive::Null()));

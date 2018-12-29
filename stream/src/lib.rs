@@ -11,8 +11,8 @@ pub enum Entry {
 }
 
 pub trait StreamTrait {
-    fn write(&mut self, Entry, &mut FnMut(Entry) -> bool) -> bool;
-    fn close(self: Box<Self>, &mut FnMut(Entry) -> bool);
+    fn write(&mut self, r: Entry, w: &mut FnMut(Entry) -> bool) -> bool;
+    fn close(self: Box<Self>, w: &mut FnMut(Entry) -> bool);
 }
 
 pub struct Stream(Box<StreamTrait>);

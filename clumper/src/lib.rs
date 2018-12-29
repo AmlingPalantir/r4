@@ -34,7 +34,7 @@ pub trait ClumperBe {
     type Args: RegistryArgs;
 
     fn names() -> Vec<&'static str>;
-    fn stream(&<Self::Args as RegistryArgs>::Val, Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream;
+    fn stream(a: &<Self::Args as RegistryArgs>::Val, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream;
 }
 
 impl<B: ClumperBe + 'static> ClumperFe for B {

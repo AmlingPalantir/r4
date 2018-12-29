@@ -43,7 +43,7 @@ registry! {
 }
 
 pub trait AggregatorState: Send + Sync {
-    fn add(&mut self, Record);
+    fn add(&mut self, r: Record);
     fn finish(self: Box<Self>) -> Record;
     fn box_clone(&self) -> Box<AggregatorState>;
 }
@@ -51,7 +51,7 @@ pub trait AggregatorState: Send + Sync {
 pub trait AggregatorFe {
     fn names() -> Vec<&'static str>;
     fn argct() -> usize;
-    fn init(&[&str]) -> Box<AggregatorState>;
+    fn init(args: &[&str]) -> Box<AggregatorState>;
 }
 
 pub trait AggregatorBe {
@@ -59,8 +59,8 @@ pub trait AggregatorBe {
     type State: Clone + Default + Send + Sync;
 
     fn names() -> Vec<&'static str>;
-    fn add(&mut Self::State, &<Self::Args as RegistryArgs>::Val, Record);
-    fn finish(Box<Self::State>, &<Self::Args as RegistryArgs>::Val) -> Record;
+    fn add(state: &mut Self::State, a: &<Self::Args as RegistryArgs>::Val, r: Record);
+    fn finish(state: Box<Self::State>, a: &<Self::Args as RegistryArgs>::Val) -> Record;
 }
 
 impl<B: AggregatorBe + 'static> AggregatorFe for B {

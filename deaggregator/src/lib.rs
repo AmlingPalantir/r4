@@ -23,7 +23,7 @@ pub trait DeaggregatorFe {
 }
 
 pub trait DeaggregatorState: Send + Sync {
-    fn deaggregate(&self, Record) -> Vec<Vec<(Arc<str>, Record)>>;
+    fn deaggregate(&self, r: Record) -> Vec<Vec<(Arc<str>, Record)>>;
     fn box_clone(&self) -> Box<DeaggregatorState>;
 }
 
@@ -31,7 +31,7 @@ pub trait DeaggregatorBe {
     type Args: RegistryArgs;
 
     fn names() -> Vec<&'static str>;
-    fn deaggregate(&<Self::Args as RegistryArgs>::Val, Record) -> Vec<Vec<(Arc<str>, Record)>>;
+    fn deaggregate(a: &<Self::Args as RegistryArgs>::Val, r: Record) -> Vec<Vec<(Arc<str>, Record)>>;
 }
 
 impl<B: DeaggregatorBe + 'static> DeaggregatorFe for B {
