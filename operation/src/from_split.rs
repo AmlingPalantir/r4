@@ -57,7 +57,7 @@ impl OperationBe2 for Impl {
                         }
                         Entry::Line(line) => {
                             let mut r = Record::empty_hash();
-                            let vals: Vec<&str> = match o.delimiter {
+                            let vals: Vec<_> = match o.delimiter {
                                 DelimiterOption::String(ref s) => line.split(s).collect(),
                                 DelimiterOption::Regex(ref re) => re.split(&line).collect(),
                             };

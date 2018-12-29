@@ -50,7 +50,7 @@ impl Db {
     }
 
     fn query(&mut self, r: &Record) -> Option<impl Iterator<Item = &Record>> {
-        let ks: Vec<Record> = self.rks.iter().map(|rk| r.get_path(rk)).collect();
+        let ks: Vec<_> = self.rks.iter().map(|rk| r.get_path(rk)).collect();
         return self.db.get_mut(&ks).map(|e| {
             e.0 = true;
             return e.1.iter();
