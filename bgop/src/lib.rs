@@ -44,7 +44,7 @@ pub struct BgopRbe {
 
 impl BgopRbe {
     pub fn read(&self) -> Option<Entry> {
-        return self.state.await(&mut |buffers| {
+        return self.state.wait(&mut |buffers| {
             if let Some(e) = buffers.fe_to_be.buf.pop_front() {
                 return (Some(Some(e)), true);
             }
@@ -69,7 +69,7 @@ pub struct BgopWbe {
 
 impl BgopWbe {
     pub fn write(&mut self, e: Entry) -> bool {
-        return self.state.await(&mut |buffers| {
+        return self.state.wait(&mut |buffers| {
             if buffers.be_to_fe.rclosed {
                 return (Some(false), false);
             }
@@ -99,7 +99,7 @@ impl BgopFe {
             Return(R),
         }
         loop {
-            let ret = self.state.await(&mut |buffers| {
+            let ret = self.state.wait(&mut |buffers| {
                 if buffers.be_to_fe.buf.len() > 0 {
                     return (Some(Ret::Ferry(buffers.be_to_fe.buf.drain(..).collect())), true);
                 }

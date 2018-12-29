@@ -25,7 +25,7 @@ impl<S> WaitNotifyState<S> {
         return f(&mut mg);
     }
 
-    pub fn await<F: FnMut(&mut S) -> (Option<R>, bool), R>(&self, f: &mut F) -> R {
+    pub fn wait<F: FnMut(&mut S) -> (Option<R>, bool), R>(&self, f: &mut F) -> R {
         let mut mg = self.m.lock().unwrap();
         loop {
             let (r, n) = f(&mut mg);
