@@ -32,6 +32,7 @@ registry! {
     grep,
     join,
     multiplex,
+    shell,
     sort,
     test,
     to_ptable,

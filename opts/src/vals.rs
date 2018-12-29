@@ -173,6 +173,12 @@ impl StringVecOption {
             self.push(a);
         }
     }
+
+    pub fn push_all(&mut self, a: &[String]) {
+        for a in a {
+            self.0.push(a.clone());
+        }
+    }
 }
 
 #[derive(Default)]
