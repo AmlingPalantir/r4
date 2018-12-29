@@ -64,7 +64,7 @@ impl BgopWbe {
         });
     }
 
-    pub fn close(self: Box<BgopWbe>) {
+    pub fn close(self) {
         self.state.write(&mut |buffers: &mut BgopState| {
             buffers.be_to_fe.closed = true;
         });
