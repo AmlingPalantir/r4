@@ -12,6 +12,7 @@ mod tests;
 use ast::BinaryOp;
 use ast::Expr;
 use ast::UnaryOp;
+use misc::Either;
 use record::MRecord;
 use record::Record;
 use record::RecordTrait;
@@ -24,21 +25,19 @@ struct State {
 
 impl State {
     fn eval_binary_number_op<RI, FI: FnOnce(i64, i64) -> RI, RF, FF: FnOnce(f64, f64) -> RF>(&mut self, e1: &Expr, e2: &Expr, fi: FI, ff: FF) -> MRecord where MRecord: From<RI> + From<RF> {
-        let r1 = self.eval(e1);
-        let r2 = self.eval(e2);
+        let n1 = self.eval(e1).coerce_num();
+        let n2 = self.eval(e2).coerce_num();
 
-        if let Some(i1) = r1.maybe_i64() {
-            if let Some(i2) = r2.maybe_i64() {
+        if let Either::Left(i1) = n1 {
+            if let Either::Left(i2) = n2 {
                 return MRecord::from(fi(i1, i2));
             }
         }
-        if let Some(f1) = r1.maybe_num() {
-            if let Some(f2) = r2.maybe_num() {
-                return MRecord::from(ff(f1, f2));
-            }
-        }
 
-        panic!();
+        let f1 = n1.map_left(|i| i as f64).join();
+        let f2 = n2.map_left(|i| i as f64).join();
+
+        return MRecord::from(ff(f1, f2));
     }
 
     fn eval_binary_string_op<R, F: FnOnce(Arc<str>, Arc<str>) -> R>(&mut self, e1: &Expr, e2: &Expr, f: F) -> MRecord where MRecord: From<R> {
@@ -134,12 +133,11 @@ impl State {
                 return self.eval_binary_number_op(e1, e2, |i1, i2| i1 % i2, |f1, f2| f1 % f2);
             }
 
-            Expr::Unary(UnaryOp::NumNeg(), e1) => {
-                let r1 = self.eval(e1);
-                if let Some(i) = r1.maybe_i64() {
-                    return MRecord::from(-i);
-                }
-                return MRecord::from(-r1.coerce_f64());
+            Expr::Unary(UnaryOp::NumNeg(), e) => {
+                let n = self.eval(e).coerce_num();
+                let n = n.map_left(|i| MRecord::from(-i));
+                let n = n.map_right(|f| MRecord::from(-f));
+                return n.join();
             }
 
             Expr::Binary(e1, BinaryOp::Cat(), e2) => {

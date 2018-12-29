@@ -33,4 +33,20 @@ impl<L, R> Either<L, R> {
             Either::Right(r) => Either::Right(r),
         };
     }
+
+    pub fn map_right<R2, F: FnOnce(R) -> R2>(self, f: F) -> Either<L, R2> {
+        return match self {
+            Either::Left(l) => Either::Left(l),
+            Either::Right(r) => Either::Right(f(r)),
+        };
+    }
+}
+
+impl<T> Either<T, T> {
+    pub fn join(self) -> T {
+        return match self {
+            Either::Left(t) => t,
+            Either::Right(t) => t,
+        };
+    }
 }

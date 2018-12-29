@@ -128,19 +128,27 @@ pub trait RecordTrait: std::marker::Sized {
 
     fn maybe_primitive(&self) -> Option<JsonPrimitive>;
 
-    fn maybe_i64(&self) -> Option<i64> {
-        return match self.maybe_primitive() {
-            Some(JsonPrimitive::NumberI64(n)) => Some(n),
-            _ => None,
-        };
-    }
-
-    fn maybe_num(&self) -> Option<f64> {
-        return match self.maybe_primitive() {
-            Some(JsonPrimitive::NumberI64(n)) => Some(n as f64),
-            Some(JsonPrimitive::NumberF64(ref n)) => Some(n.0),
-            _ => None,
-        };
+    fn coerce_num(&self) -> Either<i64, f64> {
+        match self.maybe_primitive() {
+            Some(JsonPrimitive::NumberI64(n)) => {
+                return Either::Left(n);
+            }
+            Some(JsonPrimitive::NumberF64(ref n)) => {
+                return Either::Right(n.0);
+            }
+            Some(JsonPrimitive::String(s)) => {
+                if let Ok(n) = s.parse() {
+                    return Either::Left(n);
+                }
+                if let Ok(n) = s.parse() {
+                    return Either::Right(n);
+                }
+                panic!();
+            }
+            _ => {
+                panic!();
+            }
+        }
     }
 
     fn coerce_string(&self) -> Arc<str> {
