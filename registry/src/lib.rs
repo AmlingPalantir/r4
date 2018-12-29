@@ -10,13 +10,15 @@ pub struct Registry<R> {
     map: HashMap<String, (usize, Box<Fn(&[&str]) -> R + Send + Sync>)>,
 }
 
-impl<R> Registry<R> {
-    pub fn new() -> Self {
+impl<R> Default for Registry<R> {
+    fn default() -> Self {
         return Registry {
             map: HashMap::new(),
         };
     }
+}
 
+impl<R> Registry<R> {
     pub fn add<F: Fn(&[&str]) -> R + Send + Sync + 'static>(&mut self, name: &str, argct: usize, f: F) {
         let prev = self.map.insert(name.to_string(), (argct, Box::new(f)));
         assert!(prev.is_none(), "registry collision for {}", name);
@@ -92,7 +94,7 @@ macro_rules! registry {
 
         lazy_static! {
             pub static ref REGISTRY: $crate::Registry<$r> = {
-                let mut r = $crate::Registry::new();
+                let mut r = $crate::Registry::default();
                 $(
                     for name in <$id::Impl as $fe>::names() {
                         r.add(name, <$id::Impl as $fe>::argct(), <$id::Impl as $fe>::init);

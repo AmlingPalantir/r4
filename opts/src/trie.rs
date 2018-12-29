@@ -5,14 +5,16 @@ pub struct NameTrie<T> {
     children: HashMap<char, NameTrie<T>>,
 }
 
-impl<T> NameTrie<T> {
-    pub fn new() -> NameTrie<T> {
+impl<T> Default for NameTrie<T> {
+    fn default() -> Self {
         return NameTrie {
             t: None,
             children: HashMap::new(),
-        }
+        };
     }
+}
 
+impl<T> NameTrie<T> {
     pub fn get(&self, name: &str) -> Vec<&T> {
         let mut n = self;
         for c in name.chars() {
@@ -46,7 +48,7 @@ impl<T> NameTrie<T> {
     }
 
     pub fn insert(&mut self, name: &str, t: T) {
-        let n = name.chars().fold(self, |n, c| n.children.entry(c).or_insert(NameTrie::new()));
+        let n = name.chars().fold(self, |n, c| n.children.entry(c).or_insert_with(NameTrie::default));
         if n.t.is_some() {
             panic!("Collision in options at {}", name);
         }

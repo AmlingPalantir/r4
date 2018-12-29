@@ -43,6 +43,7 @@ impl<'a, P: 'static> OptParserView<'a, P> {
 
 
 
+#[derive(Default)]
 pub struct OptParser<P> {
     named: NameTrie<(String, Rc<()>, usize, Rc<Fn(&mut P, &[String])>)>,
     extra: Vec<ExtraHandler<P>>,
@@ -59,13 +60,6 @@ fn name_from_arg(name: &str) -> Option<&str> {
 }
 
 impl<P: 'static> OptParser<P> {
-    pub fn new() -> OptParser<P> {
-        return OptParser {
-            named: NameTrie::new(),
-            extra: Vec::new(),
-        };
-    }
-
     pub fn view<'a>(&'a mut self) -> OptParserView<'a, P> {
         return OptParserView(Box::new(self));
     }

@@ -99,7 +99,7 @@ impl<B: OperationBe> OperationFe for B where <B::Options as Validates>::Target: 
 
     fn init(_args: &[&str]) -> Box<Fn(&mut Vec<String>) -> StreamWrapper> {
         return Box::new(|args| {
-            let mut opt = OptParser::<B::Options>::new();
+            let mut opt = OptParser::<B::Options>::default();
             B::options(&mut opt.view());
             let o = opt.parse(args).validate();
             let o = Arc::new(o);

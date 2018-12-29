@@ -8,34 +8,17 @@ use stream::Stream;
 use stream::StreamTrait;
 use wns::WaitNotifyState;
 
+#[derive(Default)]
 struct OneBuffer {
     buf: VecDeque<Entry>,
     rclosed: bool,
     closed: bool,
 }
 
-impl OneBuffer {
-    fn new() -> Self {
-        return OneBuffer {
-            buf: VecDeque::new(),
-            rclosed: false,
-            closed: false,
-        };
-    }
-}
-
+#[derive(Default)]
 struct BgopState {
     fe_to_be: OneBuffer,
     be_to_fe: OneBuffer,
-}
-
-impl BgopState {
-    fn new() -> Self {
-        return BgopState {
-            fe_to_be: OneBuffer::new(),
-            be_to_fe: OneBuffer::new(),
-        };
-    }
 }
 
 pub struct BgopRbe {
@@ -160,7 +143,7 @@ impl StreamTrait for BgopFe {
 }
 
 pub fn new() -> (Stream, BgopRbe, BgopWbe) {
-    let state = Arc::new(WaitNotifyState::new(BgopState::new()));
+    let state = Arc::new(WaitNotifyState::new(BgopState::default()));
 
     let fe = BgopFe {
         state: state.clone(),
