@@ -19,6 +19,7 @@ registry! {
     Box<SortState>,
     lexical,
     numeric,
+    shuffle,
 }
 
 pub trait SortState: Send + Sync {
