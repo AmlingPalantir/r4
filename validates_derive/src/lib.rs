@@ -17,6 +17,7 @@ pub fn derive_validates(input: TokenStream) -> TokenStream {
 
     let ctor_args;
     let struct_args;
+    let clone_args;
     match &ast.data {
         Data::Struct(d) => match &d.fields {
             Fields::Named(d) => {
@@ -36,6 +37,13 @@ pub fn derive_validates(input: TokenStream) -> TokenStream {
                     };
                 }).collect();
                 struct_args = quote! { { #( #struct_fields )* } };
+                let clone_fields: Vec<_> = d.named.iter().map(|f| {
+                    let name = f.ident.as_ref().unwrap();
+                    return quote! {
+                        #name: ::std::clone::Clone::clone(&self.#name),
+                    };
+                }).collect();
+                clone_args = quote! { { #( #clone_fields )* } };
             },
             Fields::Unnamed(d) => {
                 let ctor_fields: Vec<_> = d.unnamed.iter().enumerate().map(|(name, _f)| {
@@ -52,10 +60,17 @@ pub fn derive_validates(input: TokenStream) -> TokenStream {
                     };
                 }).collect();
                 struct_args = quote! { ( #( #struct_fields )* ); };
+                let clone_fields: Vec<_> = d.unnamed.iter().enumerate().map(|(name, _f)| {
+                    return quote! {
+                        ::std::clone::Clone::clone(&self.#name),
+                    };
+                }).collect();
+                clone_args = quote! { ( #( #clone_fields )* ) };
             },
             Fields::Unit => {
                 ctor_args = quote! { () };
                 struct_args = quote! { () };
+                clone_args = quote! { () };
             },
         },
         _ => panic!(),
@@ -74,8 +89,13 @@ pub fn derive_validates(input: TokenStream) -> TokenStream {
             }
         }
 
-        #[derive(Clone)]
         #vis struct #ident_validated #impl_generics #struct_args #where_clause
+
+        impl #impl_generics Clone for #ident_validated #ty_generics #where_clause {
+            fn clone(&self) -> Self {
+                return #ident_validated #clone_args;
+            }
+        }
     };
 
     return TokenStream::from(gen);
