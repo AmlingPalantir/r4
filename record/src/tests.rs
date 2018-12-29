@@ -16,6 +16,7 @@ fn test_get_path() {
     assert_eq!(r.get_path("x/#0").deparse(), "{\"y\":\"z\"}");
     assert_eq!(r.get_path("x/#1").deparse(), "null");
     assert_eq!(r.get_path("x/#0/y").deparse(), "\"z\"");
+    assert_eq!(r.get_path("").deparse(), r.deparse());
 }
 
 #[test]

@@ -12,6 +12,11 @@ pub type OwnPath = Path<'static>;
 
 impl<'a> Path<'a> {
     pub fn new(s: &'a str) -> Path<'a> {
+        // arggh, split...
+        if s.is_empty() {
+            return Path(vec![]);
+        }
+
         return Path(s.split('/').map(|e| {
             if e.starts_with('#') {
                 return PathStep::Array(e[1..].parse().unwrap());
