@@ -136,8 +136,8 @@ impl OperationBe2 for Impl {
                         cells[xk.len()][i] = (k.to_string(), ' ');
                     }
 
-                    xh.visit_cells(&mut |width, depth, v| cells[depth - 1][yk.len() + 1 + width] = (v.pretty_string(), ' '));
-                    yh.visit_cells(&mut |width, depth, v| cells[xk.len() + 1 + width][depth - 1] = (v.pretty_string(), ' '));
+                    xh.visit_cells(0, &mut |width, depth, v| cells[depth][yk.len() + 1 + width] = (v.pretty_string(), ' '));
+                    yh.visit_cells(0, &mut |width, depth, v| cells[xk.len() + 1 + width][depth] = (v.pretty_string(), ' '));
 
                     for (xs, ys, v) in cell_tuples {
                         let x = yk.len() + 1 + xh.width(&xs);
@@ -176,10 +176,10 @@ struct PreHeaderTree {
 }
 
 impl PreHeaderTree {
-    fn rebuild(self, depth: usize, width0: usize) -> HeaderTree {
+    fn rebuild(self, width0: usize) -> HeaderTree {
         let mut width1 = width0;
         let arr: Vec<_> = self.arr.into_iter().map(|(v, pht)| {
-            let ht = pht.rebuild(depth + 1, width1);
+            let ht = pht.rebuild(width1);
             width1 = ht.width1;
             return (v, ht);
         }).collect();
@@ -189,7 +189,6 @@ impl PreHeaderTree {
         return HeaderTree {
             arr: arr,
             idxs: self.idxs,
-            depth: depth,
             width0: width0,
             width1: width1,
         };
@@ -199,7 +198,6 @@ impl PreHeaderTree {
 struct HeaderTree {
     arr: Vec<(Record, HeaderTree)>,
     idxs: HashMap<Record, usize>,
-    depth: usize,
     width0: usize,
     width1: usize,
 }
@@ -235,13 +233,13 @@ impl HeaderTree {
             });
         }
 
-        return pht.rebuild(0, 0);
+        return pht.rebuild(0);
     }
 
-    fn visit_cells<F: FnMut(usize, usize, &Record)>(&self, f: &mut F) {
+    fn visit_cells<F: FnMut(usize, usize, &Record)>(&self, depth: usize, f: &mut F) {
         for (v, ht) in self.arr.iter() {
-            f(ht.width0, ht.depth, v);
-            ht.visit_cells(f);
+            f(ht.width0, depth, v);
+            ht.visit_cells(depth + 1, f);
         }
     }
 
