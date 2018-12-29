@@ -18,13 +18,13 @@ extern crate validates;
 extern crate validates_derive;
 
 mod tru;
-pub(crate) use tru::TwoRecordUnionOption;
+pub(crate) use self::tru::TwoRecordUnionOption;
 
 mod clumper_options;
-pub(crate) use clumper_options::ClumperOptions;
+pub(crate) use self::clumper_options::ClumperOptions;
 
 mod subop_options;
-pub(crate) use subop_options::SubOperationOption;
+pub(crate) use self::subop_options::SubOperationOption;
 
 registry! {
     OperationFe,

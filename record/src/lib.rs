@@ -1,26 +1,26 @@
 extern crate misc;
 
 mod float;
-pub use float::F64HashDishonorProxy;
-pub use float::F64SortDishonorProxy;
+pub use self::float::F64HashDishonorProxy;
+pub use self::float::F64SortDishonorProxy;
 
 mod path;
-pub use path::OwnPath;
-pub use path::Path;
-pub use path::PathStep;
+pub use self::path::OwnPath;
+pub use self::path::Path;
+pub use self::path::PathStep;
 
 mod json_primitive;
-pub(crate) use json_primitive::JsonPrimitive;
+pub(crate) use self::json_primitive::JsonPrimitive;
 
 mod record_node;
-pub(crate) use record_node::RecordNode;
-pub use record_node::RecordTrait;
+pub(crate) use self::record_node::RecordNode;
+pub use self::record_node::RecordTrait;
 
 mod record;
-pub use record::Record;
+pub use self::record::Record;
 
 mod mrecord;
-pub use mrecord::MRecord;
+pub use self::mrecord::MRecord;
 
 #[cfg(test)]
 mod tests;

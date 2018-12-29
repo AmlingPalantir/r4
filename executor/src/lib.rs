@@ -9,13 +9,13 @@ lalrpop_mod!(pub parse);
 #[cfg(test)]
 mod tests;
 
-use ast::BinaryOp;
-use ast::Expr;
-use ast::UnaryOp;
 use misc::Either;
 use record::MRecord;
 use record::Record;
 use record::RecordTrait;
+use self::ast::BinaryOp;
+use self::ast::Expr;
+use self::ast::UnaryOp;
 use std::collections::HashMap;
 use std::sync::Arc;
 
