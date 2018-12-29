@@ -81,7 +81,7 @@ impl OperationBe2 for Impl {
             stream::closures(
                 State {
                     cmp: o.sorts.cmp(),
-                    partial: o.partial.clone(),
+                    partial: o.partial,
                     rs: Vec::new(),
                 },
                 |s, e, _w| {

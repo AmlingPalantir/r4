@@ -15,7 +15,7 @@ impl ClumperBe for Impl {
     }
 
     fn stream(n: &usize, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream {
-        let n = n.clone();
+        let n = *n;
         let substreams: Vec<_> = (0..n).map(|_| bsw(vec![])).collect();
 
         return stream::closures(
