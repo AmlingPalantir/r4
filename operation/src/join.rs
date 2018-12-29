@@ -22,10 +22,10 @@ struct DbOption {
 }
 
 impl Validates for DbOption {
-    type Target = Arc<Db>;
+    type Target = Db;
 
-    fn validate(self) -> Arc<Db> {
-        return Arc::new(Db::new(self.file.validate(), self.pairs.validate()));
+    fn validate(self) -> Db {
+        return Db::new(self.file.validate(), self.pairs.validate());
     }
 }
 
@@ -88,32 +88,31 @@ impl OperationBe2 for Impl {
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {
-        let db = (*o.db).clone();
-        let tru = o.tru.clone();
-        let fill_left = o.fills.0;
-        let fill_right = o.fills.1;
+        let db = o.db.clone();
+        let o1 = o;
+        let o2 = o1.clone();
 
         return stream::compound(
             stream::parse(),
             stream::closures(
-                (db, tru),
+                db,
                 move |s, e, w| {
                     match e {
                         Entry::Bof(_file) => {
                             return true;
                         }
                         Entry::Record(r) => {
-                            match s.0.query(&r) {
+                            match s.query(&r) {
                                 Some(r2s) => {
                                     for r2 in r2s {
-                                        if !w(Entry::Record(s.1.union(r2.clone(), r.clone()))) {
+                                        if !w(Entry::Record(o1.tru.union(r2.clone(), r.clone()))) {
                                             return false;
                                         }
                                     }
                                 }
                                 None => {
-                                    if fill_left {
-                                        if !w(Entry::Record(s.1.union_maybe(None, Some(r)))) {
+                                    if o1.fills.0 {
+                                        if !w(Entry::Record(o1.tru.union_maybe(None, Some(r)))) {
                                             return false;
                                         }
                                     }
@@ -127,9 +126,9 @@ impl OperationBe2 for Impl {
                     }
                 },
                 move |s, w| {
-                    if fill_right {
-                        for r2 in s.0.leftover() {
-                            if !w(Entry::Record(s.1.union_maybe(Some(r2.clone()), None))) {
+                    if o2.fills.1 {
+                        for r2 in s.leftover() {
+                            if !w(Entry::Record(o2.tru.union_maybe(Some(r2.clone()), None))) {
                                 return;
                             }
                         }

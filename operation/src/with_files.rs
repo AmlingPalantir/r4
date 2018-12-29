@@ -1,5 +1,4 @@
 use OperationBe;
-use StreamWrapper;
 use SubOperationOption;
 use opts::parser::OptParserView;
 use opts::vals::OptionalStringOption;
@@ -38,7 +37,7 @@ impl OperationBe for Impl {
     fn stream(o: Arc<OptionsValidated>) -> Stream {
         struct StreamState {
             fk: Arc<str>,
-            sub_wr: Arc<StreamWrapper>,
+            o: Arc<OptionsValidated>,
             substream: Option<Stream>,
         };
         impl StreamState {
@@ -54,7 +53,7 @@ impl OperationBe for Impl {
                     Some(file) => Record::from(file),
                     None => Record::null(),
                 };
-                let sub_wr = self.sub_wr.clone();
+                let sub_wr = self.o.op.wr.clone();
                 return self.substream.get_or_insert_with(move || {
                     return stream::compound(
                         sub_wr.stream(),
@@ -70,7 +69,7 @@ impl OperationBe for Impl {
         return stream::closures(
             StreamState {
                 fk: o.fk.as_ref().map(|s| Arc::from(s as &str)).unwrap_or(Arc::from("FILE")),
-                sub_wr: o.op.wr.clone(),
+                o: o,
                 substream: None,
             },
             |s, e, w| {

@@ -34,8 +34,6 @@ impl OperationBe2 for Impl {
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {
         let lk = o.lk.as_ref().map(|s| Arc::from(s as &str)).unwrap_or(Arc::from("LINE"));
-        let sub_wr = o.op.wr.clone();
-        let tru = Arc::from(o.tru.clone());
 
         return stream::compound(
             stream::parse(),
@@ -47,12 +45,12 @@ impl OperationBe2 for Impl {
                             return w(Entry::Bof(file));
                         }
                         Entry::Record(r) => {
-                            let tru = tru.clone();
+                            let o = o.clone();
                             let r1 = r.clone();
                             let mut substream = stream::compound(
-                                sub_wr.stream(),
+                                o.op.wr.stream(),
                                 stream::transform_records(move |r2| {
-                                    return tru.union(r1.clone(), r2);
+                                    return o.tru.union(r1.clone(), r2);
                                 }),
                             );
                             // Disregard flow hint as one substream rclosing

@@ -43,9 +43,6 @@ impl OperationBe2 for Impl {
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {
-        let re = o.re.clone();
-        let keys = o.keys.clone();
-
         return stream::compound(
             stream::deparse(),
             stream::closures(
@@ -59,10 +56,10 @@ impl OperationBe2 for Impl {
                             panic!("Unexpected record in FromRegexStream");
                         }
                         Entry::Line(line) => {
-                            if let Some(m) = re.captures(&line) {
+                            if let Some(m) = o.re.captures(&line) {
                                 let mut r = Record::empty_hash();
 
-                                let ki = keys.iter();
+                                let ki = o.keys.iter();
                                 let gi = m.iter().skip(1);
                                 for (k, g) in ki.zip(gi) {
                                     if let Some(m) = g {

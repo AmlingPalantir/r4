@@ -39,7 +39,6 @@ impl OperationBe2 for Impl {
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {
-        let keys = o.keys.clone();
         let delimiter = o.delimiter.clone().unwrap_or(DelimiterOption::String(",".to_string()));
 
         return stream::compound(
@@ -60,7 +59,7 @@ impl OperationBe2 for Impl {
                                 DelimiterOption::String(ref s) => line.split(s).collect(),
                                 DelimiterOption::Regex(ref re) => re.split(&line).collect(),
                             };
-                            for (k, v) in keys.iter().zip(vals) {
+                            for (k, v) in o.keys.iter().zip(vals) {
                                 r.set_path(k, Record::from(v));
                             }
                             return w(Entry::Record(r));

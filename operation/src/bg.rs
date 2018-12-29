@@ -32,9 +32,8 @@ impl OperationBe for Impl {
     fn stream(o: Arc<OptionsValidated>) -> Stream {
         let (fe, rbe, mut wbe) = bgop::new();
 
-        let sub_wr = o.op.wr.clone();
         thread::spawn(move || {
-            let mut os = sub_wr.stream();
+            let mut os = o.op.wr.stream();
 
             loop {
                 match rbe.read() {

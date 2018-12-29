@@ -34,9 +34,8 @@ impl OperationBe for Impl {
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {
-        let keep_bof = o.keep_bof;
         return o.cmds.wrs.iter().rev().fold(stream::id(), |mut s, wr| {
-            if !keep_bof {
+            if !o.keep_bof {
                 s = stream::compound(stream::drop_bof(), s);
             }
             return stream::compound(wr.stream(), s)

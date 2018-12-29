@@ -32,7 +32,7 @@ impl OperationBe for Impl {
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {
-        let sub_wr = o.op.wr.clone();
+        let o2 = o.clone();
         return o.cl.stream(move |bucket| {
             let s = stream::transform_records(move |mut r| {
                 for (path, v) in &bucket {
@@ -40,7 +40,7 @@ impl OperationBe for Impl {
                 }
                 return r;
             });
-            return stream::compound(sub_wr.stream(), s);
+            return stream::compound(o2.op.wr.stream(), s);
         });
     }
 }
