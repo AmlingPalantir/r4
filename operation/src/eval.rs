@@ -1,8 +1,9 @@
 use OperationBe2;
+use executor::Code;
 use opts::parser::OptParserView;
 use opts::vals::BooleanOption;
 use opts::vals::OptionalOption;
-use opts::vals::RequiredStringOption;
+use opts::vals::RequiredOption;
 use record::Record;
 use record::RecordTrait;
 use stream::Entry;
@@ -28,7 +29,7 @@ pub enum OutputType {
 #[derive(Validates)]
 pub struct Options {
     invert: BooleanOption,
-    code: RequiredStringOption,
+    code: RequiredOption<Code>,
     input: OptionalOption<InputType>,
     output: OptionalOption<OutputType>,
     ret: OptionalOption<bool>,
@@ -44,7 +45,7 @@ impl OperationBe2 for Impl {
     fn options<'a>(opt: &mut OptParserView<'a, Options>) {
         opt.sub(|p| &mut p.invert).match_zero(&["v", "invert"], BooleanOption::set);
         opt.sub(|p| &mut p.invert).match_zero(&["no-invert"], BooleanOption::clear);
-        opt.sub(|p| &mut p.code).match_extra_soft(RequiredStringOption::maybe_set);
+        opt.match_extra_soft(|p, a| p.code.maybe_set_with(|| Code::parse(a)));
         opt.match_zero(&["input-lines"], |p| p.input.set(InputType::Lines()));
         opt.match_zero(&["input-records"], |p| p.input.set(InputType::Records()));
         opt.match_zero(&["output-lines"], |p| p.output.set(OutputType::Lines()));
@@ -61,14 +62,13 @@ impl OperationBe2 for Impl {
 
 pub fn stream1(o: &OptionsValidated, def_input: InputType, def_output: OutputType, def_ret: bool) -> Stream {
     let invert = o.invert;
-    let f = executor::load(&o.code);
     let input = o.input.clone().unwrap_or(def_input);
     let output = o.output.clone().unwrap_or(def_output);
     let ret = o.ret.clone().unwrap_or(def_ret);
 
     return stream::closures(
-        (),
-        move |_s, e, w| {
+        o.code.clone().stream(),
+        move |s, e, w| {
             let ri;
             match e.clone() {
                 Entry::Bof(file) => {
@@ -87,7 +87,7 @@ pub fn stream1(o: &OptionsValidated, def_input: InputType, def_output: OutputTyp
                     };
                 }
             }
-            let (rr, ro) = f(ri);
+            let (rr, ro) = s(ri);
             let ro = if ret { rr } else { ro };
             let ro = if invert { Record::from(!ro.coerce_bool()) } else { ro };
             return match output {

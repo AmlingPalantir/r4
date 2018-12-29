@@ -1,8 +1,11 @@
 use record::Record;
+use super::Code;
 
 fn test_one(input: &str, c: &str, eret: &str, er: &str) {
     let r = Record::parse(input);
-    let (oret, r) = super::load(c)(r);
+    let c = Code::parse(c);
+    let mut f = c.stream();
+    let (oret, r) = f(r);
     assert_eq!(r.deparse(), er);
     assert_eq!(oret.deparse(), eret);
 }

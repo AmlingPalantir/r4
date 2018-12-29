@@ -19,6 +19,7 @@ use record::RecordTrait;
 use std::collections::HashMap;
 use std::sync::Arc;
 
+#[derive(Default)]
 struct State {
     vars: HashMap<Arc<str>, MRecord>,
 }
@@ -189,14 +190,21 @@ impl State {
     }
 }
 
-pub fn load(code: &str) -> Arc<Fn(Record) -> (Record, Record)> {
-    let e = parse::StatementParser::new().parse(code).unwrap();
-    return Arc::new(move |r| {
-        let mut st = State {
-            vars: HashMap::new(),
-        };
-        st.vars.insert(Arc::from("r"), MRecord::wrap(r));
-        let ret = st.eval(&e);
-        return (ret.to_record(), st.vars.get("r").unwrap().clone().to_record());
-    });
+#[derive(Clone)]
+pub struct Code(Arc<Box<Expr>>);
+
+impl Code {
+    pub fn parse(code: &str) -> Self {
+        return Code(Arc::new(parse::StatementParser::new().parse(code).unwrap()));
+    }
+
+    pub fn stream(&self) -> Box<FnMut(Record) -> (Record, Record)> {
+        let e = self.0.clone();
+        let mut st = State::default();
+        return Box::new(move |r| {
+            st.vars.insert(Arc::from("r"), MRecord::wrap(r));
+            let ret = st.eval(&e);
+            return (ret.to_record(), st.vars.get("r").unwrap().clone().to_record());
+        });
+    }
 }

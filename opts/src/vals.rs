@@ -46,6 +46,14 @@ impl<T> RequiredOption<T> {
         }
         self.0 = Some(t);
     }
+
+    pub fn maybe_set_with<F: FnOnce() -> T>(&mut self, f: F) -> bool {
+        if let Some(_) = self.0 {
+            return false;
+        }
+        self.0 = Some(f());
+        return true;
+    }
 }
 
 impl<T: Clone> RequiredOption<T> {

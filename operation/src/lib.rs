@@ -2,6 +2,7 @@ extern crate aggregator;
 extern crate bgop;
 extern crate clumper;
 extern crate deaggregator;
+extern crate executor;
 #[macro_use]
 extern crate lazy_static;
 extern crate opts;
