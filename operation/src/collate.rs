@@ -1,6 +1,7 @@
 use ClumperOptions;
 use OperationBe;
 use opts::parser::OptParserView;
+use std::ops::Deref;
 use stream::Stream;
 use super::aggregate;
 use validates::Validates;
@@ -26,11 +27,11 @@ impl OperationBe for Impl {
         aggregate::Impl::options(&mut opt.sub(|p| &mut p.ag));
     }
 
-    fn get_extra(o: &OptionsValidated) -> Vec<String> {
+    fn get_extra(o: impl Deref<Target = OptionsValidated>) -> Vec<String> {
         return aggregate::Impl::get_extra(&o.ag);
     }
 
-    fn stream(o: &OptionsValidated) -> Stream {
+    fn stream(o: impl Deref<Target = OptionsValidated>) -> Stream {
         let ag_opt = o.ag.clone();
         return o.cl.stream(move |bucket| {
             let s = stream::transform_records(move |mut r| {

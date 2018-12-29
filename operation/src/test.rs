@@ -2,6 +2,7 @@ use OperationBe2;
 use opts::parser::OptParserView;
 use opts::vals::RequiredStringOption;
 use record::Record;
+use std::ops::Deref;
 use std::sync::Arc;
 use stream::Stream;
 use validates::Validates;
@@ -25,7 +26,7 @@ impl OperationBe2 for Impl {
         opt.sub(|p| &mut p.msg).match_single(&["m", "msg"], RequiredStringOption::set);
     }
 
-    fn stream(o: &OptionsValidated) -> Stream {
+    fn stream(o: impl Deref<Target = OptionsValidated>) -> Stream {
         let msg: Arc<str> = Arc::from(&*o.msg);
         let mut n = 0;
 

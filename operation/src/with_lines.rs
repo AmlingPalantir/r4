@@ -4,6 +4,7 @@ use TwoRecordUnionOption;
 use opts::parser::OptParserView;
 use opts::vals::OptionalStringOption;
 use record::RecordTrait;
+use std::ops::Deref;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
@@ -32,7 +33,7 @@ impl OperationBe2 for Impl {
         opt.sub(|p| &mut p.op).match_extra_hard(SubOperationOption::push);
     }
 
-    fn stream(o: &OptionsValidated) -> Stream {
+    fn stream(o: impl Deref<Target = OptionsValidated>) -> Stream {
         let lk = o.lk.as_ref().map(|s| Arc::from(s as &str)).unwrap_or(Arc::from("LINE"));
         let sub_wr = o.op.wr.clone();
         let tru = Arc::from(o.tru.clone());

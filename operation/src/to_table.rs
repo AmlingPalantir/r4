@@ -2,6 +2,7 @@ use OperationBe2;
 use opts::parser::OptParserView;
 use opts::vals::StringVecOption;
 use std::collections::HashSet;
+use std::ops::Deref;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
@@ -26,7 +27,7 @@ impl OperationBe2 for Impl {
         opt.sub(|p| &mut p.keys).match_single(&["k", "key"], StringVecOption::push_split);
     }
 
-    fn stream(o: &OptionsValidated) -> Stream {
+    fn stream(o: impl Deref<Target = OptionsValidated>) -> Stream {
         let keys = o.keys.clone();
 
         return stream::compound(

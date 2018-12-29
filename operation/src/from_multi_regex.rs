@@ -6,6 +6,7 @@ use opts::vals::UnvalidatedArcOption;
 use record::Record;
 use record::RecordTrait;
 use regex::Regex;
+use std::ops::Deref;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
@@ -55,7 +56,7 @@ impl OperationBe2 for Impl {
         opt.sub(|p| &mut p.clobber).match_zero(&["clobber"], BooleanOption::set);
     }
 
-    fn stream(o: &OptionsValidated) -> Stream {
+    fn stream(o: impl Deref<Target = OptionsValidated>) -> Stream {
         let res = o.res.clone();
         let clobber1 = o.clobber;
         let clobber2 = o.clobber;

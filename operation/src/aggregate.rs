@@ -4,6 +4,7 @@ use opts::parser::OptParserView;
 use opts::vals::UnvalidatedRawOption;
 use record::Record;
 use record::RecordTrait;
+use std::ops::Deref;
 use stream::Entry;
 use stream::Stream;
 use validates::Validates;
@@ -28,7 +29,7 @@ impl OperationBe2 for Impl {
         aggregator::REGISTRY.labelled_multiple_options(&mut opt.sub(|p| &mut p.aggs.0), &["a", "agg", "aggregator"]);
     }
 
-    fn stream(o: &OptionsValidated) -> Stream {
+    fn stream(o: impl Deref<Target = OptionsValidated>) -> Stream {
         return stream::compound(
             stream::parse(),
             stream::closures(

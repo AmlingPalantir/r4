@@ -53,6 +53,8 @@ registry! {
 
 use opts::parser::OptParser;
 use opts::parser::OptParserView;
+use std::ops::Deref;
+use std::sync::Arc;
 use stream::Stream;
 use validates::Validates;
 
@@ -85,8 +87,8 @@ pub trait OperationBe {
 
     fn names() -> Vec<&'static str>;
     fn options<'a>(&mut OptParserView<'a, Self::Options>);
-    fn get_extra(&<Self::Options as Validates>::Target) -> Vec<String>;
-    fn stream(&<Self::Options as Validates>::Target) -> Stream;
+    fn get_extra(impl Deref<Target = <Self::Options as Validates>::Target>) -> Vec<String>;
+    fn stream(impl Deref<Target = <Self::Options as Validates>::Target>) -> Stream;
 }
 
 impl<B: OperationBe> OperationFe for B where <B::Options as Validates>::Target: Send + Sync {
@@ -103,9 +105,10 @@ impl<B: OperationBe> OperationFe for B where <B::Options as Validates>::Target: 
             let mut opt = OptParser::<B::Options>::new();
             B::options(&mut opt.view());
             let o = opt.parse(args).validate();
-            *args = B::get_extra(&o);
+            let o = Arc::new(o);
+            *args = B::get_extra(o.clone());
 
-            return StreamWrapper::new(move || B::stream(&o));
+            return StreamWrapper::new(move || B::stream(o.clone()));
         });
     }
 }
@@ -117,7 +120,7 @@ pub trait OperationBe2 {
 
     fn names() -> Vec<&'static str>;
     fn options<'a>(&mut OptParserView<'a, Self::Options>);
-    fn stream(&<Self::Options as Validates>::Target) -> Stream;
+    fn stream(impl Deref<Target = <Self::Options as Validates>::Target>) -> Stream;
 }
 
 #[derive(Clone)]
@@ -153,11 +156,11 @@ impl<B: OperationBe2> OperationBe for B {
         });
     }
 
-    fn get_extra(p: &AndArgsOptions<<B::Options as Validates>::Target>) -> Vec<String> {
+    fn get_extra(p: impl Deref<Target = AndArgsOptions<<B::Options as Validates>::Target>>) -> Vec<String> {
         return p.args.clone();
     }
 
-    fn stream(p: &AndArgsOptions<<B::Options as Validates>::Target>) -> Stream {
+    fn stream(p: impl Deref<Target = AndArgsOptions<<B::Options as Validates>::Target>>) -> Stream {
         return B::stream(&p.p);
     }
 }

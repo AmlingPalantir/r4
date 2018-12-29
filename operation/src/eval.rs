@@ -6,6 +6,7 @@ use opts::vals::OptionalOption;
 use opts::vals::RequiredOption;
 use record::Record;
 use record::RecordTrait;
+use std::ops::Deref;
 use stream::Entry;
 use stream::Stream;
 use validates::Validates;
@@ -55,12 +56,12 @@ impl OperationBe2 for Impl {
         opt.match_zero(&["no-return"], |p| p.ret.set(false));
     }
 
-    fn stream(o: &OptionsValidated) -> Stream {
+    fn stream(o: impl Deref<Target = OptionsValidated>) -> Stream {
         return stream1(o, InputType::Records(), OutputType::Lines(), true);
     }
 }
 
-pub fn stream1(o: &OptionsValidated, def_input: InputType, def_output: OutputType, def_ret: bool) -> Stream {
+pub fn stream1(o: impl Deref<Target = OptionsValidated>, def_input: InputType, def_output: OutputType, def_ret: bool) -> Stream {
     let invert = o.invert;
     let input = o.input.clone().unwrap_or(def_input);
     let output = o.output.clone().unwrap_or(def_output);

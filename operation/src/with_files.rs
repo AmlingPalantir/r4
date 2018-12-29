@@ -5,6 +5,7 @@ use opts::parser::OptParserView;
 use opts::vals::OptionalStringOption;
 use record::Record;
 use record::RecordTrait;
+use std::ops::Deref;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
@@ -31,11 +32,11 @@ impl OperationBe for Impl {
         opt.sub(|p| &mut p.op).match_extra_hard(SubOperationOption::push);
     }
 
-    fn get_extra(o: &OptionsValidated) -> Vec<String> {
+    fn get_extra(o: impl Deref<Target = OptionsValidated>) -> Vec<String> {
         return o.op.extra.clone();
     }
 
-    fn stream(o: &OptionsValidated) -> Stream {
+    fn stream(o: impl Deref<Target = OptionsValidated>) -> Stream {
         struct StreamState {
             fk: Arc<str>,
             sub_wr: Arc<StreamWrapper>,

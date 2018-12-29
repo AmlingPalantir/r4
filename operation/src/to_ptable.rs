@@ -8,6 +8,7 @@ use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::ops::Deref;
 use stream::Entry;
 use stream::Stream;
 use super::sort::SortOptions;
@@ -44,7 +45,7 @@ impl OperationBe2 for Impl {
         SortOptions::options(&mut opt.sub(|p| &mut p.ys), &["ys"]);
     }
 
-    fn stream(o: &OptionsValidated) -> Stream {
+    fn stream(o: impl Deref<Target = OptionsValidated>) -> Stream {
         let xk = o.xk.clone();
         let yk = o.yk.clone();
         let pins = o.pins.clone();

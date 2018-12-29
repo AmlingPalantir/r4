@@ -5,6 +5,7 @@ use std::io::BufRead;
 use std::io::BufReader;
 use std::io::LineWriter;
 use std::io::Write;
+use std::ops::Deref;
 use std::process::Command;
 use std::process::Stdio;
 use std::sync::Arc;
@@ -25,11 +26,11 @@ impl OperationBe for Impl {
         opt.match_extra_hard(StringVecOption::push_all);
     }
 
-    fn get_extra(_o: &Arc<Vec<String>>) -> Vec<String> {
+    fn get_extra(_o: impl Deref<Target = Arc<Vec<String>>>) -> Vec<String> {
         return vec![];
     }
 
-    fn stream(o: &Arc<Vec<String>>) -> Stream {
+    fn stream(o: impl Deref<Target = Arc<Vec<String>>>) -> Stream {
         let args: Vec<String> = (**o).clone();
         let mut args = args.into_iter();
         let mut p = Command::new(args.next().unwrap())
