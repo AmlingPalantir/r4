@@ -24,10 +24,12 @@ registry! {
     chain,
     collate,
     decollate,
+    eval,
     from_lines,
     from_multi_regex,
     from_regex,
     from_split,
+    grep,
     join,
     multiplex,
     sort,
@@ -36,6 +38,7 @@ registry! {
     to_table,
     with_files,
     with_lines,
+    xform,
 }
 
 use clumper::ClumperFe;

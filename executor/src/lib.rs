@@ -187,9 +187,9 @@ impl State {
     }
 }
 
-pub fn load(code: &str) -> Box<Fn(Record) -> (Record, Record)> {
+pub fn load(code: &str) -> Arc<Fn(Record) -> (Record, Record)> {
     let e = parse::StatementParser::new().parse(code).unwrap();
-    return Box::new(move |r| {
+    return Arc::new(move |r| {
         let mut st = State {
             vars: HashMap::new(),
         };
