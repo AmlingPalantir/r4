@@ -25,7 +25,7 @@ impl<T: Eq + Hash> Default for DistinctSet<T> {
 
 impl<T: Clone + Eq + Hash> DistinctSet<T> {
     pub fn add(&mut self, t: T) {
-        if let None = self.m.insert(t.clone(), ()) {
+        if self.m.insert(t.clone(), ()).is_none() {
             self.v.push(t);
         }
     }

@@ -66,14 +66,14 @@ impl<T, P: OptionDefaulter<T>> Validates for DefaultedOption<T, P> {
 
 impl<T, P> DefaultedOption<T, P> {
     pub fn set(&mut self, t: T) {
-        if let Some(_) = self.0 {
+        if self.0.is_some() {
             panic!("DefaultedOption specified multiple times");
         }
         self.0 = Some(t);
     }
 
     pub fn maybe_set(&mut self, t: T) -> bool {
-        if let Some(_) = self.0 {
+        if self.0.is_some() {
             return false;
         }
         self.0 = Some(t);
@@ -81,7 +81,7 @@ impl<T, P> DefaultedOption<T, P> {
     }
 
     pub fn maybe_set_with<F: FnOnce() -> T>(&mut self, f: F) -> bool {
-        if let Some(_) = self.0 {
+        if self.0.is_some() {
             return false;
         }
         self.0 = Some(f());
@@ -138,7 +138,7 @@ impl<T> Validates for OptionalOption<T> {
 
 impl<T> OptionalOption<T> {
     pub fn set(&mut self, t: T) {
-        if let Some(_) = self.0 {
+        if self.0.is_some() {
             panic!("OptionalOption specified multiple times");
         }
         self.0 = Some(t);

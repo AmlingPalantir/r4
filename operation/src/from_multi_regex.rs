@@ -108,7 +108,7 @@ impl OperationBe2 for Impl {
                                         let ki = keys.iter();
                                         let gi = m.iter().skip(1);
                                         for (k, g) in ki.zip(gi) {
-                                            if let Some(_) = g {
+                                            if g.is_some() {
                                                 if (s.0).0.has_path(&k) {
                                                     pre_flush = true;
                                                     break;

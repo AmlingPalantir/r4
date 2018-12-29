@@ -50,12 +50,12 @@ impl OperationBe for Impl {
                         continue;
                     }
                     Some(Entry::Record(r)) => {
-                        if let Err(_) = writeln!(lw, "{}", r.deparse()) {
+                        if writeln!(lw, "{}", r.deparse()).is_err() {
                             rbe.rclose();
                         }
                     }
                     Some(Entry::Line(line)) => {
-                        if let Err(_) = writeln!(lw, "{}", line) {
+                        if writeln!(lw, "{}", line).is_err() {
                             rbe.rclose();
                         }
                     }
