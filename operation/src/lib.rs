@@ -16,6 +16,15 @@ extern crate validates;
 #[macro_use]
 extern crate validates_derive;
 
+mod tru;
+pub(crate) use tru::TwoRecordUnionOption;
+
+mod clumper_options;
+pub(crate) use clumper_options::ClumperOptions;
+
+mod subop_options;
+pub(crate) use subop_options::SubOperationOption;
+
 registry! {
     OperationFe,
     Box<Fn(&mut Vec<String>) -> StreamWrapper>,
@@ -42,16 +51,8 @@ registry! {
     xform,
 }
 
-use clumper::ClumperFe;
-use clumper::ClumperWrapper;
 use opts::parser::OptParser;
 use opts::parser::OptParserView;
-use opts::vals::OptionalStringOption;
-use opts::vals::UnvalidatedRawOption;
-use record::Record;
-use record::RecordTrait;
-use std::rc::Rc;
-use std::sync::Arc;
 use stream::Stream;
 use validates::Validates;
 
@@ -158,119 +159,5 @@ impl<B: OperationBe2> OperationBe for B {
 
     fn stream(p: &AndArgsOptions<<B::Options as Validates>::Target>) -> Stream {
         return B::stream(&p.p);
-    }
-}
-
-#[derive(Default)]
-struct SubOperationOption(Vec<String>);
-
-impl SubOperationOption {
-    fn push(&mut self, a: &[String]) {
-        self.0.extend_from_slice(a);
-    }
-
-    fn of(a: Vec<String>) -> SubOperationOption {
-        return SubOperationOption(a);
-    }
-}
-
-impl Validates for SubOperationOption {
-    type Target = SubOperationOptions;
-
-    fn validate(mut self) -> SubOperationOptions {
-        let name = self.0.remove(0);
-        let op = REGISTRY.find(&name, &[]);
-        let wr = op(&mut self.0);
-        return SubOperationOptions {
-            extra: self.0,
-            wr: Arc::new(wr),
-        };
-    }
-}
-
-#[derive(Clone)]
-struct SubOperationOptions {
-    extra: Vec<String>,
-    wr: Arc<StreamWrapper>,
-}
-
-#[derive(Default)]
-#[derive(Validates)]
-struct ClumperOptions(UnvalidatedRawOption<Vec<Box<ClumperWrapper>>>);
-
-impl ClumperOptions {
-    fn options<'a>(opt: &mut OptParserView<'a, ClumperOptions>) {
-        clumper::REGISTRY.single_options(&mut opt.sub(|p| &mut (p.0).0), &["c", "clumper"]);
-        clumper::REGISTRY.multiple_options(&mut opt.sub(|p| &mut (p.0).0), &["c", "clumper"]);
-        opt.match_single(&["k", "key"], |p, a| {
-            for a in a.split(',') {
-                (p.0).0.push(clumper::key::Impl::init(&[a]));
-            }
-        });
-    }
-}
-
-impl ClumperOptionsValidated {
-    fn stream<F: Fn(Vec<(Arc<str>, Record)>) -> Stream + 'static>(&self, f: F) -> Stream {
-        let mut bsw: Rc<Fn(Vec<(Arc<str>, Record)>) -> Stream> = Rc::new(f);
-
-        bsw = self.0.iter().rev().fold(bsw, |bsw, cw| {
-            let cw = cw.clone();
-            return Rc::new(move |bucket_outer| {
-                let bucket_outer = bucket_outer.clone();
-                let bsw = bsw.clone();
-                return cw.stream(Box::new(move |bucket_inner| {
-                    let mut bucket = bucket_outer.clone();
-                    bucket.extend(bucket_inner);
-                    return bsw(bucket);
-                }));
-            });
-        });
-
-        return bsw(vec![]);
-    }
-}
-
-#[derive(Default)]
-#[derive(Validates)]
-struct TwoRecordUnionOption {
-    left_prefix: OptionalStringOption,
-    right_prefix: OptionalStringOption,
-}
-
-impl TwoRecordUnionOption {
-    fn options<'a>(opt: &mut OptParserView<'a, TwoRecordUnionOption>) {
-        opt.sub(|p| &mut p.left_prefix).match_single(&["lp", "left-prefix"], OptionalStringOption::set);
-        opt.sub(|p| &mut p.right_prefix).match_single(&["rp", "right-prefix"], OptionalStringOption::set);
-    }
-}
-
-impl TwoRecordUnionOptionValidated {
-    fn union_maybe(&self, r1: Option<Record>, r2: Option<Record>) -> Record {
-        fn _union_aux(r: &mut Record, prefix: &Option<Arc<str>>, r1: Record) {
-            match prefix {
-                Some(prefix) => {
-                    r.set_path(&prefix, r1);
-                }
-                None => {
-                    for (k, v) in r1.expect_hash().into_iter() {
-                        r.set_path(&k, v.clone());
-                    }
-                }
-            }
-        }
-
-        let mut r = Record::empty_hash();
-        if let Some(r1) = r1 {
-            _union_aux(&mut r, &self.left_prefix, r1);
-        }
-        if let Some(r2) = r2 {
-            _union_aux(&mut r, &self.right_prefix, r2);
-        }
-        return r;
-    }
-
-    fn union(&self, r1: Record, r2: Record) -> Record {
-        return self.union_maybe(Some(r1), Some(r2));
     }
 }
