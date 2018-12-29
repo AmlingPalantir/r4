@@ -87,7 +87,7 @@ impl<P: 'static> OptParser<P> {
                             }
                         }
                         return Some((name2, id2, argct2, f2));
-                    }).expect(&format!("No such option {}", name));
+                    }).unwrap_or_else(|| panic!("No such option {}", name));
                     let start = next_index + 1;
                     let end = start + argct;
                     if end > args.len() {
