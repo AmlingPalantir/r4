@@ -1,7 +1,7 @@
 use OperationBe;
 use SubOperationOption;
 use opts::parser::OptParserView;
-use opts::vals::OptionalStringOption;
+use opts::vals::DefaultedStringOption;
 use record::Record;
 use record::RecordTrait;
 use std::sync::Arc;
@@ -11,10 +11,14 @@ use validates::Validates;
 
 pub struct Impl();
 
+option_defaulters! {
+    FileDefaulter: String => "FILE".to_string(),
+}
+
 #[derive(Default)]
 #[derive(Validates)]
 pub struct Options {
-    fk: OptionalStringOption,
+    fk: DefaultedStringOption<FileDefaulter>,
     op: SubOperationOption,
 }
 
@@ -26,7 +30,7 @@ impl OperationBe for Impl {
     }
 
     fn options<'a>(opt: &mut OptParserView<'a, Options>) {
-        opt.sub(|p| &mut p.fk).match_single(&["fk", "file-key"], OptionalStringOption::set_str);
+        opt.sub(|p| &mut p.fk).match_single(&["fk", "file-key"], DefaultedStringOption::set_str);
         opt.sub(|p| &mut p.op).match_extra_hard(SubOperationOption::push);
     }
 
@@ -36,7 +40,6 @@ impl OperationBe for Impl {
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {
         struct StreamState {
-            fk: Arc<str>,
             o: Arc<OptionsValidated>,
             substream: Option<Stream>,
         };
@@ -48,17 +51,17 @@ impl OperationBe for Impl {
             }
 
             fn open(&mut self, file: Option<Arc<str>>) -> &mut Stream {
-                let fk = self.fk.clone();
                 let fv = match file {
                     Some(file) => Record::from(file),
                     None => Record::null(),
                 };
-                let sub_wr = self.o.op.wr.clone();
+                let o = self.o.clone();
                 return self.substream.get_or_insert_with(move || {
+                    let o = o.clone();
                     return stream::compound(
-                        sub_wr.stream(),
+                        o.op.wr.stream(),
                         stream::transform_records(move |mut r| {
-                            r.set_path(&fk, fv.clone());
+                            r.set_path(&o.fk, fv.clone());
                             return r;
                         }),
                     );
@@ -68,7 +71,6 @@ impl OperationBe for Impl {
 
         return stream::closures(
             StreamState {
-                fk: o.fk.as_ref().map(|s| Arc::from(s as &str)).unwrap_or(Arc::from("FILE")),
                 o: o,
                 substream: None,
             },

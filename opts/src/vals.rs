@@ -93,20 +93,15 @@ impl<T: Clone, P> DefaultedOption<T, P> {
     }
 }
 
-pub enum PanicDefaulter {
-}
-
 impl<T> OptionDefaulter<T> for PanicDefaulter {
     fn default() -> T {
         panic!("Missing option");
     }
 }
 
-pub type RequiredOption<T> = DefaultedOption<T, PanicDefaulter>;
+pub type DefaultedStringOption<P> = DefaultedOption<String, P>;
 
-pub type RequiredStringOption = RequiredOption<String>;
-
-impl RequiredStringOption {
+impl<P> DefaultedStringOption<P> {
     pub fn set_str(&mut self, a: &str) {
         self.set(a.to_string());
     }
@@ -115,6 +110,13 @@ impl RequiredStringOption {
         return self.maybe_set(a.to_string());
     }
 }
+
+pub enum PanicDefaulter {
+}
+
+pub type RequiredOption<T> = DefaultedOption<T, PanicDefaulter>;
+
+pub type RequiredStringOption = DefaultedStringOption<PanicDefaulter>;
 
 pub struct OptionalOption<T>(Option<T>);
 

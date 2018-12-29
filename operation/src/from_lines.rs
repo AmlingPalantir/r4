@@ -1,6 +1,6 @@
 use OperationBe2;
 use opts::parser::OptParserView;
-use opts::vals::OptionalStringOption;
+use opts::vals::DefaultedStringOption;
 use record::Record;
 use record::RecordTrait;
 use std::sync::Arc;
@@ -10,12 +10,18 @@ use validates::Validates;
 
 pub struct Impl();
 
+option_defaulters! {
+    LineDefaulter: String => "LINE".to_string(),
+    LinenoDefaulter: String => "LINENO".to_string(),
+    FileDefaulter: String => "FILE".to_string(),
+}
+
 #[derive(Default)]
 #[derive(Validates)]
 pub struct Options {
-    lk: OptionalStringOption,
-    lnk: OptionalStringOption,
-    fk: OptionalStringOption,
+    lk: DefaultedStringOption<LineDefaulter>,
+    lnk: DefaultedStringOption<LinenoDefaulter>,
+    fk: DefaultedStringOption<FileDefaulter>,
 }
 
 impl OperationBe2 for Impl {
@@ -26,9 +32,9 @@ impl OperationBe2 for Impl {
     }
 
     fn options<'a>(opt: &mut OptParserView<'a, Options>) {
-        opt.sub(|p| &mut p.lk).match_single(&["lk", "line-key"], OptionalStringOption::set_str);
-        opt.sub(|p| &mut p.lnk).match_single(&["lnk", "lineno-key"], OptionalStringOption::set_str);
-        opt.sub(|p| &mut p.fk).match_single(&["fk", "file-key"], OptionalStringOption::set_str);
+        opt.sub(|p| &mut p.lk).match_single(&["lk", "line-key"], DefaultedStringOption::set_str);
+        opt.sub(|p| &mut p.lnk).match_single(&["lnk", "lineno-key"], DefaultedStringOption::set_str);
+        opt.sub(|p| &mut p.fk).match_single(&["fk", "file-key"], DefaultedStringOption::set_str);
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {
@@ -49,14 +55,10 @@ impl OperationBe2 for Impl {
                         Entry::Line(line) => {
                             let mut r = Record::empty_hash();
 
-                            let lk = o.lk.as_ref().map(|s| s as &str).unwrap_or("LINE");
-                            let lnk = o.lnk.as_ref().map(|s| s as &str).unwrap_or("LINENO");
-                            let fk = o.fk.as_ref().map(|s| s as &str).unwrap_or("FILE");
-
-                            r.set_path(&lk, Record::from(line));
-                            r.set_path(&lnk, Record::from(s.1));
+                            r.set_path(&o.lk, Record::from(line));
+                            r.set_path(&o.lnk, Record::from(s.1));
                             s.1 += 1;
-                            r.set_path(&fk, s.0.clone().map(Record::from).unwrap_or_else(Record::null));
+                            r.set_path(&o.fk, s.0.clone().map(Record::from).unwrap_or_else(Record::null));
 
                             return w(Entry::Record(r));
                         }
