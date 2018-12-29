@@ -115,11 +115,8 @@ impl OperationBe2 for Impl {
                         }
                     }
 
-                    let xcmp = o.xs.cmp();
-                    let ycmp = o.ys.cmp();
-
-                    let xh = HeaderTree::build(&o.xk, &xcmp, cell_tuples.iter().map(|(xs, _ys, _v)| xs));
-                    let yh = HeaderTree::build(&o.yk, &ycmp, cell_tuples.iter().map(|(_xs, ys, _v)| ys));
+                    let xh = HeaderTree::build(&o.xk, &o.xs.cmp(), cell_tuples.iter().map(|(xs, _ys, _v)| xs));
+                    let yh = HeaderTree::build(&o.yk, &o.ys.cmp(), cell_tuples.iter().map(|(_xs, ys, _v)| ys));
 
                     let width = o.yk.len() + 1 + xh.width1;
                     let height = o.xk.len() + 1 + yh.width1;
