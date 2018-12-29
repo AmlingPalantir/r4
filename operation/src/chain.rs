@@ -30,8 +30,8 @@ impl OperationBe for Impl {
         opt.sub(|p| &mut p.keep_bof).match_zero(&["no-keep-bof"], BooleanOption::clear);
     }
 
-    fn get_extra(o: &OptionsValidated) -> &Vec<String> {
-        return &o.cmds.extra;
+    fn get_extra(o: &OptionsValidated) -> Vec<String> {
+        return o.cmds.extra.clone();
     }
 
     fn stream(o: &OptionsValidated) -> Stream {

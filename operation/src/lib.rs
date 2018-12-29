@@ -84,7 +84,7 @@ pub trait OperationBe {
 
     fn names() -> Vec<&'static str>;
     fn options<'a>(&mut OptParserView<'a, Self::PreOptions>);
-    fn get_extra(&Self::PostOptions) -> &Vec<String>;
+    fn get_extra(&Self::PostOptions) -> Vec<String>;
     fn stream(&Self::PostOptions) -> Stream;
 }
 
@@ -102,7 +102,7 @@ impl<B: OperationBe> OperationFe for B {
             let mut opt = OptParser::<B::PreOptions>::new();
             B::options(&mut opt.view());
             let o = opt.parse(args).validate();
-            *args = B::get_extra(&o).clone();
+            *args = B::get_extra(&o);
 
             return StreamWrapper::new(move || B::stream(&o));
         });
@@ -154,8 +154,8 @@ impl<B: OperationBe2> OperationBe for B {
         });
     }
 
-    fn get_extra(p: &AndArgsOptions<B::PostOptions>) -> &Vec<String> {
-        return &p.args;
+    fn get_extra(p: &AndArgsOptions<B::PostOptions>) -> Vec<String> {
+        return p.args.clone();
     }
 
     fn stream(p: &AndArgsOptions<B::PostOptions>) -> Stream {

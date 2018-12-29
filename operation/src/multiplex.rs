@@ -27,8 +27,8 @@ impl OperationBe for Impl {
         ClumperOptions::options(&mut opt.sub(|p| &mut p.cl));
     }
 
-    fn get_extra(o: &OptionsValidated) -> &Vec<String> {
-        return &o.op.extra;
+    fn get_extra(o: &OptionsValidated) -> Vec<String> {
+        return o.op.extra.clone();
     }
 
     fn stream(o: &OptionsValidated) -> Stream {

@@ -32,8 +32,8 @@ impl OperationBe for Impl {
         opt.sub(|p| &mut p.op).match_extra_hard(SubOperationOption::push);
     }
 
-    fn get_extra(o: &OptionsValidated) -> &Vec<String> {
-        return &o.op.extra;
+    fn get_extra(o: &OptionsValidated) -> Vec<String> {
+        return o.op.extra.clone();
     }
 
     fn stream(o: &OptionsValidated) -> Stream {

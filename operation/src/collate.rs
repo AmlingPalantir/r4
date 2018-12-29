@@ -27,7 +27,7 @@ impl OperationBe for Impl {
         aggregate::Impl::options(&mut opt.sub(|p| &mut p.ag));
     }
 
-    fn get_extra(o: &OptionsValidated) -> &Vec<String> {
+    fn get_extra(o: &OptionsValidated) -> Vec<String> {
         return aggregate::Impl::get_extra(&o.ag);
     }
 
