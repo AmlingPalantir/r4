@@ -83,7 +83,7 @@ impl BgopFe {
         }
         loop {
             let ret = self.state.wait(&mut |buffers| {
-                if buffers.be_to_fe.buf.len() > 0 {
+                if !buffers.be_to_fe.buf.is_empty() {
                     return (Some(Ret::Ferry(buffers.be_to_fe.buf.drain(..).collect())), true);
                 }
 

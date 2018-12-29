@@ -80,7 +80,7 @@ impl Validates for CmdsOption {
                     extra = Some(so.extra);
                 }
                 Some(_) => {
-                    if so.extra.len() > 0 {
+                    if !so.extra.is_empty() {
                         panic!("Unexpected extra args for non-first chain stage?");
                     }
                 }
