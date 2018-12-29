@@ -181,22 +181,12 @@ impl Validates for SubOperationOption {
     type Target = SubOperationOptions;
 
     fn validate(mut self) -> SubOperationOptions {
-        if self.0.len() >= 2 && self.0[0] == "r4" {
-            self.0.remove(0);
-            let name = self.0.remove(0);
-            let op = REGISTRY.find(&name, &[]);
-            let wr = op(&mut self.0);
-            return SubOperationOptions {
-                extra: self.0,
-                wr: Arc::new(wr),
-            };
-        }
-
+        let name = self.0.remove(0);
+        let op = REGISTRY.find(&name, &[]);
+        let wr = op(&mut self.0);
         return SubOperationOptions {
-            extra: vec![],
-            wr: Arc::new(StreamWrapper::new(move || {
-                return stream_process::new(self.0.clone());
-            })),
+            extra: self.0,
+            wr: Arc::new(wr),
         };
     }
 }
