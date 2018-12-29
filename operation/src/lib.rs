@@ -11,7 +11,6 @@ extern crate regex;
 extern crate registry;
 extern crate sorts;
 extern crate stream;
-extern crate stream_process;
 extern crate validates;
 #[macro_use]
 extern crate validates_derive;

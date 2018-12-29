@@ -6,4 +6,3 @@ authors = ["Keith Amling <me@amling2.org>"]
 [dependencies]
 operation = { path = "../operation" }
 stream = { path = "../stream" }
-stream_process = { path = "../stream_process" }
