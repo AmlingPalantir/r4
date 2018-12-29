@@ -1,8 +1,8 @@
 use SortSimpleBe;
 use SortSimpleBeImpl;
+use record::F64SortDishonorProxy;
 use record::Record;
 use record::RecordTrait;
-use record::float::F64SortDishonorProxy;
 
 pub type Impl = SortSimpleBeImpl<SimpleImpl>;
 
