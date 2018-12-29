@@ -44,7 +44,6 @@ registry! {
     multiplex,
     shell,
     sort,
-    test,
     to_ptable,
     to_table,
     with_files,
