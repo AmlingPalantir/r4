@@ -7,3 +7,5 @@ authors = ["Keith Amling <me@amling2.org>"]
 record = { path = "../record" }
 registry = { path = "../registry" }
 lazy_static = "1.2.0"
+rand = "0.6.1"
+rand_chacha = "0.1.0"

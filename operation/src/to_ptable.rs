@@ -3,7 +3,6 @@ use opts::vals::StringVecOption;
 use opts::vals::UnvalidatedOption;
 use record::Record;
 use record::RecordTrait;
-use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -12,6 +11,7 @@ use stream::Entry;
 use stream::Stream;
 use super::OperationBe2;
 use super::sort::SortOptions;
+use super::sort::SortOptionsValidated;
 use validates::Validates;
 
 pub struct Impl();
@@ -114,8 +114,8 @@ impl OperationBe2 for Impl {
                     let s = *s;
                     let (o, cell_tuples) = s;
 
-                    let (xh, xh_width) = HeaderTree::build(&o.xk, &o.xs.cmp(), cell_tuples.iter().map(|(xs, _ys, _v)| xs));
-                    let (yh, yh_width) = HeaderTree::build(&o.yk, &o.ys.cmp(), cell_tuples.iter().map(|(_xs, ys, _v)| ys));
+                    let (xh, xh_width) = HeaderTree::build(&o.xk, &o.xs, cell_tuples.iter().map(|(xs, _ys, _v)| xs));
+                    let (yh, yh_width) = HeaderTree::build(&o.yk, &o.ys, cell_tuples.iter().map(|(_xs, ys, _v)| ys));
 
                     let width = o.yk.len() + 1 + xh_width;
                     let height = o.xk.len() + 1 + yh_width;
@@ -192,8 +192,8 @@ struct HeaderTree {
 }
 
 impl HeaderTree {
-    fn build<'a>(zk: &Vec<String>, zcmp: &Box<Fn(&Record, &Record) -> Ordering>, zss: impl Iterator<Item = &'a Vec<Record>>) -> (HeaderTree, usize) {
-        let mut srs = Vec::new();
+    fn build<'a>(zk: &Vec<String>, zsort: &SortOptionsValidated, zss: impl Iterator<Item = &'a Vec<Record>>) -> (HeaderTree, usize) {
+        let mut pairs = Vec::new();
         let mut already = HashSet::new();
         for zs in zss {
             if already.contains(zs) {
@@ -204,13 +204,13 @@ impl HeaderTree {
             for (k, v) in zk.iter().zip(zs.iter()) {
                 zr.set_path(k, v.clone());
             }
-            srs.push((zs, zr));
+            pairs.push((zr, zs));
         }
 
-        srs.sort_by(|sr1, sr2| zcmp(&sr1.1, &sr2.1));
+        zsort.sort_aux(&mut pairs);
 
         let mut pht = PreHeaderTree::default();
-        for (zs, _) in srs {
+        for (_, zs) in pairs {
             zs.iter().fold(&mut pht, |pht, v| {
                 if let Some(idx) = pht.idxs.get(v) {
                     return &mut pht.arr[*idx].1;

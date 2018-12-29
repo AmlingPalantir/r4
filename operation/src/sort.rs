@@ -4,7 +4,6 @@ use opts::vals::UnvalidatedOption;
 use record::Record;
 use sorts::SortFe;
 use sorts::SortState;
-use std::cmp::Ordering;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
@@ -25,18 +24,17 @@ impl SortOptions {
 }
 
 impl SortOptionsValidated {
-    pub fn cmp(&self) -> Box<Fn(&Record, &Record) -> Ordering> {
-        let sorts = self.0.clone();
-        return Box::new(move |r1, r2| {
-            for sort in sorts.iter() {
-                let r = sort.cmp(r1, r2);
-                if let Ordering::Equal = r {
-                    continue;
-                }
-                return r;
-            }
-            return Ordering::Equal;
-        });
+    pub fn sort(&self, rs: &mut [Record]) {
+        for sort in self.0.iter().rev() {
+            sort.sort(rs);
+        }
+    }
+
+    pub fn sort_aux<T>(&self, rs: &mut [(Record, T)]) {
+        for sort in self.0.iter().rev() {
+            let idxs = sort.sort_aux(rs.len(), Box::new(|i| &rs[i].0));
+            sorts::reorder(rs, &idxs);
+        }
     }
 }
 
@@ -71,8 +69,7 @@ impl OperationBe2 for Impl {
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {
         struct State {
-            cmp: Box<Fn(&Record, &Record) -> Ordering>,
-            partial: Option<usize>,
+            o: Arc<OptionsValidated>,
             rs: Vec<Record>,
         }
 
@@ -80,8 +77,7 @@ impl OperationBe2 for Impl {
             stream::parse(),
             stream::closures(
                 State {
-                    cmp: o.sorts.cmp(),
-                    partial: o.partial,
+                    o: o,
                     rs: Vec::new(),
                 },
                 |s, e, _w| {
@@ -90,10 +86,9 @@ impl OperationBe2 for Impl {
                         }
                         Entry::Record(r) => {
                             s.rs.push(r);
-                            if let Some(limit) = s.partial {
+                            if let Some(limit) = s.o.partial {
                                 if s.rs.len() >= 2 * limit {
-                                    let cmp = &s.cmp;
-                                    s.rs.sort_by(|r1, r2| cmp(r1, r2));
+                                    s.o.sorts.sort(&mut s.rs);
                                     s.rs.truncate(limit);
                                 }
                             }
@@ -106,9 +101,8 @@ impl OperationBe2 for Impl {
                 },
                 |s, w| {
                     let mut s = *s;
-                    let cmp = &s.cmp;
-                    s.rs.sort_by(|r1, r2| cmp(r1, r2));
-                    if let Some(limit) = s.partial {
+                    s.o.sorts.sort(&mut s.rs);
+                    if let Some(limit) = s.o.partial {
                         s.rs.truncate(limit);
                     }
                     for r in s.rs {
