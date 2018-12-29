@@ -31,11 +31,9 @@ impl<T> NameTrie<T> {
             // Exact, honor even if there are longer matches.
             return vec![t]
         }
-        loop {
-            let mut acc = Vec::<&T>::new();
-            n.collect(&mut acc);
-            return acc;
-        }
+        let mut acc = Vec::<&T>::new();
+        n.collect(&mut acc);
+        return acc;
     }
 
     fn collect<'a, 'b: 'a>(&'b self, acc: &'a mut Vec<&'b T>) {
