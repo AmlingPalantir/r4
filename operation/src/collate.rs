@@ -11,12 +11,12 @@ pub struct Impl();
 #[derive(Validates)]
 pub struct Options {
     cl: ClumperOptions,
-    ag: <aggregate::Impl as OperationBe>::PreOptions,
+    ag: <aggregate::Impl as OperationBe>::Options,
 }
 
 impl OperationBe for Impl {
-    type PreOptions = Options;
-    type PostOptions = OptionsValidated;
+    type Options = Options;
+    type OptionsValidated = OptionsValidated;
 
     fn names() -> Vec<&'static str> {
         return vec!["collate"];

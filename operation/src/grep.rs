@@ -9,8 +9,8 @@ use super::eval::OutputType;
 pub struct Impl();
 
 impl OperationBe2 for Impl {
-    type PreOptions = Options;
-    type PostOptions = OptionsValidated;
+    type Options = Options;
+    type OptionsValidated = OptionsValidated;
 
     fn names() -> Vec<&'static str> {
         return vec!["grep"];

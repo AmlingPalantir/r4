@@ -15,8 +15,8 @@ use stream::Stream;
 pub struct Impl();
 
 impl OperationBe for Impl {
-    type PreOptions = StringVecOption;
-    type PostOptions = Arc<Vec<String>>;
+    type Options = StringVecOption;
+    type OptionsValidated = Arc<Vec<String>>;
 
     fn names() -> Vec<&'static str> {
         return vec!["shell"];

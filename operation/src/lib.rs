@@ -79,13 +79,13 @@ impl StreamWrapper {
 
 
 pub trait OperationBe {
-    type PreOptions: Validates<Target = Self::PostOptions> + Default + 'static;
-    type PostOptions: Send + Sync + 'static;
+    type Options: Validates<Target = Self::OptionsValidated> + Default + 'static;
+    type OptionsValidated: Send + Sync + 'static;
 
     fn names() -> Vec<&'static str>;
-    fn options<'a>(&mut OptParserView<'a, Self::PreOptions>);
-    fn get_extra(&Self::PostOptions) -> Vec<String>;
-    fn stream(&Self::PostOptions) -> Stream;
+    fn options<'a>(&mut OptParserView<'a, Self::Options>);
+    fn get_extra(&Self::OptionsValidated) -> Vec<String>;
+    fn stream(&Self::OptionsValidated) -> Stream;
 }
 
 impl<B: OperationBe> OperationFe for B {
@@ -99,7 +99,7 @@ impl<B: OperationBe> OperationFe for B {
 
     fn init(_args: &[&str]) -> Box<Fn(&mut Vec<String>) -> StreamWrapper> {
         return Box::new(|args| {
-            let mut opt = OptParser::<B::PreOptions>::new();
+            let mut opt = OptParser::<B::Options>::new();
             B::options(&mut opt.view());
             let o = opt.parse(args).validate();
             *args = B::get_extra(&o);
@@ -112,12 +112,12 @@ impl<B: OperationBe> OperationFe for B {
 
 
 pub trait OperationBe2 {
-    type PreOptions: Validates<Target = Self::PostOptions> + Default + 'static;
-    type PostOptions: Send + Sync + 'static;
+    type Options: Validates<Target = Self::OptionsValidated> + Default + 'static;
+    type OptionsValidated: Send + Sync + 'static;
 
     fn names() -> Vec<&'static str>;
-    fn options<'a>(&mut OptParserView<'a, Self::PreOptions>);
-    fn stream(&Self::PostOptions) -> Stream;
+    fn options<'a>(&mut OptParserView<'a, Self::Options>);
+    fn stream(&Self::OptionsValidated) -> Stream;
 }
 
 #[derive(Clone)]
@@ -139,14 +139,14 @@ impl<P: Validates> Validates for AndArgsOptions<P> {
 }
 
 impl<B: OperationBe2> OperationBe for B {
-    type PreOptions = AndArgsOptions<B::PreOptions>;
-    type PostOptions = AndArgsOptions<B::PostOptions>;
+    type Options = AndArgsOptions<B::Options>;
+    type OptionsValidated = AndArgsOptions<B::OptionsValidated>;
 
     fn names() -> Vec<&'static str> {
         return B::names();
     }
 
-    fn options<'a>(opt: &mut OptParserView<'a, AndArgsOptions<B::PreOptions>>) {
+    fn options<'a>(opt: &mut OptParserView<'a, AndArgsOptions<B::Options>>) {
         B::options(&mut opt.sub(|p| &mut p.p));
         opt.sub(|p| &mut p.args).match_extra_soft(|p, a| {
             p.push(a.to_string());
@@ -154,11 +154,11 @@ impl<B: OperationBe2> OperationBe for B {
         });
     }
 
-    fn get_extra(p: &AndArgsOptions<B::PostOptions>) -> Vec<String> {
+    fn get_extra(p: &AndArgsOptions<B::OptionsValidated>) -> Vec<String> {
         return p.args.clone();
     }
 
-    fn stream(p: &AndArgsOptions<B::PostOptions>) -> Stream {
+    fn stream(p: &AndArgsOptions<B::OptionsValidated>) -> Stream {
         return B::stream(&p.p);
     }
 }
