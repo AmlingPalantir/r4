@@ -204,7 +204,7 @@ impl Code {
         return Box::new(move |r| {
             st.vars.insert(Arc::from("r"), MRecord::wrap(r));
             let ret = st.eval(&e);
-            return (ret.to_record(), st.vars.get("r").unwrap().clone().to_record());
+            return (ret.to_record(), st.vars["r"].clone().to_record());
         });
     }
 }

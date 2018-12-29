@@ -236,7 +236,7 @@ impl HeaderTree {
 
     fn width(&self, zs: &Vec<Record>) -> usize {
         return zs.iter().fold(self, |ht, v| {
-            return &ht.arr[*ht.idxs.get(v).unwrap()].1;
+            return &ht.arr[ht.idxs[v]].1;
         }).width0;
     }
 }
