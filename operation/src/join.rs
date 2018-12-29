@@ -25,7 +25,7 @@ impl Validates for DbOption {
     type Target = Db;
 
     fn validate(self) -> Db {
-        return Db::new(self.file.validate(), self.pairs.validate());
+        return Db::new(&self.file.validate(), &self.pairs.validate());
     }
 }
 
@@ -36,7 +36,7 @@ struct Db {
 }
 
 impl Db {
-    fn new(file: String, pairs: Vec<(String, String)>) -> Db {
+    fn new(file: &str, pairs: &[(String, String)]) -> Db {
         let mut db = Db {
             db: HashMap::new(),
             rks: Arc::new(pairs.iter().map(|(_lk, rk)| rk.clone()).collect()),
