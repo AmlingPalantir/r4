@@ -49,13 +49,60 @@ impl OperationBe2 for Impl {
         return stream::compound(
             stream::parse(),
             stream::closures(
-                Vec::new(),
+                (o, Vec::new()),
                 |s, e, _w| {
+                    let (o, cell_tuples) = s;
+
                     match e {
                         Entry::Bof(_file) => {
                         }
                         Entry::Record(r) => {
-                            s.push(r);
+                            for (k, ve) in o.pins.iter() {
+                                let vo = r.get_path(k).coerce_string();
+                                let vo = &vo as &str;
+                                if ve != vo {
+                                    return true;
+                                }
+                            }
+
+                            let mut rvk = o.vk.clone();
+                            if rvk.is_empty() {
+                                let mut unused = BTreeSet::new();
+                                for k in r.expect_hash().keys() {
+                                    unused.insert(k.to_string());
+                                }
+                                for k in o.xk.iter() {
+                                    unused.remove(k);
+                                }
+                                for k in o.yk.iter() {
+                                    unused.remove(k);
+                                }
+                                for k in o.pins.keys() {
+                                    unused.remove(k);
+                                }
+                                rvk = unused.into_iter().collect();
+                            }
+
+                            for vk in rvk {
+                                let mut xs = Vec::new();
+                                let mut ys = Vec::new();
+                                for (zk, zs) in vec![(&o.xk, &mut xs), (&o.yk, &mut ys)] {
+                                    for k in zk.iter() {
+                                        let v;
+                                        if k == "VALUE" {
+                                            v = Record::from(&vk as &str);
+                                        }
+                                        else {
+                                            v = r.get_path(&k);
+                                        }
+                                        zs.push(v);
+                                    }
+                                }
+
+                                let v = r.get_path(&vk);
+
+                                cell_tuples.push((xs, ys, v));
+                            }
                         }
                         Entry::Line(_line) => {
                             panic!("Unexpected line in ToPivotTableStream");
@@ -64,56 +111,8 @@ impl OperationBe2 for Impl {
                     return true;
                 },
                 move |s, w| {
-                    let mut cell_tuples = Vec::new();
-
-                    'record: for r in s.iter() {
-                        for (k, ve) in o.pins.iter() {
-                            let vo = r.get_path(k).coerce_string();
-                            let vo = &vo as &str;
-                            if ve != vo {
-                                continue 'record;
-                            }
-                        }
-
-                        let mut rvk = o.vk.clone();
-                        if rvk.is_empty() {
-                            let mut unused = BTreeSet::new();
-                            for k in r.expect_hash().keys() {
-                                unused.insert(k.to_string());
-                            }
-                            for k in o.xk.iter() {
-                                unused.remove(k);
-                            }
-                            for k in o.yk.iter() {
-                                unused.remove(k);
-                            }
-                            for k in o.pins.keys() {
-                                unused.remove(k);
-                            }
-                            rvk = unused.into_iter().collect();
-                        }
-
-                        for vk in rvk {
-                            let mut xs = Vec::new();
-                            let mut ys = Vec::new();
-                            for (zk, zs) in vec![(&o.xk, &mut xs), (&o.yk, &mut ys)] {
-                                for k in zk.iter() {
-                                    let v;
-                                    if k == "VALUE" {
-                                        v = Record::from(&vk as &str);
-                                    }
-                                    else {
-                                        v = r.get_path(&k);
-                                    }
-                                    zs.push(v);
-                                }
-                            }
-
-                            let v = r.get_path(&vk);
-
-                            cell_tuples.push((xs, ys, v));
-                        }
-                    }
+                    let s = *s;
+                    let (o, cell_tuples) = s;
 
                     let xh = HeaderTree::build(&o.xk, &o.xs.cmp(), cell_tuples.iter().map(|(xs, _ys, _v)| xs));
                     let yh = HeaderTree::build(&o.yk, &o.ys.cmp(), cell_tuples.iter().map(|(_xs, ys, _v)| ys));
@@ -133,7 +132,7 @@ impl OperationBe2 for Impl {
                     xh.visit_cells(0, &mut |width, depth, v| cells[depth][o.yk.len() + 1 + width] = (v.pretty_string(), ' '));
                     yh.visit_cells(0, &mut |width, depth, v| cells[o.xk.len() + 1 + width][depth] = (v.pretty_string(), ' '));
 
-                    for (xs, ys, v) in cell_tuples {
+                    for (xs, ys, v) in cell_tuples.iter() {
                         let x = o.yk.len() + 1 + xh.width(&xs);
                         let y = o.xk.len() + 1 + yh.width(&ys);
                         cells[y][x] = (v.pretty_string(), ' ');
