@@ -79,16 +79,15 @@ impl StreamWrapper {
 
 
 pub trait OperationBe {
-    type Options: Validates<Target = Self::OptionsValidated> + Default + 'static;
-    type OptionsValidated: Send + Sync + 'static;
+    type Options: Validates + Default + 'static;
 
     fn names() -> Vec<&'static str>;
     fn options<'a>(&mut OptParserView<'a, Self::Options>);
-    fn get_extra(&Self::OptionsValidated) -> Vec<String>;
-    fn stream(&Self::OptionsValidated) -> Stream;
+    fn get_extra(&<Self::Options as Validates>::Target) -> Vec<String>;
+    fn stream(&<Self::Options as Validates>::Target) -> Stream;
 }
 
-impl<B: OperationBe> OperationFe for B {
+impl<B: OperationBe> OperationFe for B where <B::Options as Validates>::Target: Send + Sync {
     fn names() -> Vec<&'static str> {
         return B::names();
     }
@@ -112,12 +111,11 @@ impl<B: OperationBe> OperationFe for B {
 
 
 pub trait OperationBe2 {
-    type Options: Validates<Target = Self::OptionsValidated> + Default + 'static;
-    type OptionsValidated: Send + Sync + 'static;
+    type Options: Validates + Default + 'static;
 
     fn names() -> Vec<&'static str>;
     fn options<'a>(&mut OptParserView<'a, Self::Options>);
-    fn stream(&Self::OptionsValidated) -> Stream;
+    fn stream(&<Self::Options as Validates>::Target) -> Stream;
 }
 
 #[derive(Clone)]
@@ -140,7 +138,6 @@ impl<P: Validates> Validates for AndArgsOptions<P> {
 
 impl<B: OperationBe2> OperationBe for B {
     type Options = AndArgsOptions<B::Options>;
-    type OptionsValidated = AndArgsOptions<B::OptionsValidated>;
 
     fn names() -> Vec<&'static str> {
         return B::names();
@@ -154,11 +151,11 @@ impl<B: OperationBe2> OperationBe for B {
         });
     }
 
-    fn get_extra(p: &AndArgsOptions<B::OptionsValidated>) -> Vec<String> {
+    fn get_extra(p: &AndArgsOptions<<B::Options as Validates>::Target>) -> Vec<String> {
         return p.args.clone();
     }
 
-    fn stream(p: &AndArgsOptions<B::OptionsValidated>) -> Stream {
+    fn stream(p: &AndArgsOptions<<B::Options as Validates>::Target>) -> Stream {
         return B::stream(&p.p);
     }
 }

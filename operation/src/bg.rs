@@ -15,7 +15,6 @@ pub struct Options {
 
 impl OperationBe for Impl {
     type Options = Options;
-    type OptionsValidated = OptionsValidated;
 
     fn names() -> Vec<&'static str> {
         return vec!["bg"];
