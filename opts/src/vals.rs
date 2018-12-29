@@ -23,26 +23,33 @@ impl BooleanOption {
     }
 }
 
-pub struct RequiredOption<T>(Option<T>);
+pub trait OptionDefaulter<T> {
+    fn default() -> T;
+}
 
-impl<T> Default for RequiredOption<T> {
+pub struct DefaultedOption<T, P>(Option<T>, std::marker::PhantomData<P>);
+
+impl<T, P> Default for DefaultedOption<T, P> {
     fn default() -> Self {
-        return RequiredOption(None);
+        return DefaultedOption(None, std::marker::PhantomData::default());
     }
 }
 
-impl<T> Validates for RequiredOption<T> {
+impl<T, P: OptionDefaulter<T>> Validates for DefaultedOption<T, P> {
     type Target = T;
 
     fn validate(self) -> T {
-        return self.0.unwrap();
+        if let Some(t) = self.0 {
+            return t;
+        }
+        return P::default();
     }
 }
 
-impl<T> RequiredOption<T> {
+impl<T, P> DefaultedOption<T, P> {
     pub fn set(&mut self, t: T) {
         if let Some(_) = self.0 {
-            panic!("RequiredOption specified multiple times");
+            panic!("DefaultedOption specified multiple times");
         }
         self.0 = Some(t);
     }
@@ -64,11 +71,22 @@ impl<T> RequiredOption<T> {
     }
 }
 
-impl<T: Clone> RequiredOption<T> {
+impl<T: Clone, P> DefaultedOption<T, P> {
     pub fn set_clone(&mut self, t: &T) {
         self.set(t.clone());
     }
 }
+
+pub enum PanicDefaulter {
+}
+
+impl<T> OptionDefaulter<T> for PanicDefaulter {
+    fn default() -> T {
+        panic!("Missing option");
+    }
+}
+
+pub type RequiredOption<T> = DefaultedOption<T, PanicDefaulter>;
 
 pub type RequiredStringOption = RequiredOption<String>;
 
