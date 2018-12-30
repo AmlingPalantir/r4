@@ -3,10 +3,13 @@ use record::RecordTrait;
 use registry::OneStringArgs;
 use std::sync::Arc;
 use super::AggregatorBe;
+use super::AggregatorRegistrant;
 
-pub struct Impl();
+pub(crate) type Impl = AggregatorRegistrant<ImplBe>;
 
-impl AggregatorBe for Impl {
+pub(crate) struct ImplBe();
+
+impl AggregatorBe for ImplBe {
     type Args = OneStringArgs;
     type State = Vec<Record>;
 

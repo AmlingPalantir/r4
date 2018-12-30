@@ -4,8 +4,7 @@ use registry::TwoStringArgs;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use super::AggregatorBe;
-
-pub struct Impl();
+use super::AggregatorRegistrant;
 
 #[derive(Clone)]
 #[derive(Default)]
@@ -18,7 +17,11 @@ pub struct State {
     sxy: f64,
 }
 
-impl AggregatorBe for Impl {
+pub(crate) type Impl = AggregatorRegistrant<ImplBe>;
+
+pub(crate) struct ImplBe;
+
+impl AggregatorBe for ImplBe {
     type Args = TwoStringArgs;
     type State = State;
 

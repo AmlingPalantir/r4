@@ -4,8 +4,7 @@ use registry::RegistryArgs;
 use std::cmp::Ord;
 use std::sync::Arc;
 use super::AggregatorBe;
-
-pub struct Impl();
+use super::AggregatorRegistrant;
 
 #[derive(Clone)]
 pub struct PercentileState<K>(Vec<(K, Record)>);
@@ -49,7 +48,11 @@ impl RegistryArgs for PercentileArgs {
     }
 }
 
-impl AggregatorBe for Impl {
+pub(crate) type Impl = AggregatorRegistrant<ImplBe>;
+
+pub(crate) struct ImplBe;
+
+impl AggregatorBe for ImplBe {
     type Args = PercentileArgs;
     type State = PercentileState<Arc<str>>;
 

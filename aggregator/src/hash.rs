@@ -4,10 +4,13 @@ use registry::TwoStringArgs;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use super::AggregatorBe;
+use super::AggregatorRegistrant;
 
-pub struct Impl();
+pub(crate) type Impl = AggregatorRegistrant<ImplBe>;
 
-impl AggregatorBe for Impl {
+pub(crate) struct ImplBe;
+
+impl AggregatorBe for ImplBe {
     type Args = TwoStringArgs;
     type State = BTreeMap<Arc<str>, Record>;
 

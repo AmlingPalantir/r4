@@ -3,12 +3,15 @@ use record::Record;
 use record::RecordTrait;
 use std::sync::Arc;
 use super::AggregatorBe;
+use super::AggregatorRegistrant;
 use super::lexical_percentile::PercentileArgs;
 use super::lexical_percentile::PercentileState;
 
-pub struct Impl();
+pub(crate) type Impl = AggregatorRegistrant<ImplBe>;
 
-impl AggregatorBe for Impl {
+pub(crate) struct ImplBe;
+
+impl AggregatorBe for ImplBe {
     type Args = PercentileArgs;
     type State = PercentileState<F64SortDishonorProxy>;
 

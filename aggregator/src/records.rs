@@ -2,10 +2,13 @@ use record::Record;
 use record::RecordTrait;
 use registry::ZeroArgs;
 use super::AggregatorBe;
+use super::AggregatorRegistrant;
 
-pub struct Impl();
+pub(crate) type Impl = AggregatorRegistrant<ImplBe>;
 
-impl AggregatorBe for Impl {
+pub(crate) struct ImplBe;
+
+impl AggregatorBe for ImplBe {
     type Args = ZeroArgs;
     type State = Vec<Record>;
 

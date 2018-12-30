@@ -5,8 +5,7 @@ use std::collections::HashMap;
 use std::hash::Hash;
 use std::sync::Arc;
 use super::AggregatorBe;
-
-pub struct Impl();
+use super::AggregatorRegistrant;
 
 #[derive(Clone)]
 pub struct DistinctSet<T> {
@@ -40,7 +39,11 @@ impl<T> IntoIterator for DistinctSet<T> {
     }
 }
 
-impl AggregatorBe for Impl {
+pub(crate) type Impl = AggregatorRegistrant<ImplBe>;
+
+pub(crate) struct ImplBe;
+
+impl AggregatorBe for ImplBe {
     type Args = OneStringArgs;
     type State = DistinctSet<Record>;
 

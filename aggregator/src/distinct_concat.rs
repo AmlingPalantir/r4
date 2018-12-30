@@ -3,11 +3,14 @@ use record::RecordTrait;
 use registry::TwoStringArgs;
 use std::sync::Arc;
 use super::AggregatorBe;
+use super::AggregatorRegistrant;
 use super::distinct_array::DistinctSet;
 
-pub struct Impl();
+pub(crate) type Impl = AggregatorRegistrant<ImplBe>;
 
-impl AggregatorBe for Impl {
+pub(crate) struct ImplBe;
+
+impl AggregatorBe for ImplBe {
     type Args = TwoStringArgs;
     type State = DistinctSet<String>;
 

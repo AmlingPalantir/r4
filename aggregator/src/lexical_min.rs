@@ -5,9 +5,8 @@ use std::cmp::Ord;
 use std::cmp::Ordering;
 use std::sync::Arc;
 use super::AggregatorBe;
+use super::AggregatorRegistrant;
 use super::lexical_max::MaxState;
-
-pub struct Impl();
 
 #[derive(Clone)]
 #[derive(Eq)]
@@ -26,7 +25,11 @@ impl<T: Ord> Ord for ReverseOrd<T> {
     }
 }
 
-impl AggregatorBe for Impl {
+pub(crate) type Impl = AggregatorRegistrant<ImplBe>;
+
+pub(crate) struct ImplBe;
+
+impl AggregatorBe for ImplBe {
     type Args = OneStringArgs;
     type State = MaxState<ReverseOrd<Arc<str>>>;
 

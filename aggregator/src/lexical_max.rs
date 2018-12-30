@@ -4,8 +4,7 @@ use registry::OneStringArgs;
 use std::cmp::Ord;
 use std::sync::Arc;
 use super::AggregatorBe;
-
-pub struct Impl();
+use super::AggregatorRegistrant;
 
 #[derive(Clone)]
 pub struct MaxState<K>(Option<(K, Record)>);
@@ -31,7 +30,11 @@ impl<K: Ord> MaxState<K> {
     }
 }
 
-impl AggregatorBe for Impl {
+pub(crate) type Impl = AggregatorRegistrant<ImplBe>;
+
+pub(crate) struct ImplBe;
+
+impl AggregatorBe for ImplBe {
     type Args = OneStringArgs;
     type State = MaxState<Arc<str>>;
 

@@ -4,11 +4,14 @@ use record::RecordTrait;
 use registry::OneStringArgs;
 use std::sync::Arc;
 use super::AggregatorBe;
+use super::AggregatorRegistrant;
 use super::lexical_max::MaxState;
 
-pub struct Impl();
+pub(crate) type Impl = AggregatorRegistrant<ImplBe>;
 
-impl AggregatorBe for Impl {
+pub(crate) struct ImplBe;
+
+impl AggregatorBe for ImplBe {
     type Args = OneStringArgs;
     type State = MaxState<F64SortDishonorProxy>;
 
