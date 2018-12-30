@@ -10,9 +10,9 @@ extern crate registry;
 mod tests;
 
 use record::Record;
-use registry::OneStringArgs;
 use registry::Registrant;
-use registry::RegistryArgs;
+use registry::args::OneStringArgs;
+use registry::args::RegistryArgs;
 use std::sync::Arc;
 
 pub type BoxedSort = Box<SortInbox>;

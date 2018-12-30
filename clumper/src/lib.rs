@@ -7,7 +7,7 @@ extern crate stream;
 
 use record::Record;
 use registry::Registrant;
-use registry::RegistryArgs;
+use registry::args::RegistryArgs;
 use std::rc::Rc;
 use std::sync::Arc;
 use stream::Stream;

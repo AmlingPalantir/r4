@@ -1,5 +1,5 @@
 use record::Record;
-use registry::ZeroArgs;
+use registry::args::ZeroArgs;
 use super::AggregatorBe;
 use super::AggregatorRegistrant;
 

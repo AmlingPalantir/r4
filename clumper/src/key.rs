@@ -1,5 +1,5 @@
 use record::Record;
-use registry::OneStringArgs;
+use registry::args::OneStringArgs;
 use std::collections::HashMap;
 use std::sync::Arc;
 use stream::Entry;

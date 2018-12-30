@@ -6,7 +6,7 @@ extern crate registry;
 
 use record::Record;
 use registry::Registrant;
-use registry::RegistryArgs;
+use registry::args::RegistryArgs;
 use std::sync::Arc;
 
 pub type BoxedDeaggregator = Box<DeaggregatorInbox>;

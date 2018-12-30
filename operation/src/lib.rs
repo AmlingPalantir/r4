@@ -31,7 +31,7 @@ use opts::parser::OptParserView;
 use opts::vals::IntoArcOption;
 use opts::vals::StringVecOption;
 use registry::Registrant;
-use registry::ZeroArgs;
+use registry::args::ZeroArgs;
 use std::sync::Arc;
 use stream::Stream;
 use validates::Validates;

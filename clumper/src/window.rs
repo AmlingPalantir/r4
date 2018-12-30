@@ -1,5 +1,5 @@
 use record::Record;
-use registry::OneIntArgs;
+use registry::args::OneIntArgs;
 use std::collections::VecDeque;
 use std::sync::Arc;
 use stream::Entry;

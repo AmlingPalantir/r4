@@ -1,5 +1,5 @@
 use record::Record;
-use registry::OneUsizeArgs;
+use registry::args::OneUsizeArgs;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;

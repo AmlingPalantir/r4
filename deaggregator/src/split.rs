@@ -1,6 +1,6 @@
 use record::Record;
 use record::RecordTrait;
-use registry::ThreeStringArgs;
+use registry::args::ThreeStringArgs;
 use std::sync::Arc;
 use super::DeaggregatorBe;
 use super::DeaggregatorRegistrant;

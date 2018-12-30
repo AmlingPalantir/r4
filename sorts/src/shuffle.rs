@@ -1,6 +1,6 @@
 use rand::seq::SliceRandom;
 use record::Record;
-use registry::ZeroArgs;
+use registry::args::ZeroArgs;
 use super::SortBe;
 use super::SortRegistrant;
 
