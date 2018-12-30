@@ -78,7 +78,7 @@ impl OperationBe for ImplBe {
                     break;
                 }
             }
-            Box::new(wbe).close();
+            wbe.close();
             // return drops r
         });
 
@@ -88,7 +88,7 @@ impl OperationBe for ImplBe {
                 return s.0.write(e, w);
             },
             |mut s, w| {
-                Box::new(s.0).close(w);
+                s.0.close(w);
                 s.1.wait().unwrap();
             },
         );

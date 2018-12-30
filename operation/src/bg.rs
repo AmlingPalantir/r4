@@ -47,7 +47,7 @@ impl OperationBe for ImplBe {
                     }
                     None => {
                         os.close(&mut |e| wbe.write(e));
-                        Box::new(wbe).close();
+                        wbe.close();
                         return;
                     }
                 }

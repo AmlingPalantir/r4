@@ -46,7 +46,7 @@ impl ClumperBe for ImplBe {
                                     substream.write(Entry::Record(r.clone()), w);
                                 }
 
-                                Box::new(substream).close(w);
+                                substream.close(w);
                             }
                             return true;
                         },
