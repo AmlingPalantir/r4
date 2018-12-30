@@ -236,3 +236,13 @@ impl<P: Validates> Validates for IntoArcOption<P> {
         return Arc::new(self.0.validate());
     }
 }
+
+#[derive(Default)]
+pub struct EmptyOption();
+
+impl Validates for EmptyOption {
+    type Target = ();
+
+    fn validate(self) {
+    }
+}
