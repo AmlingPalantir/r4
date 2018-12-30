@@ -2,10 +2,13 @@ use record::Record;
 use registry::ThreeStringArgs;
 use std::sync::Arc;
 use super::DeaggregatorBe;
+use super::DeaggregatorRegistrant;
 
-pub struct Impl();
+pub(crate) type Impl = DeaggregatorRegistrant<ImplBe>;
 
-impl DeaggregatorBe for Impl {
+pub(crate) struct ImplBe();
+
+impl DeaggregatorBe for ImplBe {
     type Args = ThreeStringArgs;
 
     fn names() -> Vec<&'static str> {

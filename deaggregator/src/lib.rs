@@ -11,9 +11,9 @@ use std::sync::Arc;
 
 registry! {
     Box<DeaggregatorInbox>,
-    //split,
+    split,
     unarray,
-    //unhash,
+    unhash,
 }
 
 trait DeaggregatorBe {
