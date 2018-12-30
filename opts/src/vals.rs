@@ -226,7 +226,6 @@ impl OptionalUsizeOption {
     }
 }
 
-#[derive(Clone)]
 #[derive(Default)]
 pub struct IntoArcOption<P>(pub P);
 
