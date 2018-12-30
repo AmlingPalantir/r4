@@ -1,4 +1,4 @@
-use aggregator::AggregatorInbox;
+use aggregator::BoxedAggregator;
 use opts::parser::OptParserView;
 use opts::vals::UnvalidatedOption;
 use record::Record;
@@ -14,7 +14,7 @@ use validates::Validates;
 #[derive(Default)]
 #[derive(Validates)]
 pub struct Options {
-    aggs: UnvalidatedOption<Vec<(String, Box<AggregatorInbox>)>>,
+    aggs: UnvalidatedOption<Vec<(String, BoxedAggregator)>>,
 }
 
 pub(crate) type Impl = OperationRegistrant<ImplBe>;

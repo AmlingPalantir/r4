@@ -3,7 +3,7 @@ use opts::vals::OptionalUsizeOption;
 use opts::vals::UnvalidatedOption;
 use record::Record;
 use registry::Registrant;
-use sorts::SortInbox;
+use sorts::BoxedSort;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
@@ -14,7 +14,7 @@ use validates::Validates;
 
 #[derive(Default)]
 #[derive(Validates)]
-pub struct SortOptions(UnvalidatedOption<Vec<Box<SortInbox>>>);
+pub struct SortOptions(UnvalidatedOption<Vec<BoxedSort>>);
 
 impl SortOptions {
     pub fn options<'a>(opt: &mut OptParserView<'a, SortOptions>, aliases: &[&str]) {

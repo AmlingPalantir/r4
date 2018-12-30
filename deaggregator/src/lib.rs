@@ -9,8 +9,10 @@ use registry::Registrant;
 use registry::RegistryArgs;
 use std::sync::Arc;
 
+pub type BoxedDeaggregator = Box<DeaggregatorInbox>;
+
 registry! {
-    Box<DeaggregatorInbox>,
+    BoxedDeaggregator,
     split,
     unarray,
     unhash,
@@ -25,11 +27,11 @@ trait DeaggregatorBe {
 
 pub trait DeaggregatorInbox: Send + Sync {
     fn deaggregate(&self, r: Record) -> Vec<Vec<(Arc<str>, Record)>>;
-    fn box_clone(&self) -> Box<DeaggregatorInbox>;
+    fn box_clone(&self) -> BoxedDeaggregator;
 }
 
-impl Clone for Box<DeaggregatorInbox> {
-    fn clone(&self) -> Box<DeaggregatorInbox> {
+impl Clone for BoxedDeaggregator {
+    fn clone(&self) -> BoxedDeaggregator {
         return self.box_clone();
     }
 }
@@ -43,7 +45,7 @@ impl<B: DeaggregatorBe + 'static> DeaggregatorInbox for DeaggregatorInboxImpl<B>
         return B::deaggregate(&self.a, r);
     }
 
-    fn box_clone(&self) -> Box<DeaggregatorInbox> {
+    fn box_clone(&self) -> BoxedDeaggregator {
         return Box::new(DeaggregatorInboxImpl::<B> {
             a: self.a.clone(),
         });
@@ -54,14 +56,14 @@ struct DeaggregatorRegistrant<B: DeaggregatorBe> {
     _b: std::marker::PhantomData<B>,
 }
 
-impl<B: DeaggregatorBe + 'static> Registrant<Box<DeaggregatorInbox>> for DeaggregatorRegistrant<B> {
+impl<B: DeaggregatorBe + 'static> Registrant<BoxedDeaggregator> for DeaggregatorRegistrant<B> {
     type Args = B::Args;
 
     fn names() -> Vec<&'static str> {
         return B::names();
     }
 
-    fn init2(a: <B::Args as RegistryArgs>::Val) -> Box<DeaggregatorInbox> {
+    fn init2(a: <B::Args as RegistryArgs>::Val) -> BoxedDeaggregator {
         return Box::new(DeaggregatorInboxImpl::<B>{
             a: Arc::new(a),
         });

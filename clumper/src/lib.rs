@@ -12,8 +12,10 @@ use std::rc::Rc;
 use std::sync::Arc;
 use stream::Stream;
 
+pub type BoxedClumper = Box<ClumperInbox>;
+
 registry! {
-    Box<ClumperInbox>,
+    BoxedClumper,
     key,
     round_robin,
     window,
@@ -28,11 +30,11 @@ pub trait ClumperBe {
 
 pub trait ClumperInbox: Send + Sync {
     fn stream(&self, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream;
-    fn box_clone(&self) -> Box<ClumperInbox>;
+    fn box_clone(&self) -> BoxedClumper;
 }
 
-impl Clone for Box<ClumperInbox> {
-    fn clone(&self) -> Box<ClumperInbox> {
+impl Clone for BoxedClumper {
+    fn clone(&self) -> BoxedClumper {
         return self.box_clone();
     }
 }
@@ -46,7 +48,7 @@ impl<B: ClumperBe + 'static> ClumperInbox for ClumperInboxImpl<B> {
         return B::stream(&self.a, bsw);
     }
 
-    fn box_clone(&self) -> Box<ClumperInbox> {
+    fn box_clone(&self) -> BoxedClumper {
         return Box::new(ClumperInboxImpl::<B>{
             a: self.a.clone(),
         });
@@ -57,21 +59,21 @@ pub struct ClumperRegistrant<B: ClumperBe> {
     _b: std::marker::PhantomData<B>,
 }
 
-impl<B: ClumperBe + 'static> Registrant<Box<ClumperInbox>> for ClumperRegistrant<B> {
+impl<B: ClumperBe + 'static> Registrant<BoxedClumper> for ClumperRegistrant<B> {
     type Args = B::Args;
 
     fn names() -> Vec<&'static str> {
         return B::names();
     }
 
-    fn init2(a: <B::Args as RegistryArgs>::Val) -> Box<ClumperInbox> {
+    fn init2(a: <B::Args as RegistryArgs>::Val) -> BoxedClumper {
         return Box::new(ClumperInboxImpl::<B>{
             a: Arc::new(a),
         });
     }
 }
 
-pub fn stream<F: Fn(Vec<(Arc<str>, Record)>) -> Stream + 'static>(cws: &Vec<Box<ClumperInbox>>, f: F) -> Stream {
+pub fn stream<F: Fn(Vec<(Arc<str>, Record)>) -> Stream + 'static>(cws: &Vec<BoxedClumper>, f: F) -> Stream {
     let mut bsw: Rc<Fn(Vec<(Arc<str>, Record)>) -> Stream> = Rc::new(f);
 
     bsw = cws.iter().rev().fold(bsw, |bsw, cw| {

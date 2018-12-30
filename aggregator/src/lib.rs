@@ -9,8 +9,10 @@ use registry::Registrant;
 use registry::RegistryArgs;
 use std::sync::Arc;
 
+pub type BoxedAggregator = Box<AggregatorInbox>;
+
 registry! {
-    Box<AggregatorInbox>,
+    BoxedAggregator,
     array,
     average,
     concat,
@@ -54,11 +56,11 @@ trait AggregatorBe {
 pub trait AggregatorInbox: Send + Sync {
     fn add(&mut self, r: Record);
     fn finish(self: Box<Self>) -> Record;
-    fn box_clone(&self) -> Box<AggregatorInbox>;
+    fn box_clone(&self) -> BoxedAggregator;
 }
 
-impl Clone for Box<AggregatorInbox> {
-    fn clone(&self) -> Box<AggregatorInbox> {
+impl Clone for BoxedAggregator {
+    fn clone(&self) -> BoxedAggregator {
         return self.box_clone();
     }
 }
@@ -78,7 +80,7 @@ impl<B: AggregatorBe + 'static> AggregatorInbox for AggregatorInboxImpl<B> {
         return B::finish(Box::new(self.s), &a);
     }
 
-    fn box_clone(&self) -> Box<AggregatorInbox> {
+    fn box_clone(&self) -> BoxedAggregator {
         return Box::new(AggregatorInboxImpl::<B> {
             a: self.a.clone(),
             s: self.s.clone(),
@@ -90,14 +92,14 @@ struct AggregatorRegistrant<B: AggregatorBe> {
     _b: std::marker::PhantomData<B>,
 }
 
-impl<B: AggregatorBe + 'static> Registrant<Box<AggregatorInbox>> for AggregatorRegistrant<B> {
+impl<B: AggregatorBe + 'static> Registrant<BoxedAggregator> for AggregatorRegistrant<B> {
     type Args = B::Args;
 
     fn names() -> Vec<&'static str> {
         return B::names();
     }
 
-    fn init2(a: <B::Args as RegistryArgs>::Val) -> Box<AggregatorInbox> {
+    fn init2(a: <B::Args as RegistryArgs>::Val) -> BoxedAggregator {
         return Box::new(AggregatorInboxImpl::<B>{
             a: Arc::new(a),
             s: B::State::default(),

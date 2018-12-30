@@ -1,4 +1,4 @@
-use deaggregator::DeaggregatorInbox;
+use deaggregator::BoxedDeaggregator;
 use opts::parser::OptParserView;
 use opts::vals::UnvalidatedOption;
 use std::sync::Arc;
@@ -12,7 +12,7 @@ use validates::Validates;
 #[derive(Default)]
 #[derive(Validates)]
 pub struct Options {
-    deaggs: UnvalidatedOption<Vec<Box<DeaggregatorInbox>>>
+    deaggs: UnvalidatedOption<Vec<BoxedDeaggregator>>
 }
 
 pub(crate) type Impl = OperationRegistrant<ImplBe>;

@@ -1,4 +1,4 @@
-use clumper::ClumperInbox;
+use clumper::BoxedClumper;
 use opts::parser::OptParserView;
 use opts::vals::UnvalidatedOption;
 use record::Record;
@@ -10,7 +10,7 @@ use validates::Validates;
 
 #[derive(Default)]
 #[derive(Validates)]
-pub struct ClumperOptions(UnvalidatedOption<Vec<Box<ClumperInbox>>>);
+pub struct ClumperOptions(UnvalidatedOption<Vec<BoxedClumper>>);
 
 impl ClumperOptions {
     pub fn options<'a>(opt: &mut OptParserView<'a, ClumperOptions>) {

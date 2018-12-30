@@ -15,8 +15,10 @@ use registry::Registrant;
 use registry::RegistryArgs;
 use std::sync::Arc;
 
+pub type BoxedSort = Box<SortInbox>;
+
 registry! {
-    Box<SortInbox>,
+    BoxedSort,
     lexical,
     numeric,
     shuffle,
@@ -33,11 +35,11 @@ pub trait SortBe {
 pub trait SortInbox: Send + Sync {
     fn sort(&self, rs: &mut [Record]);
     fn sort_aux<'a>(&self, ct: usize, f: Box<Fn(usize) -> &'a Record + 'a>) -> Vec<usize>;
-    fn box_clone(&self) -> Box<SortInbox>;
+    fn box_clone(&self) -> BoxedSort;
 }
 
-impl Clone for Box<SortInbox> {
-    fn clone(&self) -> Box<SortInbox> {
+impl Clone for BoxedSort {
+    fn clone(&self) -> BoxedSort {
         return self.box_clone();
     }
 }
@@ -55,7 +57,7 @@ impl<B: SortBe + 'static> SortInbox for SortInboxImpl<B> {
         return B::sort_aux(&self.a, ct, f);
     }
 
-    fn box_clone(&self) -> Box<SortInbox> {
+    fn box_clone(&self) -> BoxedSort {
         return Box::new(SortInboxImpl::<B> {
             a: self.a.clone(),
         });
@@ -66,14 +68,14 @@ pub struct SortRegistrant<B: SortBe> {
     _b: std::marker::PhantomData<B>,
 }
 
-impl<B: SortBe + 'static> Registrant<Box<SortInbox>> for SortRegistrant<B> {
+impl<B: SortBe + 'static> Registrant<BoxedSort> for SortRegistrant<B> {
     type Args = B::Args;
 
     fn names() -> Vec<&'static str>{
         return B::names();
     }
 
-    fn init2(a: <B::Args as RegistryArgs>::Val) -> Box<SortInbox> {
+    fn init2(a: <B::Args as RegistryArgs>::Val) -> BoxedSort {
         return Box::new(SortInboxImpl::<B>{
             a: Arc::new(a),
         });

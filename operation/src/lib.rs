@@ -36,8 +36,10 @@ use std::sync::Arc;
 use stream::Stream;
 use validates::Validates;
 
+pub type BoxedOperation = Box<OperationInbox>;
+
 registry! {
-    Box<OperationInbox>,
+    BoxedOperation,
     aggregate,
     bg,
     chain,
@@ -113,14 +115,14 @@ pub struct OperationRegistrant<B: OperationBe> {
     _b: std::marker::PhantomData<B>,
 }
 
-impl<B: OperationBe + 'static> Registrant<Box<OperationInbox>> for OperationRegistrant<B> where <B::Options as Validates>::Target: Send + Sync {
+impl<B: OperationBe + 'static> Registrant<BoxedOperation> for OperationRegistrant<B> where <B::Options as Validates>::Target: Send + Sync {
     type Args = ZeroArgs;
 
     fn names() -> Vec<&'static str> {
         return B::names();
     }
 
-    fn init2(_a: ()) -> Box<OperationInbox> {
+    fn init2(_a: ()) -> BoxedOperation {
         return Box::new(OperationInboxImpl::<B>::default());
     }
 }
