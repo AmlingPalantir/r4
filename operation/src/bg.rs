@@ -33,7 +33,7 @@ impl OperationBe for ImplBe {
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {
-        let (fe, rbe, mut wbe) = bgop::new();
+        let (fe, rbe, wbe) = bgop::new();
 
         thread::spawn(move || {
             let mut os = o.op.wr.stream();

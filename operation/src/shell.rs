@@ -41,7 +41,7 @@ impl OperationBe for ImplBe {
             .spawn()
             .unwrap();
 
-        let (fe, rbe, mut wbe) = bgop::new();
+        let (fe, rbe, wbe) = bgop::new();
         let p_stdin = p.stdin.take().unwrap();
         let p_stdout = p.stdout.take().unwrap();
 

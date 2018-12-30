@@ -51,7 +51,7 @@ pub struct BgopWbe {
 }
 
 impl BgopWbe {
-    pub fn write(&mut self, e: Entry) -> bool {
+    pub fn write(&self, e: Entry) -> bool {
         return self.state.wait(&mut |buffers| {
             if buffers.be_to_fe.rclosed {
                 return (Some(false), false);
@@ -76,7 +76,7 @@ pub struct BgopFe {
 }
 
 impl BgopFe {
-    fn ferry<R, F: FnMut(bool, &mut BgopState) -> Option<R>>(&mut self, f: &mut F, w: &mut FnMut(Entry) -> bool) -> R {
+    fn ferry<R, F: FnMut(bool, &mut BgopState) -> Option<R>>(&self, f: &mut F, w: &mut FnMut(Entry) -> bool) -> R {
         enum Ret<R> {
             Ferry(Vec<Entry>),
             Return(R),
@@ -129,7 +129,7 @@ impl StreamTrait for BgopFe {
         }, w);
     }
 
-    fn close(mut self: Box<BgopFe>, w: &mut FnMut(Entry) -> bool) {
+    fn close(self: Box<BgopFe>, w: &mut FnMut(Entry) -> bool) {
         self.state.write(|buffers| {
             buffers.fe_to_be.closed = true;
         });

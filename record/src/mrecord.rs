@@ -70,7 +70,7 @@ impl MRecord {
         return self._get_path(path.0.iter());
     }
 
-    fn _get_path_fill<'a>(&mut self, mut path: impl Iterator<Item = &'a PathStep<'a>>) -> MRecord {
+    fn _get_path_fill<'a>(&self, mut path: impl Iterator<Item = &'a PathStep<'a>>) -> MRecord {
         match path.next() {
             Some(step) => {
                 let mut n = self.0.lock().unwrap();
@@ -85,11 +85,11 @@ impl MRecord {
         }
     }
 
-    pub fn get_path_fill(&mut self, path: &str) -> MRecord {
+    pub fn get_path_fill(&self, path: &str) -> MRecord {
         return self.get_path_obj_fill(&Path::new(path));
     }
 
-    pub fn get_path_obj_fill<'a>(&mut self, path: &Path<'a>) -> MRecord {
+    pub fn get_path_obj_fill<'a>(&self, path: &Path<'a>) -> MRecord {
         return self._get_path_fill(path.0.iter());
     }
 
@@ -116,7 +116,7 @@ impl MRecord {
         self._set_path(path.0.iter(), v);
     }
 
-    fn _del_path<'a>(&mut self, prev: &'a PathStep<'a>, mut path: impl Iterator<Item = &'a PathStep<'a>>) -> MRecord {
+    fn _del_path<'a>(&self, prev: &'a PathStep<'a>, mut path: impl Iterator<Item = &'a PathStep<'a>>) -> MRecord {
         let mut n = self.0.lock().unwrap();
         let n = (*n).convert_r_mut(|r| {
             return (*r.0).clone().map(MRecord::wrap);
@@ -131,11 +131,11 @@ impl MRecord {
         }
     }
 
-    pub fn del_path(&mut self, path: &str) -> MRecord {
+    pub fn del_path(&self, path: &str) -> MRecord {
         return self.del_path_obj(&Path::new(path));
     }
 
-    pub fn del_path_obj<'a>(&mut self, path: &Path<'a>) -> MRecord {
+    pub fn del_path_obj<'a>(&self, path: &Path<'a>) -> MRecord {
         let mut path = path.0.iter();
         let first = path.next().expect("Delete of empty path?");
         return self._del_path(first, path);
