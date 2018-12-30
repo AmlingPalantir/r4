@@ -76,12 +76,13 @@ pub struct BgopFe {
 }
 
 impl BgopFe {
-    fn ferry<R, F: FnMut(bool, &mut BgopState) -> Option<R>>(&self, f: &mut F, w: &mut FnMut(Entry) -> bool) -> R {
+    fn ferry<R, F: FnMut(bool, &mut BgopState) -> Option<R>>(&self, mut f: F, w: &mut FnMut(Entry) -> bool) -> R {
         enum Ret<R> {
             Ferry(Vec<Entry>),
             Return(R),
         }
         loop {
+            let f = &mut f;
             let ret = self.state.wait(&mut |buffers| {
                 if !buffers.be_to_fe.buf.is_empty() {
                     return (Some(Ret::Ferry(buffers.be_to_fe.buf.drain(..).collect())), true);
@@ -115,7 +116,7 @@ impl BgopFe {
 
 impl StreamTrait for BgopFe {
     fn write(&mut self, e: Entry, w: &mut FnMut(Entry) -> bool) -> bool {
-        return self.ferry(&mut |_os_closed, buffers| {
+        return self.ferry(|_os_closed, buffers| {
             if buffers.fe_to_be.rclosed {
                 return Some(false);
             }
@@ -133,7 +134,7 @@ impl StreamTrait for BgopFe {
         self.state.write(|buffers| {
             buffers.fe_to_be.closed = true;
         });
-        self.ferry(&mut |os_closed, _buffers| {
+        self.ferry(|os_closed, _buffers| {
             if os_closed {
                 return Some(());
             }
