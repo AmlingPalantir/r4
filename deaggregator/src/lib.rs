@@ -5,63 +5,65 @@ extern crate record;
 extern crate registry;
 
 use record::Record;
+use registry::Registrant;
 use registry::RegistryArgs;
 use std::sync::Arc;
 
 registry! {
-    DeaggregatorFe,
-    Box<DeaggregatorState>,
-    split,
+    Box<DeaggregatorInbox>,
+    //split,
     unarray,
-    unhash,
+    //unhash,
 }
 
-pub trait DeaggregatorFe {
-    fn names() -> Vec<&'static str>;
-    fn argct() -> usize;
-    fn init(args: &[&str]) -> Box<DeaggregatorState>;
-}
-
-pub trait DeaggregatorState: Send + Sync {
-    fn deaggregate(&self, r: Record) -> Vec<Vec<(Arc<str>, Record)>>;
-    fn box_clone(&self) -> Box<DeaggregatorState>;
-}
-
-pub trait DeaggregatorBe {
+trait DeaggregatorBe {
     type Args: RegistryArgs;
 
     fn names() -> Vec<&'static str>;
     fn deaggregate(a: &<Self::Args as RegistryArgs>::Val, r: Record) -> Vec<Vec<(Arc<str>, Record)>>;
 }
 
-impl<B: DeaggregatorBe + 'static> DeaggregatorFe for B {
+pub trait DeaggregatorInbox: Send + Sync {
+    fn deaggregate(&self, r: Record) -> Vec<Vec<(Arc<str>, Record)>>;
+    fn box_clone(&self) -> Box<DeaggregatorInbox>;
+}
+
+impl Clone for Box<DeaggregatorInbox> {
+    fn clone(&self) -> Box<DeaggregatorInbox> {
+        return self.box_clone();
+    }
+}
+
+struct DeaggregatorInboxImpl<B: DeaggregatorBe> {
+    a: Arc<<B::Args as RegistryArgs>::Val>,
+}
+
+impl<B: DeaggregatorBe + 'static> DeaggregatorInbox for DeaggregatorInboxImpl<B> {
+    fn deaggregate(&self, r: Record) -> Vec<Vec<(Arc<str>, Record)>> {
+        return B::deaggregate(&self.a, r);
+    }
+
+    fn box_clone(&self) -> Box<DeaggregatorInbox> {
+        return Box::new(DeaggregatorInboxImpl::<B> {
+            a: self.a.clone(),
+        });
+    }
+}
+
+struct DeaggregatorRegistrant<B: DeaggregatorBe> {
+    _b: std::marker::PhantomData<B>,
+}
+
+impl<B: DeaggregatorBe + 'static> Registrant<Box<DeaggregatorInbox>> for DeaggregatorRegistrant<B> {
+    type Args = B::Args;
+
     fn names() -> Vec<&'static str> {
         return B::names();
     }
 
-    fn argct() -> usize {
-        return B::Args::argct();
-    }
-
-    fn init(args: &[&str]) -> Box<DeaggregatorState> {
-        return Box::new(DeaggregatorStateImpl::<B>(Arc::from(B::Args::parse(args))));
-    }
-}
-
-struct DeaggregatorStateImpl<B: DeaggregatorBe>(Arc<<B::Args as RegistryArgs>::Val>);
-
-impl<B: DeaggregatorBe + 'static> DeaggregatorState for DeaggregatorStateImpl<B> {
-    fn deaggregate(&self, r: Record) -> Vec<Vec<(Arc<str>, Record)>> {
-        return B::deaggregate(&self.0, r);
-    }
-
-    fn box_clone(&self) -> Box<DeaggregatorState> {
-        return Box::new(DeaggregatorStateImpl::<B>(self.0.clone()));
-    }
-}
-
-impl Clone for Box<DeaggregatorState> {
-    fn clone(&self) -> Box<DeaggregatorState> {
-        return self.box_clone();
+    fn init2(a: <B::Args as RegistryArgs>::Val) -> Box<DeaggregatorInbox> {
+        return Box::new(DeaggregatorInboxImpl::<B>{
+            a: Arc::new(a),
+        });
     }
 }
