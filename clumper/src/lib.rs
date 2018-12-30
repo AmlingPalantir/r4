@@ -19,7 +19,7 @@ registry! {
     //window,
 }
 
-trait ClumperBe {
+pub trait ClumperBe {
     type Args: RegistryArgs;
 
     fn names() -> Vec<&'static str>;
@@ -53,7 +53,7 @@ impl<B: ClumperBe + 'static> ClumperInbox for ClumperInboxImpl<B> {
     }
 }
 
-struct ClumperRegistrant<B: ClumperBe> {
+pub struct ClumperRegistrant<B: ClumperBe> {
     _b: std::marker::PhantomData<B>,
 }
 

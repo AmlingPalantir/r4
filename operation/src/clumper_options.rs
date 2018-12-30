@@ -1,8 +1,8 @@
-use clumper::ClumperFe;
-use clumper::ClumperWrapper;
+use clumper::ClumperInbox;
 use opts::parser::OptParserView;
 use opts::vals::UnvalidatedOption;
 use record::Record;
+use registry::Registrant;
 use std::rc::Rc;
 use std::sync::Arc;
 use stream::Stream;
@@ -10,7 +10,7 @@ use validates::Validates;
 
 #[derive(Default)]
 #[derive(Validates)]
-pub struct ClumperOptions(UnvalidatedOption<Vec<Box<ClumperWrapper>>>);
+pub struct ClumperOptions(UnvalidatedOption<Vec<Box<ClumperInbox>>>);
 
 impl ClumperOptions {
     pub fn options<'a>(opt: &mut OptParserView<'a, ClumperOptions>) {

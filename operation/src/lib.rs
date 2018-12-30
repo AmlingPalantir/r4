@@ -26,43 +26,38 @@ pub(crate) use self::clumper_options::ClumperOptions;
 mod subop_options;
 pub(crate) use self::subop_options::SubOperationOption;
 
-registry! {
-    OperationFe,
-    Box<Fn(&mut Vec<String>) -> StreamWrapper>,
-    aggregate,
-    bg,
-    chain,
-    collate,
-    decollate,
-    eval,
-    from_lines,
-    from_multi_regex,
-    from_regex,
-    from_split,
-    grep,
-    join,
-    multiplex,
-    shell,
-    sort,
-    to_ptable,
-    to_table,
-    with_files,
-    with_lines,
-    xform,
-}
-
 use opts::parser::OptParser;
 use opts::parser::OptParserView;
 use opts::vals::IntoArcOption;
 use opts::vals::StringVecOption;
+use registry::Registrant;
+use registry::ZeroArgs;
 use std::sync::Arc;
 use stream::Stream;
 use validates::Validates;
 
-pub trait OperationFe {
-    fn names() -> Vec<&'static str>;
-    fn argct() -> usize;
-    fn init(args: &[&str]) -> Box<Fn(&mut Vec<String>) -> StreamWrapper>;
+registry! {
+    Box<OperationInbox>,
+    //aggregate,
+    //bg,
+    //chain,
+    //collate,
+    //decollate,
+    //eval,
+    //from_lines,
+    //from_multi_regex,
+    from_regex,
+    //from_split,
+    //grep,
+    //join,
+    //multiplex,
+    //shell,
+    //sort,
+    //to_ptable,
+    //to_table,
+    //with_files,
+    //with_lines,
+    //xform,
 }
 
 pub struct StreamWrapper(Box<Fn() -> Stream + Send + Sync>);
@@ -77,9 +72,7 @@ impl StreamWrapper {
     }
 }
 
-
-
-pub trait OperationBe {
+trait OperationBe {
     type Options: Validates + Default + 'static;
 
     fn names() -> Vec<&'static str>;
@@ -88,31 +81,54 @@ pub trait OperationBe {
     fn stream(o: Arc<<Self::Options as Validates>::Target>) -> Stream;
 }
 
-impl<B: OperationBe> OperationFe for B where <B::Options as Validates>::Target: Send + Sync {
+pub trait OperationInbox {
+    fn parse(&self, args: &mut Vec<String>) -> StreamWrapper;
+}
+
+struct OperationInboxImpl<B: OperationBe> {
+    _b: std::marker::PhantomData<B>,
+}
+
+impl<B: OperationBe> Default for OperationInboxImpl<B> {
+    fn default() -> Self {
+        return OperationInboxImpl {
+            _b: std::marker::PhantomData::default(),
+        };
+    }
+}
+
+impl<B: OperationBe + 'static> OperationInbox for OperationInboxImpl<B> where <B::Options as Validates>::Target: Send + Sync {
+    fn parse(&self, args: &mut Vec<String>) -> StreamWrapper {
+        let mut opt = OptParser::<B::Options>::default();
+        B::options(&mut opt.view());
+        let o = opt.parse(args).validate();
+        let o = Arc::new(o);
+        *args = B::get_extra(o.clone());
+
+        return StreamWrapper::new(move || B::stream(o.clone()));
+    }
+}
+
+struct OperationRegistrant<B: OperationBe> {
+    _b: std::marker::PhantomData<B>,
+}
+
+impl<B: OperationBe + 'static> Registrant<Box<OperationInbox>> for OperationRegistrant<B> where <B::Options as Validates>::Target: Send + Sync {
+    type Args = ZeroArgs;
+
     fn names() -> Vec<&'static str> {
         return B::names();
     }
 
-    fn argct() -> usize {
-        return 0;
-    }
-
-    fn init(_args: &[&str]) -> Box<Fn(&mut Vec<String>) -> StreamWrapper> {
-        return Box::new(|args| {
-            let mut opt = OptParser::<B::Options>::default();
-            B::options(&mut opt.view());
-            let o = opt.parse(args).validate();
-            let o = Arc::new(o);
-            *args = B::get_extra(o.clone());
-
-            return StreamWrapper::new(move || B::stream(o.clone()));
-        });
+    fn init2(a: ()) -> Box<OperationInbox> {
+        return Box::new(OperationInboxImpl::<B>::default());
     }
 }
 
 
 
-pub trait OperationBe2 {
+
+trait OperationBe2 {
     type Options: Validates + Default + 'static;
 
     fn names() -> Vec<&'static str>;
@@ -122,12 +138,16 @@ pub trait OperationBe2 {
 
 #[derive(Default)]
 #[derive(Validates)]
-pub struct AndArgsOptions<P: Validates> {
+struct AndArgsOptions<P: Validates> {
     p: IntoArcOption<P>,
     args: StringVecOption,
 }
 
-impl<B: OperationBe2> OperationBe for B {
+struct OperationBeForBe2<B: OperationBe2> {
+    _b: std::marker::PhantomData<B>,
+}
+
+impl<B: OperationBe2> OperationBe for OperationBeForBe2<B> {
     type Options = AndArgsOptions<B::Options>;
 
     fn names() -> Vec<&'static str> {

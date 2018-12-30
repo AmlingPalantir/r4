@@ -15,7 +15,7 @@ fn main() {
     args.next().unwrap();
     let op = operation::REGISTRY.find(&args.next().unwrap(), &[]);
     let mut args = args.collect();
-    let op = op(&mut args);
+    let op = op.parse(&mut args);
 
     let mut w = |e| {
         return match e {

@@ -8,9 +8,15 @@ use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
 use super::OperationBe2;
+use super::OperationBeForBe2;
+use super::OperationRegistrant;
 use validates::Validates;
 
-pub struct Impl();
+pub(crate) type Impl = OperationRegistrant<ImplBe>;
+
+pub(crate) type ImplBe = OperationBeForBe2<ImplBe2>;
+
+pub(crate) struct ImplBe2();
 
 #[derive(Default)]
 struct RegexOption(RequiredStringOption);
@@ -30,7 +36,7 @@ pub struct Options {
     keys: StringVecOption,
 }
 
-impl OperationBe2 for Impl {
+impl OperationBe2 for ImplBe2 {
     type Options = Options;
 
     fn names() -> Vec<&'static str> {

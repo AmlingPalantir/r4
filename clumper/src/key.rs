@@ -7,9 +7,9 @@ use stream::Stream;
 use super::ClumperBe;
 use super::ClumperRegistrant;
 
-pub(crate) type Impl = ClumperRegistrant<ImplBe>;
+pub type Impl = ClumperRegistrant<ImplBe>;
 
-pub(crate) struct ImplBe();
+pub struct ImplBe();
 
 impl ClumperBe for ImplBe {
     type Args = OneStringArgs;

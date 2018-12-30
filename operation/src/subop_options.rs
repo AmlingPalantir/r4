@@ -21,7 +21,7 @@ impl Validates for SubOperationOption {
     fn validate(mut self) -> SubOperationOptionValidated {
         let name = self.0.remove(0);
         let op = super::REGISTRY.find(&name, &[]);
-        let wr = op(&mut self.0);
+        let wr = op.parse(&mut self.0);
         return SubOperationOptionValidated {
             extra: self.0,
             wr: Arc::new(wr),
