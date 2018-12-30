@@ -1,4 +1,3 @@
-use misc::Either;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::vec::Vec;
@@ -52,29 +51,16 @@ impl Record {
     }
 
     pub fn del_path(&mut self, path: &str) -> Record {
-        let path = Path::new(path);
-        let x = path.0.iter().fold(
-            Either::Left(self),
-            |e, part| {
-                match e {
-                    Either::Left(r) => {
-                        return Either::Right((r, part));
-                    }
-                    Either::Right((r, prev)) => {
-                        let r = Arc::make_mut(&mut r.0).get_rstep_fill(prev);
-                        return Either::Right((r, part));
-                    }
-                }
+        let mut path = Path::new(path).0.into_iter();
+        let first = path.next().expect("Delete of empty path?");
+        let (r, part) = path.fold(
+            (self, first),
+            |(r, prev), part| {
+                let r = Arc::make_mut(&mut r.0).get_rstep_fill(&prev);
+                return (r, part);
             }
         );
-        match x {
-            Either::Left(_) => {
-                panic!();
-            }
-            Either::Right((r, part)) => {
-                return Arc::make_mut(&mut r.0).del_rpart(part);
-            }
-        }
+        return Arc::make_mut(&mut r.0).del_rpart(&part);
     }
 
     pub fn parse(s: &str) -> Self {
@@ -145,14 +131,14 @@ impl Record {
     pub fn expect_array(&self) -> &Vec<Record> {
         return match *self.0 {
             RecordNode::Array(ref arr) => arr,
-            _ => panic!(),
+            _ => panic!("expect_array() on non-array"),
         };
     }
 
     pub fn expect_hash(&self) -> &BTreeMap<Arc<str>, Record> {
         return match *self.0 {
             RecordNode::Hash(ref hash) => hash,
-            _ => panic!(),
+            _ => panic!("expect_hash() on non-hash"),
         };
     }
 

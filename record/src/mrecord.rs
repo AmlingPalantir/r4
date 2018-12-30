@@ -137,9 +137,7 @@ impl MRecord {
 
     pub fn del_path_obj<'a>(&mut self, path: &Path<'a>) -> MRecord {
         let mut path = path.0.iter();
-        if let Some(first) = path.next() {
-            return self._del_path(first, path);
-        }
-        panic!();
+        let first = path.next().expect("Delete of empty path?");
+        return self._del_path(first, path);
     }
 }

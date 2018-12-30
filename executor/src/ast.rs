@@ -86,8 +86,8 @@ pub fn string_literal(s: &str) -> Box<Expr> {
                     Some('"') => {
                         s.push('"');
                     }
-                    _ => {
-                        panic!();
+                    oc => {
+                        panic!("Unexpected backslash in string literal: {:?}?", oc);
                     }
                 }
             }

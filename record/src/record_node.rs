@@ -77,10 +77,10 @@ pub trait RecordTrait: std::marker::Sized {
                 if let Ok(n) = s.parse() {
                     return Either::Right(n);
                 }
-                panic!();
+                panic!("coerce_num() on unparseable string {}", s);
             }
             _ => {
-                panic!();
+                panic!("coerce_num() on something incoercible");
             }
         }
     }
@@ -92,7 +92,7 @@ pub trait RecordTrait: std::marker::Sized {
             Some(JsonPrimitive::NumberF64(ref f)) => Arc::from(f.0.to_string()),
             Some(JsonPrimitive::NumberI64(i)) => Arc::from(i.to_string()),
             Some(JsonPrimitive::String(ref s)) => s.clone(),
-            _ => panic!(),
+            _ => panic!("coerce_string() on something incoercible"),
         };
     }
 
@@ -112,14 +112,14 @@ pub trait RecordTrait: std::marker::Sized {
             Some(JsonPrimitive::NumberF64(ref f)) => f.0,
             Some(JsonPrimitive::NumberI64(i)) => i as f64,
             Some(JsonPrimitive::String(ref s)) => s.parse().unwrap(),
-            _ => panic!(),
+            _ => panic!("coerce_f64() on something incoercible"),
         };
     }
 
     fn expect_string(&self) -> Arc<str> {
         return match self.maybe_primitive() {
             Some(JsonPrimitive::String(ref s)) => s.clone(),
-            _ => panic!(),
+            _ => panic!("expect_string() on non-string"),
         };
     }
 }
@@ -180,7 +180,7 @@ impl<T: RecordTrait> RecordNode<T> {
                 if let RecordNode::Hash(hash) = self {
                     return hash.entry(Arc::from(*s)).or_insert_with(T::null);
                 }
-                panic!();
+                panic!("hash step on non-hash");
             }
             PathStep::OwnHash(s) => {
                 if let RecordNode::Primitive(JsonPrimitive::Null()) = self {
@@ -189,7 +189,7 @@ impl<T: RecordTrait> RecordNode<T> {
                 if let RecordNode::Hash(hash) = self {
                     return hash.entry(s.clone()).or_insert_with(T::null);
                 }
-                panic!();
+                panic!("hash step on non-hash");
             }
             PathStep::Array(n) => {
                 if let RecordNode::Primitive(JsonPrimitive::Null()) = self {
@@ -201,7 +201,7 @@ impl<T: RecordTrait> RecordNode<T> {
                     }
                     return &mut arr[*n];
                 }
-                panic!();
+                panic!("array step on non-array");
             }
         }
     }
@@ -215,7 +215,7 @@ impl<T: RecordTrait> RecordNode<T> {
                 if let RecordNode::Hash(hash) = self {
                     return hash.remove(s as &str).unwrap_or_else(T::null);
                 }
-                panic!();
+                panic!("delete hash step on non-hash");
             }
             PathStep::OwnHash(s) => {
                 if let RecordNode::Primitive(JsonPrimitive::Null()) = self {
@@ -224,10 +224,10 @@ impl<T: RecordTrait> RecordNode<T> {
                 if let RecordNode::Hash(hash) = self {
                     return hash.remove(s).unwrap_or_else(T::null);
                 }
-                panic!();
+                panic!("delete hash step on non-hash");
             }
             PathStep::Array(_n) => {
-                panic!();
+                panic!("delete array step");
             }
         }
     }

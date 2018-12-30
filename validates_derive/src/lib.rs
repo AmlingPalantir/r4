@@ -73,7 +73,7 @@ pub fn derive_validates(input: TokenStream) -> TokenStream {
                 clone_args = quote! { () };
             },
         },
-        _ => panic!(),
+        _ => panic!("#[derive(Validates)] on something unexpected"),
     };
 
     let vis = &ast.vis;
