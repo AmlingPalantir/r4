@@ -146,19 +146,27 @@ pub fn drop_bof() -> Stream {
     return Stream::new(DropBofStream());
 }
 
-struct ClosuresStream<S>(S, Box<Fn(&mut S, Entry, &mut FnMut(Entry) -> bool) -> bool>, Box<Fn(S, &mut FnMut(Entry) -> bool)>);
+struct ClosuresStream<S, W: Fn(&mut S, Entry, &mut FnMut(Entry) -> bool) -> bool, C: Fn(S, &mut FnMut(Entry) -> bool)> {
+    s: S,
+    w: W,
+    c: C,
+}
 
-impl<S> StreamTrait for ClosuresStream<S> {
+impl<S, W: Fn(&mut S, Entry, &mut FnMut(Entry) -> bool) -> bool, C: Fn(S, &mut FnMut(Entry) -> bool)> StreamTrait for ClosuresStream<S, W, C> {
     fn write(&mut self, e: Entry, w: &mut FnMut(Entry) -> bool) -> bool {
-        return self.1(&mut self.0, e, w);
+        return (self.w)(&mut self.s, e, w);
     }
 
     fn close(self: Box<Self>, w: &mut FnMut(Entry) -> bool) {
         let s = *self;
-        s.2(s.0, w);
+        return (s.c)(s.s, w);
     }
 }
 
 pub fn closures<S: 'static, W: Fn(&mut S, Entry, &mut FnMut(Entry) -> bool) -> bool + 'static, C: Fn(S, &mut FnMut(Entry) -> bool) + 'static>(s: S, w: W, c: C) -> Stream {
-    return Stream::new(ClosuresStream(s, Box::new(w), Box::new(c)));
+    return Stream::new(ClosuresStream {
+        s: s,
+        w: w,
+        c: c,
+    });
 }
