@@ -15,8 +15,8 @@ use stream::Stream;
 registry! {
     Box<ClumperInbox>,
     key,
-    //round_robin,
-    //window,
+    round_robin,
+    window,
 }
 
 pub trait ClumperBe {

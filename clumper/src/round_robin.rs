@@ -4,10 +4,13 @@ use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
 use super::ClumperBe;
+use super::ClumperRegistrant;
 
-pub struct Impl();
+pub type Impl = ClumperRegistrant<ImplBe>;
 
-impl ClumperBe for Impl {
+pub struct ImplBe();
+
+impl ClumperBe for ImplBe {
     type Args = OneUsizeArgs;
 
     fn names() -> Vec<&'static str> {
