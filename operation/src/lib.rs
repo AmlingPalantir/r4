@@ -53,6 +53,7 @@ registry! {
     grep,
     join,
     multiplex,
+    provenance,
     shell,
     sort,
     to_ptable,
