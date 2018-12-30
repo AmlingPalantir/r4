@@ -6,70 +6,72 @@ extern crate registry;
 extern crate stream;
 
 use record::Record;
+use registry::Registrant;
 use registry::RegistryArgs;
 use std::rc::Rc;
 use std::sync::Arc;
 use stream::Stream;
 
 registry! {
-    ClumperFe,
-    Box<ClumperWrapper>,
+    Box<ClumperInbox>,
     key,
-    round_robin,
-    window,
+    //round_robin,
+    //window,
 }
 
-pub trait ClumperFe {
-    fn names() -> Vec<&'static str>;
-    fn argct() -> usize;
-    fn init(args: &[&str]) -> Box<ClumperWrapper>;
-}
-
-pub trait ClumperWrapper: Send + Sync {
-    fn stream(&self, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream;
-    fn box_clone(&self) -> Box<ClumperWrapper>;
-}
-
-pub trait ClumperBe {
+trait ClumperBe {
     type Args: RegistryArgs;
 
     fn names() -> Vec<&'static str>;
     fn stream(a: &<Self::Args as RegistryArgs>::Val, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream;
 }
 
-impl<B: ClumperBe + 'static> ClumperFe for B {
-    fn names() -> Vec<&'static str> {
-        return B::names();
-    }
-
-    fn argct() -> usize {
-        return B::Args::argct();
-    }
-
-    fn init(args: &[&str]) -> Box<ClumperWrapper> {
-        return Box::new(ClumperWrapperImpl::<B>(Arc::from(B::Args::parse(args))));
-    }
+pub trait ClumperInbox: Send + Sync {
+    fn stream(&self, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream;
+    fn box_clone(&self) -> Box<ClumperInbox>;
 }
 
-struct ClumperWrapperImpl<B: ClumperBe>(Arc<<B::Args as RegistryArgs>::Val>);
-
-impl<B: ClumperBe + 'static> ClumperWrapper for ClumperWrapperImpl<B> {
-    fn stream(&self, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream {
-        return B::stream(&self.0, bsw);
-    }
-
-    fn box_clone(&self) -> Box<ClumperWrapper> {
-        return Box::new(ClumperWrapperImpl::<B>(self.0.clone()));
-    }
-}
-
-impl Clone for Box<ClumperWrapper> {
-    fn clone(&self) -> Box<ClumperWrapper> {
+impl Clone for Box<ClumperInbox> {
+    fn clone(&self) -> Box<ClumperInbox> {
         return self.box_clone();
     }
 }
 
-pub fn stream<F: Fn(Vec<(Arc<str>, Record)>) -> Stream + 'static>(cws: &Vec<Box<ClumperWrapper>>, f: F) -> Stream {
+struct ClumperInboxImpl<B: ClumperBe> {
+    a: Arc<<B::Args as RegistryArgs>::Val>,
+}
+
+impl<B: ClumperBe + 'static> ClumperInbox for ClumperInboxImpl<B> {
+    fn stream(&self, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream {
+        return B::stream(&self.a, bsw);
+    }
+
+    fn box_clone(&self) -> Box<ClumperInbox> {
+        return Box::new(ClumperInboxImpl::<B>{
+            a: self.a.clone(),
+        });
+    }
+}
+
+struct ClumperRegistrant<B: ClumperBe> {
+    _b: std::marker::PhantomData<B>,
+}
+
+impl<B: ClumperBe + 'static> Registrant<Box<ClumperInbox>> for ClumperRegistrant<B> {
+    type Args = B::Args;
+
+    fn names() -> Vec<&'static str> {
+        return B::names();
+    }
+
+    fn init2(a: <B::Args as RegistryArgs>::Val) -> Box<ClumperInbox> {
+        return Box::new(ClumperInboxImpl::<B>{
+            a: Arc::new(a),
+        });
+    }
+}
+
+pub fn stream<F: Fn(Vec<(Arc<str>, Record)>) -> Stream + 'static>(cws: &Vec<Box<ClumperInbox>>, f: F) -> Stream {
     let mut bsw: Rc<Fn(Vec<(Arc<str>, Record)>) -> Stream> = Rc::new(f);
 
     bsw = cws.iter().rev().fold(bsw, |bsw, cw| {
