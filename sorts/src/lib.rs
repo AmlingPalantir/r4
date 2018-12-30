@@ -11,30 +11,18 @@ mod tests;
 
 use record::Record;
 use registry::OneStringArgs;
+use registry::Registrant;
 use registry::RegistryArgs;
 use std::sync::Arc;
 
 registry! {
-    SortFe,
-    Box<SortState>,
+    Box<SortInbox>,
     lexical,
     numeric,
     shuffle,
 }
 
-pub trait SortState: Send + Sync {
-    fn sort(&self, rs: &mut [Record]);
-    fn sort_aux<'a>(&self, ct: usize, f: Box<Fn(usize) -> &'a Record + 'a>) -> Vec<usize>;
-    fn box_clone(&self) -> Box<SortState>;
-}
-
-pub trait SortFe {
-    fn names() -> Vec<&'static str>;
-    fn argct() -> usize;
-    fn init(args: &[&str]) -> Box<SortState>;
-}
-
-pub trait SortBe {
+trait SortBe {
     type Args: RegistryArgs;
 
     fn names() -> Vec<&'static str>;
@@ -42,27 +30,23 @@ pub trait SortBe {
     fn sort_aux<'a>(a: &<Self::Args as RegistryArgs>::Val, ct: usize, f: Box<Fn(usize) -> &'a Record + 'a>) -> Vec<usize>;
 }
 
-impl<B: SortBe + 'static> SortFe for B {
-    fn names() -> Vec<&'static str>{
-        return B::names();
-    }
+pub trait SortInbox: Send + Sync {
+    fn sort(&self, rs: &mut [Record]);
+    fn sort_aux<'a>(&self, ct: usize, f: Box<Fn(usize) -> &'a Record + 'a>) -> Vec<usize>;
+    fn box_clone(&self) -> Box<SortInbox>;
+}
 
-    fn argct() -> usize {
-        return B::Args::argct();
-    }
-
-    fn init(args: &[&str]) -> Box<SortState> {
-        return Box::new(SortStateImpl::<B> {
-            a: Arc::from(B::Args::parse(args)),
-        });
+impl Clone for Box<SortInbox> {
+    fn clone(&self) -> Box<SortInbox> {
+        return self.box_clone();
     }
 }
 
-struct SortStateImpl<B: SortBe> {
+struct SortInboxImpl<B: SortBe> {
     a: Arc<<B::Args as RegistryArgs>::Val>,
 }
 
-impl<B: SortBe + 'static> SortState for SortStateImpl<B> {
+impl<B: SortBe + 'static> SortInbox for SortInboxImpl<B> {
     fn sort(&self, rs: &mut [Record]) {
         return B::sort(&self.a, rs);
     }
@@ -71,16 +55,28 @@ impl<B: SortBe + 'static> SortState for SortStateImpl<B> {
         return B::sort_aux(&self.a, ct, f);
     }
 
-    fn box_clone(&self) -> Box<SortState> {
-        return Box::new(SortStateImpl::<B> {
+    fn box_clone(&self) -> Box<SortInbox> {
+        return Box::new(SortInboxImpl::<B> {
             a: self.a.clone(),
         });
     }
 }
 
-impl Clone for Box<SortState> {
-    fn clone(&self) -> Box<SortState> {
-        return self.box_clone();
+struct SortRegistrant<B: SortBe> {
+    _b: std::marker::PhantomData<B>,
+}
+
+impl<B: SortBe + 'static> Registrant<Box<SortInbox>> for SortRegistrant<B> {
+    type Args = B::Args;
+
+    fn names() -> Vec<&'static str>{
+        return B::names();
+    }
+
+    fn init2(a: <B::Args as RegistryArgs>::Val) -> Box<SortInbox> {
+        return Box::new(SortInboxImpl::<B>{
+            a: Arc::new(a),
+        });
     }
 }
 
@@ -91,11 +87,11 @@ pub trait SortSimpleBe {
     fn get(r: Record) -> Self::T;
 }
 
-pub struct SortSimpleBeImpl<B: SortSimpleBe> {
+pub struct SortBeFromSimple<B: SortSimpleBe> {
     _x: std::marker::PhantomData<B>,
 }
 
-impl<B: SortSimpleBe> SortBe for SortSimpleBeImpl<B> {
+impl<B: SortSimpleBe> SortBe for SortBeFromSimple<B> {
     type Args = OneStringArgs;
 
     fn names() -> Vec<&'static str> {
@@ -103,7 +99,7 @@ impl<B: SortSimpleBe> SortBe for SortSimpleBeImpl<B> {
     }
 
     fn sort(a: &Arc<str>, rs: &mut [Record]) {
-        let idxs = SortSimpleBeImpl::<B>::sort_aux(a, rs.len(), Box::new(|i| &rs[i]));
+        let idxs = SortBeFromSimple::<B>::sort_aux(a, rs.len(), Box::new(|i| &rs[i]));
         reorder(rs, &idxs);
     }
 

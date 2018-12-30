@@ -2,10 +2,13 @@ use rand::seq::SliceRandom;
 use record::Record;
 use registry::ZeroArgs;
 use super::SortBe;
+use super::SortRegistrant;
 
-pub struct Impl();
+pub(crate) type Impl = SortRegistrant<ImplBe>;
 
-impl SortBe for Impl {
+pub(crate) struct ImplBe();
+
+impl SortBe for ImplBe {
     type Args = ZeroArgs;
 
     fn names() -> Vec<&'static str> {

@@ -1,14 +1,17 @@
 use record::Record;
 use record::RecordTrait;
 use std::sync::Arc;
+use super::SortBeFromSimple;
+use super::SortRegistrant;
 use super::SortSimpleBe;
-use super::SortSimpleBeImpl;
 
-pub type Impl = SortSimpleBeImpl<SimpleImpl>;
+pub(crate) type Impl = SortRegistrant<ImplBe>;
 
-pub struct SimpleImpl();
+pub(crate) type ImplBe = SortBeFromSimple<ImplSimpleBe>;
 
-impl SortSimpleBe for SimpleImpl {
+pub(crate) struct ImplSimpleBe;
+
+impl SortSimpleBe for ImplSimpleBe {
     type T = Arc<str>;
 
     fn names() -> Vec<&'static str> {
