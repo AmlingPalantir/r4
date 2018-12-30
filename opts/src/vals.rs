@@ -89,12 +89,6 @@ impl<T, P> DefaultedOption<T, P> {
     }
 }
 
-impl<T: Clone, P> DefaultedOption<T, P> {
-    pub fn set_clone(&mut self, t: &T) {
-        self.set(t.clone());
-    }
-}
-
 impl<T> OptionDefaulter<T> for PanicDefaulter {
     fn default() -> T {
         panic!("Missing option");
@@ -142,12 +136,6 @@ impl<T> OptionalOption<T> {
             panic!("OptionalOption specified multiple times");
         }
         self.0 = Some(t);
-    }
-}
-
-impl<T: Clone> OptionalOption<T> {
-    pub fn set_clone(&mut self, t: &T) {
-        self.set(t.clone());
     }
 }
 
