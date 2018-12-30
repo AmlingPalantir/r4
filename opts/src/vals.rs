@@ -114,21 +114,7 @@ pub type RequiredOption<T> = DefaultedOption<T, PanicDefaulter>;
 
 pub type RequiredStringOption = DefaultedStringOption<PanicDefaulter>;
 
-pub struct OptionalOption<T>(Option<T>);
-
-impl<T> Default for OptionalOption<T> {
-    fn default() -> Self {
-        return OptionalOption(None);
-    }
-}
-
-impl<T> Validates for OptionalOption<T> {
-    type Target = Option<T>;
-
-    fn validate(self) -> Option<T> {
-        return self.0;
-    }
-}
+pub type OptionalOption<T> = UnvalidatedOption<Option<T>>;
 
 impl<T> OptionalOption<T> {
     pub fn set(&mut self, t: T) {
