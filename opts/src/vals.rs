@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::sync::Arc;
 use validates::Validates;
 
@@ -166,29 +165,6 @@ impl StringVecOption {
     pub fn maybe_push(&mut self, a: &str) -> bool {
         self.push(a);
         return true;
-    }
-}
-
-#[derive(Default)]
-pub struct StringSetOption(Vec<String>);
-
-impl Validates for StringSetOption {
-    type Target = HashSet<String>;
-
-    fn validate(self) -> HashSet<String> {
-        return self.0.into_iter().collect();
-    }
-}
-
-impl StringSetOption {
-    pub fn push(&mut self, s: &str) {
-        self.0.push(s.to_string());
-    }
-
-    pub fn push_split(&mut self, s: &str) {
-        for a in s.split(',') {
-            self.push(a);
-        }
     }
 }
 
