@@ -87,7 +87,7 @@ impl<R> Registry<R> {
 
 #[macro_export]
 macro_rules! registry {
-    {$fe:ident, $r:ty, $($id:ident,)*} => {
+    {$r:ty, $($id:ident,)*} => {
         $(
             pub mod $id;
         )*
@@ -96,13 +96,30 @@ macro_rules! registry {
             pub static ref REGISTRY: $crate::Registry<$r> = {
                 let mut r = $crate::Registry::default();
                 $(
-                    for name in <$id::Impl as $fe>::names() {
-                        r.add(name, <$id::Impl as $fe>::argct(), <$id::Impl as $fe>::init);
+                    for name in <$id::Impl as $crate::Registrant<$r>>::names() {
+                        r.add(name, <$id::Impl as $crate::Registrant<$r>>::argct(), <$id::Impl as $crate::Registrant<$r>>::init);
                     }
                 )*
                 r
             };
         }
+    }
+}
+
+
+
+pub trait Registrant<R> {
+    type Args: RegistryArgs;
+
+    fn names() -> Vec<&'static str>;
+    fn init2(a: <Self::Args as RegistryArgs>::Val) -> R;
+
+    fn argct() -> usize {
+        return Self::Args::argct();
+    }
+
+    fn init(args: &[&str]) -> R {
+        return Self::init2(Self::Args::parse(args));
     }
 }
 

@@ -5,56 +5,44 @@ extern crate record;
 extern crate registry;
 
 use record::Record;
+use registry::Registrant;
 use registry::RegistryArgs;
 use std::sync::Arc;
 
 registry! {
-    AggregatorFe,
-    Box<AggregatorState>,
-    array,
-    average,
-    concat,
+    Box<AggregatorInbox>,
+    //array,
+    //average,
+    //concat,
     count,
-    count_by,
-    distinct_array,
-    distinct_concat,
-    distinct_count,
-    first,
-    first_record,
-    hash,
-    last,
-    last_record,
-    lexical_max,
-    lexical_min,
-    lexical_percentile,
-    linear_regression,
-    max,
-    min,
-    percentile,
-    record_for_lexical_max,
-    record_for_lexical_min,
-    record_for_lexical_percentile,
-    record_for_max,
-    record_for_min,
-    record_for_percentile,
-    records,
-    standard_deviation,
-    sum,
+    //count_by,
+    //distinct_array,
+    //distinct_concat,
+    //distinct_count,
+    //first,
+    //first_record,
+    //hash,
+    //last,
+    //last_record,
+    //lexical_max,
+    //lexical_min,
+    //lexical_percentile,
+    //linear_regression,
+    //max,
+    //min,
+    //percentile,
+    //record_for_lexical_max,
+    //record_for_lexical_min,
+    //record_for_lexical_percentile,
+    //record_for_max,
+    //record_for_min,
+    //record_for_percentile,
+    //records,
+    //standard_deviation,
+    //sum,
 }
 
-pub trait AggregatorState: Send + Sync {
-    fn add(&mut self, r: Record);
-    fn finish(self: Box<Self>) -> Record;
-    fn box_clone(&self) -> Box<AggregatorState>;
-}
-
-pub trait AggregatorFe {
-    fn names() -> Vec<&'static str>;
-    fn argct() -> usize;
-    fn init(args: &[&str]) -> Box<AggregatorState>;
-}
-
-pub trait AggregatorBe {
+trait AggregatorBe {
     type Args: RegistryArgs;
     type State: Clone + Default + Send + Sync;
 
@@ -63,29 +51,24 @@ pub trait AggregatorBe {
     fn finish(state: Box<Self::State>, a: &<Self::Args as RegistryArgs>::Val) -> Record;
 }
 
-impl<B: AggregatorBe + 'static> AggregatorFe for B {
-    fn names() -> Vec<&'static str>{
-        return B::names();
-    }
+pub trait AggregatorInbox: Send + Sync {
+    fn add(&mut self, r: Record);
+    fn finish(self: Box<Self>) -> Record;
+    fn box_clone(&self) -> Box<AggregatorInbox>;
+}
 
-    fn argct() -> usize {
-        return B::Args::argct();
-    }
-
-    fn init(args: &[&str]) -> Box<AggregatorState> {
-        return Box::new(AggregatorStateImpl::<B> {
-            a: Arc::from(B::Args::parse(args)),
-            s: B::State::default(),
-        });
+impl Clone for Box<AggregatorInbox> {
+    fn clone(&self) -> Box<AggregatorInbox> {
+        return self.box_clone();
     }
 }
 
-struct AggregatorStateImpl<B: AggregatorBe> {
+struct AggregatorInboxImpl<B: AggregatorBe> {
     a: Arc<<B::Args as RegistryArgs>::Val>,
     s: B::State,
 }
 
-impl<B: AggregatorBe + 'static> AggregatorState for AggregatorStateImpl<B> {
+impl<B: AggregatorBe + 'static> AggregatorInbox for AggregatorInboxImpl<B> {
     fn add(&mut self, r: Record) {
         B::add(&mut self.s, &self.a, r);
     }
@@ -95,16 +78,29 @@ impl<B: AggregatorBe + 'static> AggregatorState for AggregatorStateImpl<B> {
         return B::finish(Box::new(self.s), &a);
     }
 
-    fn box_clone(&self) -> Box<AggregatorState> {
-        return Box::new(AggregatorStateImpl::<B> {
+    fn box_clone(&self) -> Box<AggregatorInbox> {
+        return Box::new(AggregatorInboxImpl::<B> {
             a: self.a.clone(),
             s: self.s.clone(),
         });
     }
 }
 
-impl Clone for Box<AggregatorState> {
-    fn clone(&self) -> Box<AggregatorState> {
-        return self.box_clone();
+struct AggregatorRegistrant<B: AggregatorBe> {
+    _b: std::marker::PhantomData<B>,
+}
+
+impl<B: AggregatorBe + 'static> Registrant<Box<AggregatorInbox>> for AggregatorRegistrant<B> {
+    type Args = B::Args;
+
+    fn names() -> Vec<&'static str> {
+        return B::names();
+    }
+
+    fn init2(a: <B::Args as RegistryArgs>::Val) -> Box<AggregatorInbox> {
+        return Box::new(AggregatorInboxImpl::<B>{
+            a: Arc::new(a),
+            s: B::State::default(),
+        });
     }
 }
