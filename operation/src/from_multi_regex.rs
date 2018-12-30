@@ -141,8 +141,7 @@ impl OperationBe2 for ImplBe2 {
                         }
                     }
                 },
-                move |s, w| {
-                    let mut s = *s;
+                move |mut s, w| {
                     if !s.1.clobber {
                         s.0.flush(&s.1, w);
                     }

@@ -87,8 +87,7 @@ impl OperationBe for ImplBe {
             |s, e, w| {
                 return s.0.write(e, w);
             },
-            |s, w| {
-                let mut s = *s;
+            |mut s, w| {
                 Box::new(s.0).close(w);
                 s.1.wait().unwrap();
             },

@@ -105,8 +105,7 @@ impl OperationBe2 for ImplBe2 {
                     }
                     return true;
                 },
-                |s, w| {
-                    let mut s = *s;
+                |mut s, w| {
                     s.o.sorts.sort(&mut s.rs);
                     if let Some(limit) = s.o.partial {
                         s.rs.truncate(limit);
