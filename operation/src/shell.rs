@@ -70,7 +70,7 @@ impl OperationBe for ImplBe {
             }
         });
 
-        thread::spawn(move || {
+        thread::spawn(|| {
             let r = BufReader::new(p_stdout);
             for line in r.lines() {
                 let line = line.unwrap();

@@ -59,7 +59,7 @@ impl OperationBe for ImplBe {
                     None => Record::null(),
                 };
                 let o = self.o.clone();
-                return self.substream.get_or_insert_with(move || {
+                return self.substream.get_or_insert_with(|| {
                     let o = o.clone();
                     return stream::compound(
                         o.op.wr.stream(),

@@ -92,7 +92,7 @@ impl OperationBe2 for ImplBe2 {
             stream::deparse(),
             stream::closures(
                 (State(Record::empty_hash()), o),
-                move |s, e, w| {
+                |s, e, w| {
                     match e {
                         Entry::Bof(file) => {
                             if !s.1.clobber {
@@ -141,7 +141,7 @@ impl OperationBe2 for ImplBe2 {
                         }
                     }
                 },
-                move |mut s, w| {
+                |mut s, w| {
                     if !s.1.clobber {
                         s.0.flush(&s.1, w);
                     }

@@ -116,7 +116,7 @@ impl OperationBe2 for ImplBe2 {
                     }
                     return true;
                 },
-                move |s, w| {
+                |s, w| {
                     let (o, cell_tuples) = s;
 
                     let (xh, xh_width) = HeaderTree::build(&o.xk, &o.xs, cell_tuples.iter().map(|(xs, _ys, _v)| xs));

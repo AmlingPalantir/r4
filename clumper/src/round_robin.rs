@@ -23,7 +23,7 @@ impl ClumperBe for ImplBe {
 
         return stream::closures(
             (substreams, 0),
-            move |s, e, w| {
+            |s, e, w| {
                 match e {
                     Entry::Bof(_file) => {
                         return true;
