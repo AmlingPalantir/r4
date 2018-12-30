@@ -22,7 +22,7 @@ registry! {
     shuffle,
 }
 
-trait SortBe {
+pub trait SortBe {
     type Args: RegistryArgs;
 
     fn names() -> Vec<&'static str>;
@@ -62,7 +62,7 @@ impl<B: SortBe + 'static> SortInbox for SortInboxImpl<B> {
     }
 }
 
-struct SortRegistrant<B: SortBe> {
+pub struct SortRegistrant<B: SortBe> {
     _b: std::marker::PhantomData<B>,
 }
 

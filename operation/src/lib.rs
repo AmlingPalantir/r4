@@ -38,26 +38,26 @@ use validates::Validates;
 
 registry! {
     Box<OperationInbox>,
-    //aggregate,
-    //bg,
-    //chain,
-    //collate,
-    //decollate,
-    //eval,
-    //from_lines,
-    //from_multi_regex,
+    aggregate,
+    bg,
+    chain,
+    collate,
+    decollate,
+    eval,
+    from_lines,
+    from_multi_regex,
     from_regex,
-    //from_split,
-    //grep,
-    //join,
-    //multiplex,
-    //shell,
-    //sort,
-    //to_ptable,
-    //to_table,
-    //with_files,
-    //with_lines,
-    //xform,
+    from_split,
+    grep,
+    join,
+    multiplex,
+    shell,
+    sort,
+    to_ptable,
+    to_table,
+    with_files,
+    with_lines,
+    xform,
 }
 
 pub struct StreamWrapper(Box<Fn() -> Stream + Send + Sync>);
@@ -72,7 +72,7 @@ impl StreamWrapper {
     }
 }
 
-trait OperationBe {
+pub trait OperationBe {
     type Options: Validates + Default + 'static;
 
     fn names() -> Vec<&'static str>;
@@ -109,7 +109,7 @@ impl<B: OperationBe + 'static> OperationInbox for OperationInboxImpl<B> where <B
     }
 }
 
-struct OperationRegistrant<B: OperationBe> {
+pub struct OperationRegistrant<B: OperationBe> {
     _b: std::marker::PhantomData<B>,
 }
 
@@ -120,7 +120,7 @@ impl<B: OperationBe + 'static> Registrant<Box<OperationInbox>> for OperationRegi
         return B::names();
     }
 
-    fn init2(a: ()) -> Box<OperationInbox> {
+    fn init2(_a: ()) -> Box<OperationInbox> {
         return Box::new(OperationInboxImpl::<B>::default());
     }
 }
@@ -128,7 +128,7 @@ impl<B: OperationBe + 'static> Registrant<Box<OperationInbox>> for OperationRegi
 
 
 
-trait OperationBe2 {
+pub trait OperationBe2 {
     type Options: Validates + Default + 'static;
 
     fn names() -> Vec<&'static str>;
@@ -138,12 +138,12 @@ trait OperationBe2 {
 
 #[derive(Default)]
 #[derive(Validates)]
-struct AndArgsOptions<P: Validates> {
+pub struct AndArgsOptions<P: Validates> {
     p: IntoArcOption<P>,
     args: StringVecOption,
 }
 
-struct OperationBeForBe2<B: OperationBe2> {
+pub struct OperationBeForBe2<B: OperationBe2> {
     _b: std::marker::PhantomData<B>,
 }
 

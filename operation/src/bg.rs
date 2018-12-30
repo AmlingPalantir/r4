@@ -3,10 +3,9 @@ use std::sync::Arc;
 use std::thread;
 use stream::Stream;
 use super::OperationBe;
+use super::OperationRegistrant;
 use super::SubOperationOption;
 use validates::Validates;
-
-pub struct Impl();
 
 #[derive(Default)]
 #[derive(Validates)]
@@ -14,7 +13,11 @@ pub struct Options {
     op: SubOperationOption,
 }
 
-impl OperationBe for Impl {
+pub(crate) type Impl = OperationRegistrant<ImplBe>;
+
+pub(crate) struct ImplBe();
+
+impl OperationBe for ImplBe {
     type Options = Options;
 
     fn names() -> Vec<&'static str> {

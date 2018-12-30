@@ -3,11 +3,10 @@ use opts::vals::BooleanOption;
 use std::sync::Arc;
 use stream::Stream;
 use super::OperationBe;
+use super::OperationRegistrant;
 use super::StreamWrapper;
 use super::SubOperationOption;
 use validates::Validates;
-
-pub struct Impl();
 
 #[derive(Default)]
 #[derive(Validates)]
@@ -16,7 +15,11 @@ pub struct Options {
     cmds: CmdsOption,
 }
 
-impl OperationBe for Impl {
+pub(crate) type Impl = OperationRegistrant<ImplBe>;
+
+pub(crate) struct ImplBe();
+
+impl OperationBe for ImplBe {
     type Options = Options;
 
     fn names() -> Vec<&'static str> {

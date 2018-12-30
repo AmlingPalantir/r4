@@ -6,10 +6,9 @@ use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
 use super::OperationBe;
+use super::OperationRegistrant;
 use super::SubOperationOption;
 use validates::Validates;
-
-pub struct Impl();
 
 option_defaulters! {
     FileDefaulter: String => "FILE".to_string(),
@@ -22,7 +21,11 @@ pub struct Options {
     op: SubOperationOption,
 }
 
-impl OperationBe for Impl {
+pub(crate) type Impl = OperationRegistrant<ImplBe>;
+
+pub(crate) struct ImplBe();
+
+impl OperationBe for ImplBe {
     type Options = Options;
 
     fn names() -> Vec<&'static str> {

@@ -2,19 +2,19 @@ use opts::parser::OptParserView;
 use opts::vals::OptionalUsizeOption;
 use opts::vals::UnvalidatedOption;
 use record::Record;
-use sorts::SortFe;
-use sorts::SortState;
+use registry::Registrant;
+use sorts::SortInbox;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
 use super::OperationBe2;
+use super::OperationBeForBe2;
+use super::OperationRegistrant;
 use validates::Validates;
-
-pub struct Impl();
 
 #[derive(Default)]
 #[derive(Validates)]
-pub struct SortOptions(UnvalidatedOption<Vec<Box<SortState>>>);
+pub struct SortOptions(UnvalidatedOption<Vec<Box<SortInbox>>>);
 
 impl SortOptions {
     pub fn options<'a>(opt: &mut OptParserView<'a, SortOptions>, aliases: &[&str]) {
@@ -45,7 +45,13 @@ pub struct Options {
     partial: OptionalUsizeOption,
 }
 
-impl OperationBe2 for Impl {
+pub(crate) type Impl = OperationRegistrant<ImplBe>;
+
+pub(crate) type ImplBe = OperationBeForBe2<ImplBe2>;
+
+pub(crate) struct ImplBe2();
+
+impl OperationBe2 for ImplBe2 {
     type Options = Options;
 
     fn names() -> Vec<&'static str> {

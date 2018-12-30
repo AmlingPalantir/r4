@@ -10,6 +10,8 @@ use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
 use super::OperationBe2;
+use super::OperationBeForBe2;
+use super::OperationRegistrant;
 use validates::Validates;
 
 option_defaulters! {
@@ -47,10 +49,6 @@ pub struct EvalOptions<I: OptionDefaulter<InputType>, O: OptionDefaulter<OutputT
     ret: DefaultedOption<bool, R>,
 }
 
-pub struct EvalImpl<B: EvalBe> {
-    _b: std::marker::PhantomData<B>,
-}
-
 pub trait EvalBe {
     type I: OptionDefaulter<InputType> + Default;
     type O: OptionDefaulter<OutputType> + Default;
@@ -59,7 +57,11 @@ pub trait EvalBe {
     fn names() -> Vec<&'static str>;
 }
 
-impl<B: EvalBe + 'static> OperationBe2 for EvalImpl<B> {
+pub struct EvalBe2<B: EvalBe> {
+    _b: std::marker::PhantomData<B>,
+}
+
+impl<B: EvalBe + 'static> OperationBe2 for EvalBe2<B> {
     type Options = EvalOptions<B::I, B::O, B::R>;
 
     fn names() -> Vec<&'static str> {
@@ -115,6 +117,8 @@ impl<B: EvalBe + 'static> OperationBe2 for EvalImpl<B> {
         );
     }
 }
+
+pub type EvalImpl<B> = OperationRegistrant<OperationBeForBe2<EvalBe2<B>>>;
 
 pub enum EvalBeImpl {
 }

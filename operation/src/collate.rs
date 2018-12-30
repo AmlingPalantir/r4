@@ -4,19 +4,22 @@ use std::sync::Arc;
 use stream::Stream;
 use super::ClumperOptions;
 use super::OperationBe;
+use super::OperationRegistrant;
 use super::aggregate;
 use validates::Validates;
-
-pub struct Impl();
 
 #[derive(Default)]
 #[derive(Validates)]
 pub struct Options {
     cl: ClumperOptions,
-    ag: IntoArcOption<<aggregate::Impl as OperationBe>::Options>,
+    ag: IntoArcOption<<aggregate::ImplBe as OperationBe>::Options>,
 }
 
-impl OperationBe for Impl {
+pub(crate) type Impl = OperationRegistrant<ImplBe>;
+
+pub(crate) struct ImplBe();
+
+impl OperationBe for ImplBe {
     type Options = Options;
 
     fn names() -> Vec<&'static str> {
@@ -25,11 +28,11 @@ impl OperationBe for Impl {
 
     fn options<'a>(opt: &mut OptParserView<'a, Options>) {
         ClumperOptions::options(&mut opt.sub(|p| &mut p.cl));
-        aggregate::Impl::options(&mut opt.sub(|p| &mut p.ag.0));
+        aggregate::ImplBe::options(&mut opt.sub(|p| &mut p.ag.0));
     }
 
     fn get_extra(o: Arc<OptionsValidated>) -> Vec<String> {
-        return aggregate::Impl::get_extra(o.ag.clone());
+        return aggregate::ImplBe::get_extra(o.ag.clone());
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {
@@ -41,7 +44,7 @@ impl OperationBe for Impl {
                 }
                 return r;
             });
-            return stream::compound(aggregate::Impl::stream(o2.ag.clone()), s);
+            return stream::compound(aggregate::ImplBe::stream(o2.ag.clone()), s);
         });
     }
 }

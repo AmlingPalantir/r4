@@ -11,10 +11,13 @@ use std::thread;
 use stream::Entry;
 use stream::Stream;
 use super::OperationBe;
+use super::OperationRegistrant;
 
-pub struct Impl();
+pub(crate) type Impl = OperationRegistrant<ImplBe>;
 
-impl OperationBe for Impl {
+pub(crate) struct ImplBe();
+
+impl OperationBe for ImplBe {
     type Options = StringVecOption;
 
     fn names() -> Vec<&'static str> {

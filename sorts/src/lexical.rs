@@ -5,11 +5,11 @@ use super::SortBeFromSimple;
 use super::SortRegistrant;
 use super::SortSimpleBe;
 
-pub(crate) type Impl = SortRegistrant<ImplBe>;
+pub type Impl = SortRegistrant<ImplBe>;
 
 pub(crate) type ImplBe = SortBeFromSimple<ImplSimpleBe>;
 
-pub(crate) struct ImplSimpleBe;
+pub struct ImplSimpleBe;
 
 impl SortSimpleBe for ImplSimpleBe {
     type T = Arc<str>;
