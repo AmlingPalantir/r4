@@ -20,7 +20,7 @@ impl AggregatorBe for ImplBe {
         state.get_or_insert(r.get_path(a));
     }
 
-    fn finish(state: Box<Option<Record>>, _a: &Arc<str>) -> Record {
+    fn finish(state: Option<Record>, _a: &Arc<str>) -> Record {
         return state.unwrap();
     }
 }

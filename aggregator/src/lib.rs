@@ -50,7 +50,7 @@ trait AggregatorBe {
 
     fn names() -> Vec<&'static str>;
     fn add(state: &mut Self::State, a: &<Self::Args as RegistryArgs>::Val, r: Record);
-    fn finish(state: Box<Self::State>, a: &<Self::Args as RegistryArgs>::Val) -> Record;
+    fn finish(state: Self::State, a: &<Self::Args as RegistryArgs>::Val) -> Record;
 }
 
 pub trait AggregatorInbox: Send + Sync {
@@ -77,7 +77,7 @@ impl<B: AggregatorBe + 'static> AggregatorInbox for AggregatorInboxImpl<B> {
 
     fn finish(self: Box<Self>) -> Record {
         let a = self.a.clone();
-        return B::finish(Box::new(self.s), &a);
+        return B::finish(self.s, &a);
     }
 
     fn box_clone(&self) -> BoxedAggregator {

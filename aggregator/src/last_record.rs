@@ -19,7 +19,7 @@ impl AggregatorBe for ImplBe {
         *state = Some(r);
     }
 
-    fn finish(state: Box<Option<Record>>, _a: &()) -> Record {
+    fn finish(state: Option<Record>, _a: &()) -> Record {
         return state.unwrap();
     }
 }

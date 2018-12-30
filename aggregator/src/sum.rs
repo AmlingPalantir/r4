@@ -22,7 +22,7 @@ impl AggregatorBe for ImplBe {
         *state += v.coerce_f64();
     }
 
-    fn finish(state: Box<f64>, _a: &Arc<str>) -> Record {
-        return Record::from(*state);
+    fn finish(state: f64, _a: &Arc<str>) -> Record {
+        return Record::from(state);
     }
 }

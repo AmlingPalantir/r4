@@ -40,7 +40,7 @@ impl AggregatorBe for ImplBe {
         state.sxy += x * y;
     }
 
-    fn finish(state: Box<State>, _a: &(Arc<str>, Arc<str>)) -> Record {
+    fn finish(state: State, _a: &(Arc<str>, Arc<str>)) -> Record {
         let beta = (state.sxy * state.s1 - state.sx * state.sy) / (state.sx2 * state.s1 - state.sx * state.sx);
         let alpha = (state.sy - beta * state.sx) / state.s1;
 

@@ -25,7 +25,7 @@ impl AggregatorBe for ImplBe {
         state.add(ReverseOrd(F64SortDishonorProxy(v.coerce_f64())), r);
     }
 
-    fn finish(state: Box<MaxState<ReverseOrd<F64SortDishonorProxy>>>, _a: &Arc<str>) -> Record {
+    fn finish(state: MaxState<ReverseOrd<F64SortDishonorProxy>>, _a: &Arc<str>) -> Record {
         return state.finish();
     }
 }

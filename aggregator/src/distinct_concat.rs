@@ -22,7 +22,7 @@ impl AggregatorBe for ImplBe {
         state.add(r.get_path(&a.1).expect_string().to_string());
     }
 
-    fn finish(state: Box<DistinctSet<String>>, a: &(Arc<str>, Arc<str>)) -> Record {
+    fn finish(state: DistinctSet<String>, a: &(Arc<str>, Arc<str>)) -> Record {
         let vs: Vec<_> = state.into_iter().collect();
         return Record::from(vs.join(&a.1));
     }

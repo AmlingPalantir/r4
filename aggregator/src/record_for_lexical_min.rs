@@ -24,7 +24,7 @@ impl AggregatorBe for ImplBe {
         state.add(ReverseOrd(v.expect_string()), r);
     }
 
-    fn finish(state: Box<MaxState<ReverseOrd<Arc<str>>>>, _a: &Arc<str>) -> Record {
+    fn finish(state: MaxState<ReverseOrd<Arc<str>>>, _a: &Arc<str>) -> Record {
         return state.finish();
     }
 }

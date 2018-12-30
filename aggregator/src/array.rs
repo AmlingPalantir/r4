@@ -21,7 +21,7 @@ impl AggregatorBe for ImplBe {
         state.push(r.get_path(a));
     }
 
-    fn finish(state: Box<Vec<Record>>, _a: &Arc<str>) -> Record {
-        return Record::from_vec(*state);
+    fn finish(state: Vec<Record>, _a: &Arc<str>) -> Record {
+        return Record::from_vec(state);
     }
 }

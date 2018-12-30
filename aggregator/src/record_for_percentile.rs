@@ -24,7 +24,7 @@ impl AggregatorBe for ImplBe {
         state.add(F64SortDishonorProxy(v.coerce_f64()), r);
     }
 
-    fn finish(state: Box<PercentileState<F64SortDishonorProxy>>, a: &(f64, Arc<str>)) -> Record {
+    fn finish(state: PercentileState<F64SortDishonorProxy>, a: &(f64, Arc<str>)) -> Record {
         return state.finish(a.0);
     }
 }

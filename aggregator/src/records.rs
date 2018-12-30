@@ -20,7 +20,7 @@ impl AggregatorBe for ImplBe {
         state.push(r);
     }
 
-    fn finish(state: Box<Vec<Record>>, _a: &()) -> Record {
-        return Record::from_vec(*state);
+    fn finish(state: Vec<Record>, _a: &()) -> Record {
+        return Record::from_vec(state);
     }
 }

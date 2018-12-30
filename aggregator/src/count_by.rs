@@ -22,7 +22,7 @@ impl AggregatorBe for ImplBe {
         *state.entry(r.get_path(a).expect_string()).or_insert(0) += 1;
     }
 
-    fn finish(state: Box<HashMap<Arc<str>, i64>>, _a: &Arc<str>) -> Record {
+    fn finish(state: HashMap<Arc<str>, i64>, _a: &Arc<str>) -> Record {
         return Record::from_hash(state.into_iter().map(|(v, ct)| (v, Record::from(ct))).collect());
     }
 }

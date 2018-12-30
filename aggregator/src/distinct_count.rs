@@ -21,7 +21,7 @@ impl AggregatorBe for ImplBe {
         state.add(r.get_path(&a));
     }
 
-    fn finish(state: Box<DistinctSet<Record>>, _a: &Arc<str>) -> Record {
+    fn finish(state: DistinctSet<Record>, _a: &Arc<str>) -> Record {
         return Record::from(state.into_iter().count() as i64);
     }
 }

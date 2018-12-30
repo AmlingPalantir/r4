@@ -22,7 +22,7 @@ impl AggregatorBe for ImplBe {
         state.insert(r.get_path(&a.0).expect_string(), r.get_path(&a.1));
     }
 
-    fn finish(state: Box<BTreeMap<Arc<str>, Record>>, _a: &(Arc<str>, Arc<str>)) -> Record {
-        return Record::from_hash(*state);
+    fn finish(state: BTreeMap<Arc<str>, Record>, _a: &(Arc<str>, Arc<str>)) -> Record {
+        return Record::from_hash(state);
     }
 }

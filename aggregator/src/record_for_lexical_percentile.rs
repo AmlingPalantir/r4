@@ -23,7 +23,7 @@ impl AggregatorBe for ImplBe {
         state.add(v.expect_string(), r);
     }
 
-    fn finish(state: Box<PercentileState<Arc<str>>>, a: &(f64, Arc<str>)) -> Record {
+    fn finish(state: PercentileState<Arc<str>>, a: &(f64, Arc<str>)) -> Record {
         return state.finish(a.0);
     }
 }
