@@ -39,111 +39,84 @@ impl Stream {
     }
 }
 
-struct IdStream();
-
-impl StreamTrait for IdStream {
-    fn write(&mut self, e: Entry, w: &mut FnMut(Entry) -> bool) -> bool {
-        return w(e);
-    }
-
-    fn close(self: Box<Self>, _w: &mut FnMut(Entry) -> bool) {
-    }
-}
-
 pub fn id() -> Stream {
-    return Stream::new(IdStream());
-}
-
-struct CompoundStream(Stream, Stream);
-
-impl StreamTrait for CompoundStream {
-    fn write(&mut self, e: Entry, w: &mut FnMut(Entry) -> bool) -> bool {
-        let s2 = &mut self.1;
-        return self.0.write(e, &mut |e| s2.write(e, w));
-    }
-
-    fn close(self: Box<Self>, w: &mut FnMut(Entry) -> bool) {
-        let s = *self;
-        let mut s2 = s.1;
-        s.0.close(&mut |e| s2.write(e, w));
-        s2.close(w);
-    }
+    return closures(
+        (),
+        |_s, e, w| {
+            return w(e);
+        },
+        |_s, _w| {
+        },
+    );
 }
 
 pub fn compound(s1: Stream, s2: Stream) -> Stream {
-    return Stream::new(CompoundStream(s1, s2));
-}
-
-struct ParseStream();
-
-impl StreamTrait for ParseStream {
-    fn write(&mut self, e: Entry, w: &mut FnMut(Entry) -> bool) -> bool {
-        return w(match e {
-            Entry::Line(line) => Entry::Record(Record::parse(&line)),
-            e => e,
-        });
-    }
-
-    fn close(self: Box<Self>, _w: &mut FnMut(Entry) -> bool) {
-    }
+    return closures(
+        (s1, s2),
+        |(s1, s2), e, w| {
+            return s1.write(e, &mut |e| s2.write(e, w));
+        },
+        |(s1, mut s2), w| {
+            s1.close(&mut |e| s2.write(e, w));
+            s2.close(w);
+        },
+    );
 }
 
 pub fn parse() -> Stream {
-    return Stream::new(ParseStream());
-}
-
-struct DeparseStream();
-
-impl StreamTrait for DeparseStream {
-    fn write(&mut self, e: Entry, w: &mut FnMut(Entry) -> bool) -> bool {
-        return w(match e {
-            Entry::Record(r) => Entry::Line(Arc::from(r.deparse())),
-            e => e,
-        });
-    }
-
-    fn close(self: Box<Self>, _w: &mut FnMut(Entry) -> bool) {
-    }
+    return closures(
+        (),
+        |_s, e, w| {
+            return w(match e {
+                Entry::Line(line) => Entry::Record(Record::parse(&line)),
+                e => e,
+            });
+        },
+        |_s, _w| {
+        },
+    );
 }
 
 pub fn deparse() -> Stream {
-    return Stream::new(DeparseStream());
-}
-
-struct TransformRecordsStream(Box<FnMut(Record) -> Record>);
-
-impl StreamTrait for TransformRecordsStream {
-    fn write(&mut self, e: Entry, w: &mut FnMut(Entry) -> bool) -> bool {
-        return w(match e {
-            Entry::Record(r) => Entry::Record((*self.0)(r)),
-            e => e,
-        });
-    }
-
-    fn close(self: Box<Self>, _w: &mut FnMut(Entry) -> bool) {
-    }
+    return closures(
+        (),
+        |_s, e, w| {
+            return w(match e {
+                Entry::Record(r) => Entry::Line(Arc::from(r.deparse())),
+                e => e,
+            });
+        },
+        |_s, _w| {
+        },
+    );
 }
 
 pub fn transform_records<F: FnMut(Record) -> Record + 'static>(f: F) -> Stream {
-    return Stream::new(TransformRecordsStream(Box::new(f)));
-}
-
-struct DropBofStream();
-
-impl StreamTrait for DropBofStream {
-    fn write(&mut self, e: Entry, w: &mut FnMut(Entry) -> bool) -> bool {
-        return match e {
-            Entry::Bof(_file) => true,
-            e => w(e),
-        };
-    }
-
-    fn close(self: Box<Self>, _w: &mut FnMut(Entry) -> bool) {
-    }
+    return closures(
+        f,
+        |f, e, w| {
+            return w(match e {
+                Entry::Record(r) => Entry::Record(f(r)),
+                e => e,
+            });
+        },
+        |_f, _w| {
+        },
+    );
 }
 
 pub fn drop_bof() -> Stream {
-    return Stream::new(DropBofStream());
+    return closures(
+        (),
+        |_s, e, w| {
+            return match e {
+                Entry::Bof(_file) => true,
+                e => w(e),
+            };
+        },
+        |_s, _w| {
+        },
+    );
 }
 
 struct ClosuresStream<S, W: Fn(&mut S, Entry, &mut FnMut(Entry) -> bool) -> bool, C: Fn(S, &mut FnMut(Entry) -> bool)> {
