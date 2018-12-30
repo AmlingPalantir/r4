@@ -25,11 +25,8 @@ impl Stream {
     pub fn write(&mut self, e: Entry, w: &mut FnMut(Entry) -> bool) -> bool {
         let mut ret = true;
         let ret2 = self.0.write(e, &mut |e| {
-            let r = w(e);
-            if !r {
-                ret = false;
-            }
-            return r;
+            ret &= w(e);
+            return ret;
         });
         return ret && ret2;
     }
