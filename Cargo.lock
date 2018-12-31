@@ -3,6 +3,7 @@ name = "aggregator"
 version = "1.0.0"
 dependencies = [
  "lazy_static 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "misc 1.0.0",
  "record 1.0.0",
  "registry 1.0.0",
 ]
