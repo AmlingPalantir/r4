@@ -8,7 +8,7 @@ enum ExtraHandler<P> {
 }
 
 trait OptParserMatch<P: 'static> {
-    fn match_n(&mut self, aliases: &str, id: Rc<()>, argct: usize, f: Rc<Fn(&mut P, &[String])>);
+    fn match_n(&mut self, alias: &str, id: Rc<()>, argct: usize, f: Rc<Fn(&mut P, &[String])>);
     fn match_extra_soft(&mut self, f: Rc<Fn(&mut P, &str) -> bool>);
     fn match_extra_hard(&mut self, f: Rc<Fn(&mut P, &[String])>);
 }
