@@ -199,7 +199,6 @@ struct HeaderTree {
 impl HeaderTree {
     fn build<'a>(zk: &Vec<String>, zsort: &SortOptionsValidated, zss: impl Iterator<Item = &'a Vec<Record>>) -> (HeaderTree, usize) {
         let mut bucket = zsort.new_bucket();
-        let mut zss_unique = Vec::new();
         let mut already = HashSet::new();
         for zs in zss {
             if already.contains(zs) {
@@ -211,13 +210,11 @@ impl HeaderTree {
             for (k, v) in zk.iter().zip(zs.iter()) {
                 zr.set_path(k, v.clone());
             }
-            bucket.add(zr, zss_unique.len());
-            zss_unique.push(zs);
+            bucket.add(zr, zs);
         }
 
         let mut pht = PreHeaderTree::default();
-        while let Some((_, i)) = bucket.remove_first() {
-            let zs = zss_unique[i];
+        while let Some((_, zs)) = bucket.remove_first() {
             zs.iter().fold(&mut pht, |pht, v| {
                 if let Some(idx) = pht.idxs.get(v) {
                     return &mut pht.arr[*idx].1;
