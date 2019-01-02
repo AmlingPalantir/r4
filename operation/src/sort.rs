@@ -1,9 +1,11 @@
 use opts::parser::OptParserView;
 use opts::vals::OptionalUsizeOption;
 use opts::vals::UnvalidatedOption;
-use record::Record;
 use registry::Registrant;
 use sorts::BoxedSort;
+use sorts::SortBucket;
+use sorts::VecDequeSortBucket;
+use std::rc::Rc;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
@@ -24,17 +26,15 @@ impl SortOptions {
 }
 
 impl SortOptionsValidated {
-    pub fn sort(&self, rs: &mut [Record]) {
-        for sort in self.0.iter().rev() {
-            sort.sort(rs);
-        }
-    }
+    pub fn new_bucket(&self) -> Box<SortBucket> {
+        let f: Rc<Fn() -> Box<SortBucket>> = Rc::new(VecDequeSortBucket::new);
 
-    pub fn sort_aux<T>(&self, rs: &mut [(Record, T)]) {
-        for sort in self.0.iter().rev() {
-            let idxs = sort.sort_aux(rs.len(), Box::new(|i| &rs[i].0));
-            sorts::reorder(rs, &idxs);
-        }
+        let f = self.0.iter().rev().fold(f, |f, sort| {
+            let sort = sort.clone();
+            return Rc::new(move || sort.new_bucket(f.clone()));
+        });
+
+        return f();
     }
 }
 
@@ -76,26 +76,30 @@ impl OperationBe2 for ImplBe2 {
     fn stream(o: Arc<OptionsValidated>) -> Stream {
         struct State {
             o: Arc<OptionsValidated>,
-            rs: Vec<Record>,
+            ri: usize,
+            rs: Box<SortBucket>,
         }
+
+        let rs = o.sorts.new_bucket();
 
         return stream::compound(
             stream::parse(),
             stream::closures(
                 State {
                     o: o,
-                    rs: Vec::new(),
+                    ri: 0,
+                    rs: rs,
                 },
                 |s, e, _w| {
                     match e {
                         Entry::Bof(_file) => {
                         }
                         Entry::Record(r) => {
-                            s.rs.push(r);
+                            s.rs.add(r, s.ri);
+                            s.ri += 1;
                             if let Some(limit) = s.o.partial {
-                                if s.rs.len() >= 2 * limit {
-                                    s.o.sorts.sort(&mut s.rs);
-                                    s.rs.truncate(limit);
+                                if s.ri > limit {
+                                    s.rs.remove_last();
                                 }
                             }
                         }
@@ -106,11 +110,7 @@ impl OperationBe2 for ImplBe2 {
                     return true;
                 },
                 |mut s, w| {
-                    s.o.sorts.sort(&mut s.rs);
-                    if let Some(limit) = s.o.partial {
-                        s.rs.truncate(limit);
-                    }
-                    for r in s.rs {
+                    while let Some((r, _)) = s.rs.remove_first() {
                         if !w(Entry::Record(r)) {
                             return;
                         }

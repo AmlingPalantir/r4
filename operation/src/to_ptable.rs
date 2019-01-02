@@ -198,24 +198,26 @@ struct HeaderTree {
 
 impl HeaderTree {
     fn build<'a>(zk: &Vec<String>, zsort: &SortOptionsValidated, zss: impl Iterator<Item = &'a Vec<Record>>) -> (HeaderTree, usize) {
-        let mut pairs = Vec::new();
+        let mut bucket = zsort.new_bucket();
+        let mut zss_unique = Vec::new();
         let mut already = HashSet::new();
         for zs in zss {
             if already.contains(zs) {
                 continue;
             }
-            already.insert(zs.clone());
+            already.insert(zs);
+
             let mut zr = Record::empty_hash();
             for (k, v) in zk.iter().zip(zs.iter()) {
                 zr.set_path(k, v.clone());
             }
-            pairs.push((zr, zs));
+            bucket.add(zr, zss_unique.len());
+            zss_unique.push(zs);
         }
 
-        zsort.sort_aux(&mut pairs);
-
         let mut pht = PreHeaderTree::default();
-        for (_, zs) in pairs {
+        while let Some((_, i)) = bucket.remove_first() {
+            let zs = zss_unique[i];
             zs.iter().fold(&mut pht, |pht, v| {
                 if let Some(idx) = pht.idxs.get(v) {
                     return &mut pht.arr[*idx].1;
