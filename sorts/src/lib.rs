@@ -25,11 +25,32 @@ registry! {
     shuffle,
 }
 
+pub enum SortBucketSide {
+    Front(),
+    Back(),
+}
+
+impl SortBucketSide {
+    fn next<T, I: DoubleEndedIterator<Item = T>>(&self, i: &mut I) -> Option<T> {
+        return match self {
+            SortBucketSide::Front() => i.next(),
+            SortBucketSide::Back() => i.next_back(),
+        };
+    }
+}
+
 pub trait SortBucket {
     fn add(&mut self, r: Record, i: usize);
-    fn remove_first(&mut self) -> Option<(Record, usize)>;
-    fn remove_last(&mut self) -> Option<(Record, usize)>;
+    fn remove_from(&mut self, side: SortBucketSide) -> Option<(Record, usize)>;
     fn is_empty(&self) -> bool;
+
+    fn remove_last(&mut self) -> Option<(Record, usize)> {
+        return self.remove_from(SortBucketSide::Back());
+    }
+
+    fn remove_first(&mut self) -> Option<(Record, usize)> {
+        return self.remove_from(SortBucketSide::Front());
+    }
 }
 
 struct KeySortBucket<T: Clone + Ord, F: Fn(Record, usize) -> T> {
@@ -45,55 +66,22 @@ impl<T: Clone + Ord, F: Fn(Record, usize) -> T> SortBucket for KeySortBucket<T, 
         self.map.entry(t).or_insert_with(|| next()).add(r, i);
     }
 
-    fn remove_first(&mut self) -> Option<(Record, usize)> {
-        let first_t;
-        match self.map.keys().next() {
-            Some(t) => {
-                first_t = t.clone();
-            }
-            None => {
-                return None;
-            }
+    fn remove_from(&mut self, side: SortBucketSide) -> Option<(Record, usize)> {
+        let t = match side.next(&mut self.map.keys()) {
+            Some(t) => t.clone(),
+            None => return None,
+        };
+
+        let mut next = self.map.remove(&t).unwrap();
+        assert!(!next.is_empty());
+
+        let ret = next.remove_from(side);
+        assert!(ret.is_some());
+
+        if !next.is_empty() {
+            self.map.insert(t, next);
         }
 
-        let ret;
-        let remove;
-        {
-            let next = self.map.get_mut(&first_t).unwrap();
-            assert!(!next.is_empty());
-            ret = next.remove_first();
-            remove = next.is_empty();
-        }
-
-        if remove {
-            self.map.remove(&first_t);
-        }
-        return ret;
-    }
-
-    fn remove_last(&mut self) -> Option<(Record, usize)> {
-        let last_t;
-        match self.map.keys().rev().next() {
-            Some(t) => {
-                last_t = t.clone();
-            }
-            None => {
-                return None;
-            }
-        }
-
-        let ret;
-        let remove;
-        {
-            let next = self.map.get_mut(&last_t).unwrap();
-            assert!(!next.is_empty());
-            ret = next.remove_last();
-            remove = next.is_empty();
-        }
-
-        if remove {
-            self.map.remove(&last_t);
-        }
         return ret;
     }
 
@@ -120,12 +108,11 @@ impl SortBucket for VecDequeSortBucket {
         self.0.push_back((r, i));
     }
 
-    fn remove_first(&mut self) -> Option<(Record, usize)> {
-        return self.0.pop_front();
-    }
-
-    fn remove_last(&mut self) -> Option<(Record, usize)> {
-        return self.0.pop_back();
+    fn remove_from(&mut self, side: SortBucketSide) -> Option<(Record, usize)> {
+        return match side {
+            SortBucketSide::Front() => self.0.pop_front(),
+            SortBucketSide::Back() => self.0.pop_back(),
+        };
     }
 
     fn is_empty(&self) -> bool {
