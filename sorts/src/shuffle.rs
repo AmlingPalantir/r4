@@ -3,10 +3,10 @@ use registry::args::ZeroArgs;
 use std::cmp::Ordering;
 use std::rc::Rc;
 use std::sync::Mutex;
-use super::KeySortBucket;
 use super::SortBe;
-use super::SortBucket;
 use super::SortRegistrant;
+use super::bucket::KeySortBucket;
+use super::bucket::SortBucket;
 
 #[derive(Clone)]
 #[derive(Default)]
