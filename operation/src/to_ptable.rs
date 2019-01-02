@@ -12,8 +12,8 @@ use stream::Stream;
 use super::OperationBe2;
 use super::OperationBeForBe2;
 use super::OperationRegistrant;
-use super::sort::SortOptions;
-use super::sort::SortOptionsValidated;
+use super::SortOptions;
+use super::SortOptionsValidated;
 use validates::Validates;
 
 #[derive(Default)]

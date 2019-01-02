@@ -26,6 +26,11 @@ pub(crate) use self::clumper_options::ClumperOptions;
 mod subop_options;
 pub(crate) use self::subop_options::SubOperationOption;
 
+mod sort_options;
+pub(crate) use self::sort_options::GenericSortBucket;
+pub(crate) use self::sort_options::SortOptions;
+pub(crate) use self::sort_options::SortOptionsValidated;
+
 use opts::parser::OptParser;
 use opts::parser::OptParserView;
 use opts::vals::IntoArcOption;
