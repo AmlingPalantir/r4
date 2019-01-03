@@ -119,8 +119,8 @@ impl OperationBe2 for ImplBe2 {
                 |s, w| {
                     let (o, cell_tuples) = s;
 
-                    let (xh, xh_width) = HeaderTree::build(&o.xk, &o.xs, cell_tuples.iter().map(|(xs, _ys, _v)| xs));
-                    let (yh, yh_width) = HeaderTree::build(&o.yk, &o.ys, cell_tuples.iter().map(|(_xs, ys, _v)| ys));
+                    let (xh, xh_width) = build_header_tree(&o.xk, &o.xs, cell_tuples.iter().map(|(xs, _ys, _v)| xs));
+                    let (yh, yh_width) = build_header_tree(&o.yk, &o.ys, cell_tuples.iter().map(|(_xs, ys, _v)| ys));
 
                     let width = o.yk.len() + 1 + xh_width;
                     let height = o.xk.len() + 1 + yh_width;
@@ -134,12 +134,12 @@ impl OperationBe2 for ImplBe2 {
                         cells[o.xk.len()][i] = (k.to_string(), ' ');
                     }
 
-                    xh.visit_cells(0, &mut |width, depth, v| cells[depth][o.yk.len() + 1 + width] = (v.pretty_string(), ' '));
-                    yh.visit_cells(0, &mut |width, depth, v| cells[o.xk.len() + 1 + width][depth] = (v.pretty_string(), ' '));
+                    xh.visit(0, &mut |width, depth, v| cells[depth][o.yk.len() + 1 + width] = (v.pretty_string(), ' '));
+                    yh.visit(0, &mut |width, depth, v| cells[o.xk.len() + 1 + width][depth] = (v.pretty_string(), ' '));
 
                     for (xs, ys, v) in cell_tuples.iter() {
-                        let x = o.yk.len() + 1 + xh.width(&xs);
-                        let y = o.xk.len() + 1 + yh.width(&ys);
+                        let x = o.yk.len() + 1 + xh.tag(&xs);
+                        let y = o.xk.len() + 1 + yh.tag(&ys);
                         cells[y][x] = (v.pretty_string(), ' ');
                     }
 
@@ -168,79 +168,81 @@ impl OperationBe2 for ImplBe2 {
 }
 
 #[derive(Default)]
-struct PreHeaderTree {
-    arr: Vec<(Record, PreHeaderTree)>,
+struct HeaderTree<T> {
+    arr: Vec<(Record, HeaderTree<T>)>,
     idxs: HashMap<Record, usize>,
+    tag: T,
 }
 
-impl PreHeaderTree {
-    fn rebuild(self, width: &mut usize) -> HeaderTree {
+impl<T: Default> HeaderTree<T> {
+    fn touch(&mut self, zs: &[Record]) {
+        zs.iter().fold(self, |pht, v| {
+            if let Some(idx) = pht.idxs.get(v) {
+                return &mut pht.arr[*idx].1;
+            }
+            let idx = pht.arr.len();
+            pht.arr.push((v.clone(), HeaderTree::default()));
+            pht.idxs.insert(v.clone(), idx);
+            return &mut pht.arr[idx].1;
+        });
+    }
+}
+
+impl<T: Clone> HeaderTree<T> {
+    fn visit<F: FnMut(T, usize, &Record)>(&self, depth: usize, f: &mut F) {
+        for (v, ht) in self.arr.iter() {
+            f(ht.tag.clone(), depth, v);
+            ht.visit(depth + 1, f);
+        }
+    }
+
+    fn tag(&self, zs: &Vec<Record>) -> T {
+        return zs.iter().fold(self, |ht, v| {
+            return &ht.arr[ht.idxs[v]].1;
+        }).tag.clone();
+    }
+}
+
+impl<T> HeaderTree<T> {
+    fn retag_width<S: Clone, F: FnMut(T, usize, usize) -> S>(self, width: &mut usize, f: &mut F) -> HeaderTree<S> {
         let width0 = *width;
         let arr: Vec<_> = self.arr.into_iter().map(|(v, pht)| {
-            return (v, pht.rebuild(width));
+            return (v, pht.retag_width(width, f));
         }).collect();
         if arr.is_empty() {
             *width += 1;
         }
+        let width1 = *width;
         return HeaderTree {
             arr: arr,
             idxs: self.idxs,
-            width0: width0,
+            tag: f(self.tag, width0, width1),
         };
     }
 }
 
-struct HeaderTree {
-    arr: Vec<(Record, HeaderTree)>,
-    idxs: HashMap<Record, usize>,
-    width0: usize,
-}
-
-impl HeaderTree {
-    fn build<'a>(zk: &Vec<String>, zsort: &SortOptionsValidated, zss: impl Iterator<Item = &'a Vec<Record>>) -> (HeaderTree, usize) {
-        let mut bucket = zsort.new_bucket();
-        let mut already = HashSet::new();
-        for zs in zss {
-            if already.contains(zs) {
-                continue;
-            }
-            already.insert(zs);
-
-            let mut zr = Record::empty_hash();
-            for (k, v) in zk.iter().zip(zs.iter()) {
-                zr.set_path(k, v.clone());
-            }
-            bucket.add(zr, zs);
+fn build_header_tree<'a>(zk: &Vec<String>, zsort: &SortOptionsValidated, zss: impl Iterator<Item = &'a Vec<Record>>) -> (HeaderTree<usize>, usize) {
+    let mut bucket = zsort.new_bucket();
+    let mut already = HashSet::new();
+    for zs in zss {
+        if already.contains(zs) {
+            continue;
         }
+        already.insert(zs);
 
-        let mut pht = PreHeaderTree::default();
-        while let Some((_, zs)) = bucket.remove_first() {
-            zs.iter().fold(&mut pht, |pht, v| {
-                if let Some(idx) = pht.idxs.get(v) {
-                    return &mut pht.arr[*idx].1;
-                }
-                let idx = pht.arr.len();
-                pht.arr.push((v.clone(), PreHeaderTree::default()));
-                pht.idxs.insert(v.clone(), idx);
-                return &mut pht.arr[idx].1;
-            });
+        let mut zr = Record::empty_hash();
+        for (k, v) in zk.iter().zip(zs.iter()) {
+            zr.set_path(k, v.clone());
         }
-
-        let mut width = 0;
-        let ht = pht.rebuild(&mut width);
-        return (ht, width);
+        bucket.add(zr, zs);
     }
 
-    fn visit_cells<F: FnMut(usize, usize, &Record)>(&self, depth: usize, f: &mut F) {
-        for (v, ht) in self.arr.iter() {
-            f(ht.width0, depth, v);
-            ht.visit_cells(depth + 1, f);
-        }
+    let mut pht = HeaderTree::<()>::default();
+    while let Some((_, zs)) = bucket.remove_first() {
+        pht.touch(zs);
     }
 
-    fn width(&self, zs: &Vec<Record>) -> usize {
-        return zs.iter().fold(self, |ht, v| {
-            return &ht.arr[ht.idxs[v]].1;
-        }).width0;
-    }
+    let mut width = 0;
+    let ht = pht.retag_width(&mut width, &mut |(), width0, _width1| width0);
+    return (ht, width);
 }
