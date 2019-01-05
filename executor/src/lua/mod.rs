@@ -123,6 +123,9 @@ fn from_lua(lua: &Lua, v: Value) -> MRecord {
 pub fn stream(code: &str, ret: bool) -> Box<FnMut(Record) -> Record> {
     let code = code.to_string();
     let lua = Lua::new();
+    lua.globals().set("arr", lua.create_function(|lua, t: rlua::Table| {
+        return MRecordHolder(MRecord::from_vec(t.sequence_values().map(|v| from_lua(lua, v.unwrap())).collect())).to_lua(lua);
+    }).unwrap()).unwrap();
     return Box::new(move |r| {
         lua.globals().set("r", MRecordHolder(MRecord::wrap(r))).unwrap();
         let r: Value;

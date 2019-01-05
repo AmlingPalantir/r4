@@ -45,3 +45,8 @@ fn test_to_lua() {
     test_one(r#"{"x":1}"#, r#"r["x"] = r["x"] + 1"#, r#"{"x":2}"#);
     test_one(r#"{"x":"1"}"#, r#"r["x"] = r["x"] + 1"#, r#"{"x":2}"#);
 }
+
+#[test]
+fn test_arr() {
+    test_one(r#"{}"#, r#"r["a"] = arr({1, "b"})"#, r#"{"a":[1,"b"]}"#);
+}
