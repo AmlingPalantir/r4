@@ -8,6 +8,7 @@ mod path;
 pub use self::path::OwnPath;
 pub use self::path::Path;
 pub use self::path::PathStep;
+pub(crate) use self::path::RPathStep;
 
 mod json_primitive;
 pub use self::json_primitive::JsonPrimitive;

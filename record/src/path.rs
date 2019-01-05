@@ -7,6 +7,21 @@ pub enum PathStep<'a> {
     Array(usize),
 }
 
+pub(crate) enum RPathStep<'a> {
+    Hash(&'a str),
+    Array(usize),
+}
+
+impl<'a> PathStep<'a> {
+    pub(crate) fn as_r<'b>(&'b self) -> RPathStep<'b> where 'a: 'b {
+        return match self {
+            PathStep::RefHash(s) => RPathStep::Hash(s),
+            PathStep::OwnHash(s) => RPathStep::Hash(s),
+            PathStep::Array(n) => RPathStep::Array(*n),
+        };
+    }
+}
+
 pub struct Path<'a>(pub(crate) Vec<PathStep<'a>>);
 pub type OwnPath = Path<'static>;
 

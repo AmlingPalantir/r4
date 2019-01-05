@@ -4,6 +4,7 @@ use std::sync::Arc;
 use std::vec::Vec;
 use super::JsonPrimitive;
 use super::PathStep;
+use super::RPathStep;
 
 #[derive(Clone)]
 #[derive(Eq)]
@@ -126,22 +127,16 @@ pub trait RecordTrait: std::marker::Sized {
 
 impl<T: RecordTrait> RecordNode<T> {
     pub fn get_rstep(&self, step: &PathStep) -> Option<&T> {
-        match step {
-            PathStep::RefHash(s) => {
-                if let RecordNode::Hash(hash) = self {
-                    return hash.get(*s);
-                }
-                panic!("hash step on non-hash");
-            }
-            PathStep::OwnHash(s) => {
+        match step.as_r() {
+            RPathStep::Hash(s) => {
                 if let RecordNode::Hash(hash) = self {
                     return hash.get(s);
                 }
                 panic!("hash step on non-hash");
             }
-            PathStep::Array(n) => {
+            RPathStep::Array(n) => {
                 if let RecordNode::Array(arr) = self {
-                    return arr.get(*n);
+                    return arr.get(n);
                 }
                 panic!("array step on non-array");
             }
@@ -149,22 +144,16 @@ impl<T: RecordTrait> RecordNode<T> {
     }
 
     pub fn get_rstep_mut(&mut self, step: &PathStep) -> Option<&mut T> {
-        match step {
-            PathStep::RefHash(s) => {
-                if let RecordNode::Hash(hash) = self {
-                    return hash.get_mut(*s);
-                }
-                panic!("hash step on non-hash");
-            }
-            PathStep::OwnHash(s) => {
+        match step.as_r() {
+            RPathStep::Hash(s) => {
                 if let RecordNode::Hash(hash) = self {
                     return hash.get_mut(s);
                 }
                 panic!("hash step on non-hash");
             }
-            PathStep::Array(n) => {
+            RPathStep::Array(n) => {
                 if let RecordNode::Array(arr) = self {
-                    return arr.get_mut(*n);
+                    return arr.get_mut(n);
                 }
                 panic!("array step on non-array");
             }
@@ -172,6 +161,9 @@ impl<T: RecordTrait> RecordNode<T> {
     }
 
     pub fn get_rstep_fill(&mut self, step: &PathStep) -> &mut T {
+        // We don't as_r() because we want to avoid making our own Arc in the
+        // OwnHash case (preferring to take another reference to the existing
+        // one).
         match step {
             PathStep::RefHash(s) => {
                 if let RecordNode::Primitive(JsonPrimitive::Null()) = self {
@@ -207,8 +199,8 @@ impl<T: RecordTrait> RecordNode<T> {
     }
 
     pub fn del_rpart(&mut self, step: &PathStep) -> T {
-        match step {
-            PathStep::RefHash(s) => {
+        match step.as_r() {
+            RPathStep::Hash(s) => {
                 if let RecordNode::Primitive(JsonPrimitive::Null()) = self {
                     *self = RecordNode::Hash(BTreeMap::new());
                 }
@@ -217,16 +209,7 @@ impl<T: RecordTrait> RecordNode<T> {
                 }
                 panic!("delete hash step on non-hash");
             }
-            PathStep::OwnHash(s) => {
-                if let RecordNode::Primitive(JsonPrimitive::Null()) = self {
-                    *self = RecordNode::Hash(BTreeMap::new());
-                }
-                if let RecordNode::Hash(hash) = self {
-                    return hash.remove(s).unwrap_or_else(T::null);
-                }
-                panic!("delete hash step on non-hash");
-            }
-            PathStep::Array(_n) => {
+            RPathStep::Array(_n) => {
                 panic!("delete array step");
             }
         }
