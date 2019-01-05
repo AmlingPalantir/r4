@@ -13,7 +13,7 @@ mod json_primitive;
 pub(crate) use self::json_primitive::JsonPrimitive;
 
 mod record_node;
-pub(crate) use self::record_node::RecordNode;
+pub use self::record_node::RecordNode;
 pub use self::record_node::RecordTrait;
 
 mod record;

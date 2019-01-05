@@ -11,3 +11,4 @@ misc = { path = "../misc" }
 record = { path = "../record" }
 lalrpop-util = "0.16.2"
 regex = "1"
+rlua = "0.15.3"

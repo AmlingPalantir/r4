@@ -140,4 +140,12 @@ impl MRecord {
         let first = path.next().expect("Delete of empty path?");
         return self._del_path(first, path);
     }
+
+    pub fn visit_converted<R, F: FnOnce(&mut RecordNode<MRecord>) -> R>(&self, f: F) -> R {
+        let mut n = self.0.lock().unwrap();
+        let n = (*n).convert_r_mut(|r| {
+            return (*r.0).clone().map(MRecord::wrap);
+        });
+        return f(n);
+    }
 }
