@@ -4,6 +4,7 @@ use std::sync::Arc;
 use record::Path;
 use record::OwnPath;
 
+#[derive(Debug)]
 pub enum Expr {
     Statement(Vec<Box<Expr>>),
     Ternary(Box<Expr>, Box<Expr>, Box<Expr>),
@@ -20,11 +21,13 @@ pub enum Expr {
     ReadVar(Arc<str>),
 }
 
+#[derive(Debug)]
 pub enum UnaryOp {
     LogNeg(),
     NumNeg(),
 }
 
+#[derive(Debug)]
 pub enum BinaryOp {
     LogOr(),
     LogAnd(),

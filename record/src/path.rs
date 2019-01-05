@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use std::vec::Vec;
 
+#[derive(Debug)]
 pub enum PathStep<'a> {
     RefHash(&'a str),
     OwnHash(Arc<str>),
@@ -22,6 +23,7 @@ impl<'a> PathStep<'a> {
     }
 }
 
+#[derive(Debug)]
 pub struct Path<'a>(pub(crate) Vec<PathStep<'a>>);
 pub type OwnPath = Path<'static>;
 

@@ -186,6 +186,7 @@ impl State {
 }
 
 #[derive(Clone)]
+#[derive(Debug)]
 pub struct Code(Arc<Box<Expr>>);
 
 impl Code {
