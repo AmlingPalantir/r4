@@ -9,6 +9,7 @@ use super::RecordNode;
 use super::RecordTrait;
 
 #[derive(Clone)]
+#[derive(Debug)]
 pub struct MRecord(Arc<Mutex<Either<Record, RecordNode<MRecord>>>>);
 
 impl RecordTrait for MRecord {

@@ -3,6 +3,7 @@ use std::hash::Hash;
 use std::hash::Hasher;
 
 #[derive(Clone)]
+#[derive(Debug)]
 pub struct F64HashDishonorProxy(pub f64);
 
 impl F64HashDishonorProxy {

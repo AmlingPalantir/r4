@@ -1,4 +1,5 @@
 #[derive(Clone)]
+#[derive(Debug)]
 pub enum Either<L, R> {
     Right(R),
     Left(L),

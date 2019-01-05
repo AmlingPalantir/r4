@@ -7,6 +7,7 @@ use super::PathStep;
 use super::RPathStep;
 
 #[derive(Clone)]
+#[derive(Debug)]
 #[derive(Eq)]
 #[derive(Hash)]
 #[derive(PartialEq)]

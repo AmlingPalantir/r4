@@ -7,6 +7,7 @@ use super::RecordNode;
 use super::RecordTrait;
 
 #[derive(Clone)]
+#[derive(Debug)]
 #[derive(Eq)]
 #[derive(Hash)]
 #[derive(PartialEq)]

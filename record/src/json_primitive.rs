@@ -2,6 +2,7 @@ use std::sync::Arc;
 use super::F64HashDishonorProxy;
 
 #[derive(Clone)]
+#[derive(Debug)]
 #[derive(Eq)]
 #[derive(Hash)]
 #[derive(PartialEq)]
