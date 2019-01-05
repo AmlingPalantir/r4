@@ -41,7 +41,7 @@ impl Db {
             db: HashMap::new(),
             rks: Arc::new(pairs.iter().map(|(_lk, rk)| rk.clone()).collect()),
         };
-        for line in BufReader::new(File::open(&file as &str).unwrap()).lines() {
+        for line in BufReader::new(File::open(&file).unwrap()).lines() {
             let r = Record::parse(&line.unwrap());
             let ks = pairs.iter().map(|(lk, _rk)| r.get_path(lk)).collect();
             db.db.entry(ks).or_insert_with(|| (false, Vec::new())).1.push(r);
