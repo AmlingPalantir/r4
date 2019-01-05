@@ -27,6 +27,12 @@ option_defaulters! {
 }
 
 #[derive(Clone)]
+enum Code {
+    R4l(R4lCode),
+    Lua(String),
+}
+
+#[derive(Clone)]
 pub enum InputType {
     Records(),
     Lines(),
@@ -43,7 +49,7 @@ pub enum OutputType {
 #[derive(Validates)]
 pub struct EvalOptions<I: OptionDefaulter<InputType>, O: OptionDefaulter<OutputType>, R: OptionDefaulter<bool>> {
     invert: BooleanOption,
-    code: RequiredOption<R4lCode>,
+    code: RequiredOption<Code>,
     input: DefaultedOption<InputType, I>,
     output: DefaultedOption<OutputType, O>,
     ret: DefaultedOption<bool, R>,
@@ -71,7 +77,8 @@ impl<B: EvalBe + 'static> OperationBe2 for EvalBe2<B> {
     fn options<'a>(opt: &mut OptParserView<'a, Self::Options>) {
         opt.sub(|p| &mut p.invert).match_zero(&["v", "invert"], BooleanOption::set);
         opt.sub(|p| &mut p.invert).match_zero(&["no-invert"], BooleanOption::clear);
-        opt.match_extra_soft(|p, a| p.code.maybe_set_with(|| R4lCode::parse(a)));
+        opt.match_extra_soft(|p, a| p.code.maybe_set_with(|| Code::R4l(R4lCode::parse(a))));
+        opt.match_single(&["lua"], |p, a| p.code.set(Code::Lua(a.to_string())));
         opt.match_zero(&["input-lines"], |p| p.input.set(InputType::Lines()));
         opt.match_zero(&["input-records"], |p| p.input.set(InputType::Records()));
         opt.match_zero(&["output-lines"], |p| p.output.set(OutputType::Lines()));
@@ -82,8 +89,18 @@ impl<B: EvalBe + 'static> OperationBe2 for EvalBe2<B> {
     }
 
     fn stream(o: Arc<EvalOptionsValidated<B::I, B::O, B::R>>) -> Stream {
+        let f: Box<FnMut(Record) -> Record>;
+        match o.code {
+            Code::R4l(ref code) => {
+                f = code.stream(o.ret);
+            }
+            Code::Lua(ref code) => {
+                f = executor::lua_stream(code, o.ret);
+            }
+        }
+
         return stream::closures(
-            o.code.clone().stream(),
+            f,
             move |s, e, w| {
                 let ri;
                 match e.clone() {
@@ -103,8 +120,7 @@ impl<B: EvalBe + 'static> OperationBe2 for EvalBe2<B> {
                         };
                     }
                 }
-                let (rr, ro) = s(ri);
-                let ro = if o.ret { rr } else { ro };
+                let ro = s(ri);
                 let ro = if o.invert { Record::from(!ro.coerce_bool()) } else { ro };
                 return match o.output {
                     OutputType::Records() => w(Entry::Record(ro)),

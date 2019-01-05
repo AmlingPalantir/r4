@@ -96,11 +96,19 @@ fn from_lua(lua: &Lua, v: Value) -> MRecord {
     }
 }
 
-pub fn eval(code: &str, r: Record) -> Record {
+pub fn stream(code: &str, ret: bool) -> Box<FnMut(Record) -> Record> {
     let code = code.to_string();
     let lua = Lua::new();
-    lua.globals().set("r", MRecordHolder(MRecord::wrap(r))).unwrap();
-    let _: () = lua.eval(&code, None).unwrap();
-    let r: MRecordHolder = lua.globals().get("r").unwrap();
-    return r.0.to_record();
+    return Box::new(move |r| {
+        lua.globals().set("r", MRecordHolder(MRecord::wrap(r))).unwrap();
+        let r: Value;
+        if ret {
+            r = lua.eval(&code, None).unwrap();
+        }
+        else {
+            let _: () = lua.eval(&code, None).unwrap();
+            r = lua.globals().get("r").unwrap();
+        }
+        return from_lua(&lua, r).to_record();
+    });
 }

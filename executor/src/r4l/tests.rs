@@ -4,10 +4,15 @@ use super::Code;
 fn test_one(input: &str, c: &str, eret: &str, er: &str) {
     let r = Record::parse(input);
     let c = Code::parse(c);
-    let mut f = c.stream();
-    let (oret, r) = f(r);
-    assert_eq!(r.deparse(), er);
-    assert_eq!(oret.deparse(), eret);
+
+    {
+        let mut f = c.stream(false);
+        assert_eq!(f(r.clone()).deparse(), er);
+    }
+    {
+        let mut f = c.stream(true);
+        assert_eq!(f(r.clone()).deparse(), eret);
+    }
 }
 
 #[test]

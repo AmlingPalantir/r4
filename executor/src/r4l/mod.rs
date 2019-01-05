@@ -193,13 +193,16 @@ impl Code {
         return Code(Arc::new(parse::StatementParser::new().parse(code).unwrap()));
     }
 
-    pub fn stream(&self) -> Box<FnMut(Record) -> (Record, Record)> {
+    pub fn stream(&self, ret: bool) -> Box<FnMut(Record) -> Record> {
         let e = self.0.clone();
         let mut st = State::default();
         return Box::new(move |r| {
             st.vars.insert(Arc::from("r"), MRecord::wrap(r));
-            let ret = st.eval(&e);
-            return (ret.to_record(), st.vars["r"].clone().to_record());
+            let rr = st.eval(&e);
+            if ret {
+                return rr.to_record();
+            }
+            return st.vars["r"].clone().to_record();
         });
     }
 }
