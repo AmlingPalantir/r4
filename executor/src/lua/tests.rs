@@ -31,3 +31,17 @@ fn test_tables_suck() {
 fn test_deep_index() {
     test_one(r#"{"a":{"b":[{"c":"x"}]}}"#, r#"r["a"] = r["a"]["b"][1]["c"]"#, r#"{"a":"x"}"#);
 }
+
+#[test]
+fn test_fp() {
+    test_one(r#"{}"#, r#"r["x"] = 1.0"#, r#"{"x":1}"#);
+    test_one(r#"{}"#, r#"r["x"] = 1.5"#, r#"{"x":1.5}"#);
+    // make sure attempted f64 -> i64 coercion doesn't crash for big numbers
+    test_one(r#"{}"#, r#"r["x"] = 1e99"#, r#"{"x":1e99}"#);
+}
+
+#[test]
+fn test_to_lua() {
+    test_one(r#"{"x":1}"#, r#"r["x"] = r["x"] + 1"#, r#"{"x":2}"#);
+    test_one(r#"{"x":"1"}"#, r#"r["x"] = r["x"] + 1"#, r#"{"x":2}"#);
+}

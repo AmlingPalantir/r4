@@ -10,7 +10,7 @@ pub use self::path::Path;
 pub use self::path::PathStep;
 
 mod json_primitive;
-pub(crate) use self::json_primitive::JsonPrimitive;
+pub use self::json_primitive::JsonPrimitive;
 
 mod record_node;
 pub use self::record_node::RecordNode;

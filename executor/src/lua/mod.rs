@@ -1,12 +1,15 @@
 #[cfg(test)]
 mod tests;
 
+use record::F64HashDishonorProxy;
+use record::JsonPrimitive;
 use record::MRecord;
 use record::Record;
 use record::RecordNode;
 use record::RecordTrait;
 use rlua::Lua;
 use rlua::MetaMethod;
+use rlua::ToLua;
 use rlua::UserData;
 use rlua::UserDataMethods;
 use rlua::Value;
@@ -20,19 +23,21 @@ impl UserData for MRecordHolder {
         m.add_meta_method_mut(MetaMethod::Index, |lua, r, k: Value| {
             return r.0.visit_converted(
                 |rn| {
+                    let ret;
                     match rn {
                         RecordNode::Primitive(_p) => {
                             panic!();
                         }
                         RecordNode::Array(arr) => {
                             let k = lua.coerce_integer(k).unwrap() as usize;
-                            return Result::Ok(MRecordHolder(arr[k - 1].clone()));
+                            ret = arr[k - 1].clone();
                         }
                         RecordNode::Hash(hash) => {
                             let k: Arc<str> = Arc::from(lua.coerce_string(k).unwrap().to_str().unwrap());
-                            return Result::Ok(MRecordHolder(hash.get(&k).unwrap().clone()));
+                            ret = hash[&k].clone();
                         }
                     }
+                    return to_lua(lua, ret);
                 }
             );
         });
@@ -60,6 +65,19 @@ impl UserData for MRecordHolder {
     }
 }
 
+fn to_lua(lua: &Lua, r: MRecord) -> Result<Value, rlua::Error> {
+    if let Some(p) = r.maybe_primitive() {
+        return match p {
+            JsonPrimitive::Null() => Result::Ok(Value::Nil),
+            JsonPrimitive::Bool(b) => b.to_lua(lua),
+            JsonPrimitive::NumberI64(n) => n.to_lua(lua),
+            JsonPrimitive::NumberF64(F64HashDishonorProxy(f)) => f.to_lua(lua),
+            JsonPrimitive::String(s) => s.to_lua(lua),
+        };
+    }
+    return MRecordHolder(r.clone()).to_lua(lua);
+}
+
 fn from_lua(lua: &Lua, v: Value) -> MRecord {
     match v {
         Value::Nil => {
@@ -72,7 +90,13 @@ fn from_lua(lua: &Lua, v: Value) -> MRecord {
             return MRecord::from(n);
         }
         Value::Number(n) => {
-            return MRecord::from(n as f64);
+            // Oh boy, no integers in lua?  Coerce what we can back to i64.
+            let ni = n as i64;
+            let nf = n as f64;
+            if (ni as f64) == nf {
+                return MRecord::from(ni);
+            }
+            return MRecord::from(nf);
         }
         Value::String(s) => {
             return MRecord::from(s.to_str().unwrap());
