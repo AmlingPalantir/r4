@@ -1,5 +1,6 @@
 use opts::parser::OptParserView;
 use opts::vals::BooleanOption;
+use opts::vals::OptionalStringOption;
 use std::sync::Arc;
 use stream::Stream;
 use super::OperationBe;
@@ -27,7 +28,8 @@ impl OperationBe for ImplBe {
     }
 
     fn options<'a>(opt: &mut OptParserView<'a, Options>) {
-        opt.sub(|p| &mut p.cmds).match_extra_hard(CmdsOption::push);
+        opt.sub(|p| &mut p.cmds.delim).match_single(&["d", "delim"], OptionalStringOption::set_str);
+        opt.match_extra_hard(|p, a| p.cmds.args.extend_from_slice(a));
         opt.sub(|p| &mut p.keep_bof).match_zero(&["keep-bof"], BooleanOption::set);
         opt.sub(|p| &mut p.keep_bof).match_zero(&["no-keep-bof"], BooleanOption::clear);
     }
@@ -47,13 +49,17 @@ impl OperationBe for ImplBe {
 }
 
 #[derive(Default)]
-struct CmdsOption(Vec<String>);
+struct CmdsOption {
+    delim: OptionalStringOption,
+    args: Vec<String>,
+}
 
 impl Validates for CmdsOption {
     type Target = CmdsOptions;
 
     fn validate(self) -> CmdsOptions {
-        let mut iter = self.0.into_iter();
+        let delim = self.delim.validate().unwrap_or("|".to_string());
+        let mut iter = self.args.into_iter();
         let mut cmds = Vec::new();
         'TOP: loop {
             let mut cmd = Vec::new();
@@ -64,7 +70,7 @@ impl Validates for CmdsOption {
                         break 'TOP;
                     }
                     Some(first) => {
-                        if first == "|" {
+                        if first == delim {
                             cmds.push(cmd);
                             continue 'TOP;
                         }
@@ -95,12 +101,6 @@ impl Validates for CmdsOption {
             extra: extra.unwrap(),
             wrs: wrs,
         };
-    }
-}
-
-impl CmdsOption {
-    fn push(&mut self, a: &[String]) {
-        self.0.extend_from_slice(a);
     }
 }
 
