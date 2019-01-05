@@ -37,12 +37,12 @@ impl OperationBe for ImplBe {
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {
-        return o.cmds.wrs.iter().rev().fold(stream::id(), |mut s, wr| {
-            if !o.keep_bof {
+        return o.cmds.wrs.iter().rev().fold((true, stream::id()), |(first, mut s), wr| {
+            if !first && !o.keep_bof {
                 s = stream::compound(stream::drop_bof(), s);
             }
-            return stream::compound(wr.stream(), s)
-        });
+            return (false, stream::compound(wr.stream(), s));
+        }).1;
     }
 }
 
