@@ -121,21 +121,32 @@ fn from_lua(lua: &Lua, v: Value) -> MRecord {
 }
 
 pub fn stream(code: &str, ret: bool) -> Box<FnMut(Record) -> Record> {
-    let code = code.to_string();
     let lua = Lua::new();
+
+    // Our library of functions to help manage API "issues".
     lua.globals().set("arr", lua.create_function(|lua, t: rlua::Table| {
         return MRecordHolder(MRecord::from_vec(t.sequence_values().map(|v| from_lua(lua, v.unwrap())).collect())).to_lua(lua);
     }).unwrap()).unwrap();
+
+    // Your "main" function.  We hold a RegistryKey since basically anything
+    // else is lifetime tied to lua object and we therefore simply can't keep
+    // them.
+    let f = lua.create_registry_value(lua.load(&code, None).unwrap()).unwrap();
+
     return Box::new(move |r| {
         lua.globals().set("r", MRecordHolder(MRecord::wrap(r))).unwrap();
+
+        let f: rlua::Function = lua.registry_value(&f).unwrap();
+
         let r: Value;
         if ret {
-            r = lua.eval(&code, None).unwrap();
+            r = f.call(()).unwrap();
         }
         else {
-            let _: () = lua.eval(&code, None).unwrap();
+            let _: () = f.call(()).unwrap();
             r = lua.globals().get("r").unwrap();
         }
+
         return from_lua(&lua, r).to_record();
     });
 }
