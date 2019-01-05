@@ -205,7 +205,7 @@ impl<T: RecordTrait> RecordNode<T> {
                     *self = RecordNode::Hash(BTreeMap::new());
                 }
                 if let RecordNode::Hash(hash) = self {
-                    return hash.remove(s as &str).unwrap_or_else(T::null);
+                    return hash.remove(s).unwrap_or_else(T::null);
                 }
                 panic!("delete hash step on non-hash");
             }
