@@ -1,6 +1,6 @@
-use crate::ast::BinaryOp;
-use crate::ast::Expr;
-use crate::ast::UnaryOp;
+use crate::r4l::ast::BinaryOp;
+use crate::r4l::ast::Expr;
+use crate::r4l::ast::UnaryOp;
 use record::OwnPath;
 use record::Record;
 use std::sync::Arc;
@@ -117,8 +117,8 @@ HashLiteralElement: (Arc<str>, Box<Expr>) = {
     <k:r"[_a-zA-Z][_a-zA-Z0-9]*"> ":" <v:Expr0> => (Arc::from(k), v),
 }
 
-IntLiteral: Box<Expr> = <s:r"-?[0-9]+"> => crate::ast::int_literal(s);
-FloatLiteral: Box<Expr> = <s:r"-?[0-9]+\.[0-9]+"> => crate::ast::float_literal(s);
-StringLiteral: Box<Expr> = <s:r#""([^"\\]|\\[\\nt"])*""#> => crate::ast::string_literal(s);
-RecPath: (Arc<str>, OwnPath) = <s:r#"\{\{([_a-zA-Z][_a-zA-Z0-9]*:)?[^:{}]*\}\}"#> => crate::ast::path_literal(s);
+IntLiteral: Box<Expr> = <s:r"-?[0-9]+"> => crate::r4l::ast::int_literal(s);
+FloatLiteral: Box<Expr> = <s:r"-?[0-9]+\.[0-9]+"> => crate::r4l::ast::float_literal(s);
+StringLiteral: Box<Expr> = <s:r#""([^"\\]|\\[\\nt"])*""#> => crate::r4l::ast::string_literal(s);
+RecPath: (Arc<str>, OwnPath) = <s:r#"\{\{([_a-zA-Z][_a-zA-Z0-9]*:)?[^:{}]*\}\}"#> => crate::r4l::ast::path_literal(s);
 Var: Arc<str> = <s:r"\$[_a-zA-Z][_a-zA-Z0-9]*"> => Arc::from(&s[1..]);
