@@ -10,13 +10,16 @@ use stream::Stream;
 use super::OperationBe2;
 use super::OperationBeForBe2;
 use super::OperationRegistrant;
+use super::TwoRecordUnionOption;
 use validates::Validates;
 
 #[derive(Default)]
 #[derive(Validates)]
 pub struct Options {
     aggs: UnvalidatedOption<Vec<(String, BoxedAggregator)>>,
+    tru: TwoRecordUnionOption,
     incremental: BooleanOption,
+    no_bucket: BooleanOption,
 }
 
 pub(crate) type Impl = OperationRegistrant<ImplBe>;
@@ -35,14 +38,18 @@ impl OperationBe2 for ImplBe2 {
     fn options<'a>(opt: &mut OptParserView<'a, Options>) {
         aggregator::REGISTRY.labelled_single_options(&mut opt.sub(|p| &mut p.aggs.0), &["a", "agg", "aggregator"]);
         aggregator::REGISTRY.labelled_multiple_options(&mut opt.sub(|p| &mut p.aggs.0), &["a", "agg", "aggregator"]);
+        TwoRecordUnionOption::options(&mut opt.sub(|p| &mut p.tru));
         opt.sub(|p| &mut p.incremental).match_zero(&["incremental"], BooleanOption::set);
         opt.sub(|p| &mut p.incremental).match_zero(&["no-incremental"], BooleanOption::clear);
+        opt.sub(|p| &mut p.no_bucket).match_zero(&["bucket"], BooleanOption::clear);
+        opt.sub(|p| &mut p.no_bucket).match_zero(&["no-bucket"], BooleanOption::set);
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {
         struct State {
             o: Arc<OptionsValidated>,
             aggs: Vec<(String, BoxedAggregator)>,
+            recs: Vec<Record>,
         }
         fn aggregate_record(aggs: Vec<(String, BoxedAggregator)>) -> Record {
             let mut rhs = Record::empty_hash();
@@ -58,6 +65,7 @@ impl OperationBe2 for ImplBe2 {
                 State {
                     o: o.clone(),
                     aggs: o.aggs.clone(),
+                    recs: Vec::new(),
                 },
                 |s, e, w| {
                     match e {
@@ -70,7 +78,15 @@ impl OperationBe2 for ImplBe2 {
                             }
 
                             if s.o.incremental {
-                                return w(Entry::Record(aggregate_record(s.aggs.clone())));
+                                if s.o.no_bucket {
+                                    return w(Entry::Record(s.o.tru.union(r, aggregate_record(s.aggs.clone()))));
+                                }
+
+                                return w(Entry::Record(s.o.tru.union_maybe(None, Some(aggregate_record(s.aggs.clone())))));
+                            }
+
+                            if s.o.no_bucket {
+                                s.recs.push(r);
                             }
                             return true;
                         }
@@ -80,9 +96,21 @@ impl OperationBe2 for ImplBe2 {
                     }
                 },
                 |s, w| {
-                    if !s.o.incremental {
-                        w(Entry::Record(aggregate_record(s.aggs)));
+                    if s.o.incremental {
                         return;
+                    }
+
+                    let rhs = aggregate_record(s.aggs);
+
+                    if !s.o.no_bucket {
+                        w(Entry::Record(s.o.tru.union_maybe(None, Some(rhs))));
+                        return;
+                    }
+
+                    for lhs in s.recs {
+                        if !w(Entry::Record(s.o.tru.union(lhs, rhs.clone()))) {
+                            return;
+                        }
                     }
                 },
             ),
