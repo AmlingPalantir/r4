@@ -143,7 +143,7 @@ pub fn stream(code: &str, ret: bool) -> Box<FnMut(Record) -> Record> {
             r = f.call(()).unwrap();
         }
         else {
-            let _: () = f.call(()).unwrap();
+            let () = f.call(()).unwrap();
             r = lua.globals().get("r").unwrap();
         }
 
