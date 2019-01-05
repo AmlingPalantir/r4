@@ -1,4 +1,4 @@
-use executor::r4l::Code;
+use executor::R4lCode;
 use opts::parser::OptParserView;
 use opts::vals::BooleanOption;
 use opts::vals::DefaultedOption;
@@ -43,7 +43,7 @@ pub enum OutputType {
 #[derive(Validates)]
 pub struct EvalOptions<I: OptionDefaulter<InputType>, O: OptionDefaulter<OutputType>, R: OptionDefaulter<bool>> {
     invert: BooleanOption,
-    code: RequiredOption<Code>,
+    code: RequiredOption<R4lCode>,
     input: DefaultedOption<InputType, I>,
     output: DefaultedOption<OutputType, O>,
     ret: DefaultedOption<bool, R>,
@@ -71,7 +71,7 @@ impl<B: EvalBe + 'static> OperationBe2 for EvalBe2<B> {
     fn options<'a>(opt: &mut OptParserView<'a, Self::Options>) {
         opt.sub(|p| &mut p.invert).match_zero(&["v", "invert"], BooleanOption::set);
         opt.sub(|p| &mut p.invert).match_zero(&["no-invert"], BooleanOption::clear);
-        opt.match_extra_soft(|p, a| p.code.maybe_set_with(|| Code::parse(a)));
+        opt.match_extra_soft(|p, a| p.code.maybe_set_with(|| R4lCode::parse(a)));
         opt.match_zero(&["input-lines"], |p| p.input.set(InputType::Lines()));
         opt.match_zero(&["input-records"], |p| p.input.set(InputType::Records()));
         opt.match_zero(&["output-lines"], |p| p.output.set(OutputType::Lines()));

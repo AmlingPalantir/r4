@@ -4,6 +4,8 @@ extern crate misc;
 extern crate record;
 extern crate rlua;
 
-pub mod lua;
+mod lua;
+pub use self::lua::eval as lua_eval;
 
-pub mod r4l;
+mod r4l;
+pub use self::r4l::Code as R4lCode;
