@@ -1,4 +1,3 @@
-use std::borrow::BorrowMut;
 use std::rc::Rc;
 use super::trie::NameTrie;
 
@@ -168,12 +167,8 @@ impl<'a, PP: 'static, P: 'static> OptParserMatch<P> for OptParserSubMatch<'a, PP
 
 impl<'a, P: 'static> OptParserView<'a, P> {
     pub fn sub<'b, P2: 'static, F: Fn(&mut P) -> &mut P2 + 'static>(&'b mut self, f: F) -> OptParserView<'b, P2> where 'a: 'b {
-        // Unfortunately rustc can't seem to figure this one out without at
-        // least some intermediate.  This was the least I could get it to work
-        // with.
-        let parent: &'b mut (OptParserMatch<P> + 'a) = self.0.borrow_mut();
         return OptParserView(Box::new(OptParserSubMatch {
-            parent: parent,
+            parent: &mut *self.0,
             f: Rc::new(f),
         }));
     }
