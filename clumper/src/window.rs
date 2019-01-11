@@ -1,5 +1,5 @@
 use record::Record;
-use registry::args::OneIntArgs;
+use registry::args::OneUsizeArgs;
 use std::collections::VecDeque;
 use std::sync::Arc;
 use stream::Entry;
@@ -12,13 +12,13 @@ pub type Impl = ClumperRegistrant<ImplBe>;
 pub struct ImplBe();
 
 impl ClumperBe for ImplBe {
-    type Args = OneIntArgs;
+    type Args = OneUsizeArgs;
 
     fn names() -> Vec<&'static str> {
         return vec!["window"];
     }
 
-    fn stream(size: &i64, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream {
+    fn stream(size: &usize, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream {
         let size = *size;
 
         return stream::compound(
@@ -33,10 +33,10 @@ impl ClumperBe for ImplBe {
                         },
                         Entry::Record(r) => {
                             s.push_back(r);
-                            if s.len() as i64 > size {
+                            if s.len() > size {
                                 s.pop_front();
                             }
-                            if s.len() as i64 == size {
+                            if s.len() == size {
                                 let mut substream = bsw(vec![]);
 
                                 for r in s {
