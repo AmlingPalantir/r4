@@ -1,0 +1,35 @@
+chain w/in chain (going to need eventually)
+    maybe jack parens as well
+    cmd0 = cmd1 ['|' cmd0]
+    cmd1 = '(' cmd0 ')'
+    cmd1 = args
+    something like: chain ( multiplex chain a | b ) | c
+    maybe even: r4 multiplex ( a | b ) | c
+        ugh, not sure how to coordinate this...
+    chain already has quoting issues, e.g.  I couldn't name a key '|' no matter how hard I wanted to (within a chain)
+        or more applicable example is from-split on '|'
+    maybe have chain take -d?
+        so now: chain multiplex chain -d || a || b | c
+        this works, although sucks (very hard to read versus natural grouping of parens)
+
+"multiplex helpers"
+    all can be done with --no-bucket and considering how rarely they're needed maybe it's not too complex
+    zscore
+        aggregate --no-bucket -a avg=avg,x -a sd=sd,x | xform '{{z}} = ({{x}} - d{{avg}}) / d{{sd}}'
+    linear extrapolate
+        aggregate --no-bucket -a lr=linreg,x,y | xform '{{yhat}} = {{lr/alpha}} + {{lr/beta}} * {{x}}; d{{lr}}'
+    normalize field?  (just divide by max)
+        aggregate --no-bucket -a max=max,x | xform '{{x}} = 1.0 * {{x}} / d{{max}}'
+
+sort --rank --percentile
+    save rank/percentile in keys?
+        what does --percentile + --limit mean?
+    both of these are easy enough
+        rank:
+            xform
+            or even aggregate --no-bucket --increment -a n=ct
+        percentile:
+            aggregate --no-bucket --increment -a rank=ct | aggregate --no-bucket -a ct | xform '{{perc}} = d{{rank}} * 100.0 / {{ct}}'
+
+multiplex access to bucket in subcommand
+    I have no idea how we could ever do this

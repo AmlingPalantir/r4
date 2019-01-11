@@ -1,0 +1,80 @@
+kind of wish we could centralize more of these behaviours...
+
+
+
+bof: pass, drop, act, act+pass
+line/record: parse, deparse, uniform?
+close: act or don't
+
+
+
+not sure how to build an API to succinctly present those possibilities
+
+
+
+stream::closures2(
+    stream::Closures2::drop_bof(),
+    stream::Closures2::parse(
+        |s, r, w| {
+        },
+    ),
+    |s, w| {
+    },
+)
+
+stream::closures2(
+    stream::Closures2::pass_bof(),
+    stream::Closures2::deparse(
+        |s, line, w| {
+        },
+    ),
+    |s, w| {
+    },
+)
+
+stream::closures2(s0)
+    .drop_bof()
+    .parse(|s, r, w| {
+    })
+    .close(|s, w| {
+    })
+
+stream::closures2(s0)
+    .pass_bof()
+    .deparse(|s, line, w| {
+    })
+    .drop_close()
+
+stream::closures2(s0) {
+    .bof(|s, file| {
+    })
+    .entry(|s, e, w| {
+        match e {
+            Closures2Entry::Line(line) => {
+            }
+            Closures2Entry::Record(r) => {
+            }
+        }
+    }})
+    .close(|s, w|) {
+    })
+
+stream::parse_closures(
+    s0,
+    |s, file, w| {
+    }
+    |s, r, w| {
+    },
+    |s, w| {
+    },
+)
+
+stream::deparse_closures(
+    s0,
+    |s, file, w| {
+    }
+    |s, line, w| {
+    },
+    |s, w| {
+    },
+)
