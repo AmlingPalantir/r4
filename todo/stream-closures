@@ -12,6 +12,26 @@ not sure how to build an API to succinctly present those possibilities
 
 
 
+stream::state(s0) // StateStreamBuilder
+    // all methods consume and return owned StateStreamBuilder
+    // drop/nop is default in all cases
+    .pass_bof()
+    .on_bof(|s, file, w| {
+    })
+    .parse(|s, r, w| {
+    })
+    .deparse(|s, r, w| {
+    })
+    .on_line(|s, line, w| {
+    })
+    .on_record(|s, r, w| {
+    })
+    .on_close(|s, w| {
+    })
+    .build() // StateStreamBuilder.build() -> Box<Stream> (box of StateStream)
+
+
+
 stream::closures2(
     stream::Closures2::drop_bof(),
     stream::Closures2::parse(
