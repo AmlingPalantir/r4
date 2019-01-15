@@ -40,7 +40,7 @@ impl<'a, P: 'static> OptParserView<'a, P> {
 
 #[derive(Default)]
 pub struct OptParser<P> {
-    named: NameTrie<(String, Rc<()>, usize, Rc<Fn(&mut P, &[String])>)>,
+    named: NameTrie<(String, usize, Rc<Fn(&mut P, &[String])>)>,
     extra: Vec<ExtraHandler<P>>,
 }
 
@@ -75,13 +75,13 @@ impl<P: 'static> OptParser<P> {
                 }
 
                 if let Some(name) = name_from_arg(&args[next_index]) {
-                    let (_, _, argct, f) = self.named.get(name).iter().fold(None, |hit, (name2, id2, argct2, f2)| {
-                        if let Some((name1, id1, _, _)) = hit {
-                            if !Rc::ptr_eq(id1, id2) {
+                    let (_, argct, f) = self.named.get(name).iter().fold(None, |hit, (name2, argct2, f2)| {
+                        if let Some((name1, _, f1)) = hit {
+                            if !Rc::ptr_eq(f1, f2) {
                                 panic!("Option {} is ambiguous (e.g.  {} and {})", name, name1, name2);
                             }
                         }
-                        return Some((name2, id2, argct2, f2));
+                        return Some((name2, argct2, f2));
                     }).unwrap_or_else(|| panic!("No such option {}", name));
                     let start = next_index + 1;
                     let end = start + argct;
@@ -125,9 +125,8 @@ impl<P: Default + 'static> OptParser<P> {
 
 impl<'a, P: 'static> OptParserMatch<P> for &'a mut OptParser<P> {
     fn match_n(&mut self, aliases: &[&str], argct: usize, f: Rc<Fn(&mut P, &[String])>) {
-        let id = Rc::new(());
         for alias in aliases {
-            self.named.insert(alias, (alias.to_string(), id.clone(), argct, f.clone()));
+            self.named.insert(alias, (alias.to_string(), argct, f.clone()));
         }
     }
 
