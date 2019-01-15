@@ -13,6 +13,8 @@ use self::ast::Expr;
 use self::ast::UnaryOp;
 use std::collections::HashMap;
 use std::sync::Arc;
+use super::ExecutorBe;
+use super::ExecutorRegistrant;
 
 #[derive(Default)]
 struct State {
@@ -184,18 +186,26 @@ impl State {
         }
     }
 }
-
 #[derive(Clone)]
 #[derive(Debug)]
 pub struct Code(Arc<Box<Expr>>);
 
-impl Code {
-    pub fn parse(code: &str) -> Self {
+pub type Impl = ExecutorRegistrant<ImplBe>;
+pub struct ImplBe();
+
+impl ExecutorBe for ImplBe {
+    type Code = Code;
+
+    fn names() -> Vec<&'static str> {
+        return vec!["r4l"];
+    }
+
+    fn parse(code: &str) -> Code {
         return Code(Arc::new(parse::StatementParser::new().parse(code).unwrap()));
     }
 
-    pub fn stream(&self, ret: bool) -> Box<FnMut(Record) -> Record> {
-        let e = self.0.clone();
+    fn stream(code: &Code, ret: bool) -> Box<FnMut(Record) -> Record> {
+        let e = code.0.clone();
         let mut st = State::default();
         return Box::new(move |r| {
             st.vars.insert(Arc::from("r"), MRecord::wrap(r));

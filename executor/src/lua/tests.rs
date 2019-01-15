@@ -1,8 +1,10 @@
 use record::Record;
+use registry::Registrant;
+use super::Impl;
 
 fn test_one(i: &str, c: &str, o: &str) {
     let r = Record::parse(i);
-    let mut f = super::stream(c, false);
+    let mut f = Impl::init2(()).parse(c).stream(false);
     let r = f(r);
     assert_eq!(r.deparse(), o);
 }

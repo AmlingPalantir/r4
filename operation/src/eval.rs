@@ -1,11 +1,13 @@
-use executor::R4lCode;
+use executor::BoxedExecutor2;
 use opts::parser::OptParserView;
 use opts::vals::BooleanOption;
 use opts::vals::DefaultedOption;
 use opts::vals::OptionDefaulter;
-use opts::vals::RequiredOption;
+use opts::vals::OptionalStringOption;
+use opts::vals::RequiredStringOption;
 use record::Record;
 use record::RecordTrait;
+use registry::Registrant;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
@@ -27,12 +29,6 @@ option_defaulters! {
 }
 
 #[derive(Clone)]
-enum Code {
-    R4l(R4lCode),
-    Lua(String),
-}
-
-#[derive(Clone)]
 pub enum InputType {
     Records(),
     Lines(),
@@ -46,10 +42,27 @@ pub enum OutputType {
 }
 
 #[derive(Default)]
+struct CodeOptions {
+    engine: OptionalStringOption,
+    code: RequiredStringOption,
+}
+
+impl Validates for CodeOptions {
+    type Target = BoxedExecutor2;
+
+    fn validate(self) -> BoxedExecutor2 {
+        let engine = self.engine.validate().unwrap_or_else(|| executor::r4l::Impl::names()[0].to_string());
+        let executor = executor::REGISTRY.find(&engine, &[]);
+        let executor = executor.parse(&self.code.validate());
+        return executor;
+    }
+}
+
+#[derive(Default)]
 #[derive(Validates)]
 pub struct EvalOptions<I: OptionDefaulter<InputType>, O: OptionDefaulter<OutputType>, R: OptionDefaulter<bool>> {
     invert: BooleanOption,
-    code: RequiredOption<Code>,
+    code: CodeOptions,
     input: DefaultedOption<InputType, I>,
     output: DefaultedOption<OutputType, O>,
     ret: DefaultedOption<bool, R>,
@@ -77,8 +90,9 @@ impl<B: EvalBe + 'static> OperationBe2 for EvalBe2<B> {
     fn options<'a>(opt: &mut OptParserView<'a, Self::Options>) {
         opt.sub(|p| &mut p.invert).match_zero(&["v", "invert"], BooleanOption::set);
         opt.sub(|p| &mut p.invert).match_zero(&["no-invert"], BooleanOption::clear);
-        opt.match_extra_soft(|p, a| p.code.maybe_set_with(|| Code::R4l(R4lCode::parse(a))));
-        opt.match_single(&["lua"], |p, a| p.code.set(Code::Lua(a.to_string())));
+        opt.sub(|p| &mut p.code.code).match_extra_soft(RequiredStringOption::maybe_set_str);
+        opt.sub(|p| &mut p.code.engine).match_single(&["engine"], OptionalStringOption::set_str);
+        opt.match_zero(&["lua"], |p| p.code.engine.set("lua".to_string()));
         opt.match_zero(&["input-lines"], |p| p.input.set(InputType::Lines()));
         opt.match_zero(&["input-records"], |p| p.input.set(InputType::Records()));
         opt.match_zero(&["output-lines"], |p| p.output.set(OutputType::Lines()));
@@ -90,14 +104,7 @@ impl<B: EvalBe + 'static> OperationBe2 for EvalBe2<B> {
 
     fn stream(o: Arc<EvalOptionsValidated<B::I, B::O, B::R>>) -> Stream {
         let f: Box<FnMut(Record) -> Record>;
-        match o.code {
-            Code::R4l(ref code) => {
-                f = code.stream(o.ret);
-            }
-            Code::Lua(ref code) => {
-                f = executor::lua_stream(code, o.ret);
-            }
-        }
+        f = o.code.stream(o.ret);
 
         return stream::closures(
             f,
