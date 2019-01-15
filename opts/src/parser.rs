@@ -7,7 +7,7 @@ enum ExtraHandler<P> {
 }
 
 trait OptParserMatch<P: 'static> {
-    fn match_n(&mut self, alias: &str, id: Rc<()>, argct: usize, f: Rc<Fn(&mut P, &[String])>);
+    fn match_n(&mut self, aliases: &[&str], argct: usize, f: Rc<Fn(&mut P, &[String])>);
     fn match_extra_soft(&mut self, f: Rc<Fn(&mut P, &str) -> bool>);
     fn match_extra_hard(&mut self, f: Rc<Fn(&mut P, &[String])>);
 }
@@ -23,12 +23,8 @@ impl<'a, P: 'static> OptParserView<'a, P> {
         self.match_n(aliases, 0, move |p, _a| f(p));
     }
 
-    pub fn match_n<S: AsRef<str>, I: IntoIterator<Item = S>, F: Fn(&mut P, &[String]) + 'static>(&mut self, aliases: I, argct: usize, f: F) {
-        let id = Rc::new(());
-        let f = Rc::new(f);
-        for alias in aliases.into_iter() {
-            self.0.match_n(alias.as_ref(), id.clone(), argct, f.clone());
-        }
+    pub fn match_n<F: Fn(&mut P, &[String]) + 'static>(&mut self, aliases: &[&str], argct: usize, f: F) {
+        self.0.match_n(aliases, argct, Rc::new(f));
     }
 
     pub fn match_extra_soft<F: Fn(&mut P, &str) -> bool + 'static>(&mut self, f: F) {
@@ -128,8 +124,11 @@ impl<P: Default + 'static> OptParser<P> {
 }
 
 impl<'a, P: 'static> OptParserMatch<P> for &'a mut OptParser<P> {
-    fn match_n(&mut self, alias: &str, id: Rc<()>, argct: usize, f: Rc<Fn(&mut P, &[String])>) {
-        self.named.insert(alias, (alias.to_string(), id, argct, f.clone()));
+    fn match_n(&mut self, aliases: &[&str], argct: usize, f: Rc<Fn(&mut P, &[String])>) {
+        let id = Rc::new(());
+        for alias in aliases {
+            self.named.insert(alias, (alias.to_string(), id.clone(), argct, f.clone()));
+        }
     }
 
     fn match_extra_soft(&mut self, f: Rc<Fn(&mut P, &str) -> bool>) {
@@ -149,9 +148,9 @@ struct OptParserSubMatch<'a, PP: 'a, P> {
 }
 
 impl<'a, PP: 'static, P: 'static> OptParserMatch<P> for OptParserSubMatch<'a, PP, P> {
-    fn match_n(&mut self, alias: &str, id: Rc<()>, argct: usize, f: Rc<Fn(&mut P, &[String])>) {
+    fn match_n(&mut self, aliases: &[&str], argct: usize, f: Rc<Fn(&mut P, &[String])>) {
         let f1 = self.f.clone();
-        self.parent.match_n(alias, id, argct, Rc::new(move |p, a| f(f1(p), a)));
+        self.parent.match_n(aliases, argct, Rc::new(move |p, a| f(f1(p), a)));
     }
 
     fn match_extra_soft(&mut self, f: Rc<Fn(&mut P, &str) -> bool>) {

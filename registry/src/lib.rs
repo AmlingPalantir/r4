@@ -41,7 +41,8 @@ impl<R> Registry<R> {
     pub fn labelled_multiple_options<'a, O: AsMut<Vec<(String, R)>> + 'static>(&'static self, opt: &mut OptParserView<'a, O>, prefixes: &[&str]) {
         for (alias, (argct, f)) in &self.map {
             let aliases: Vec<_> = prefixes.iter().map(|prefix| format!("{}-{}", prefix, alias)).collect();
-            opt.match_n(aliases, argct + 1, move |rs, a| {
+            let aliases: Vec<_> = aliases.iter().map(|s| s as &str).collect();
+            opt.match_n(&aliases, argct + 1, move |rs, a| {
                 let mut iter = a.iter();
                 let label = iter.next().unwrap().to_string();
                 let a: Vec<_> = iter.map(|s| s as &str).collect();
@@ -67,7 +68,8 @@ impl<R> Registry<R> {
     pub fn multiple_options<'a, O: AsMut<Vec<R>> + 'static>(&'static self, opt: &mut OptParserView<'a, O>, prefixes: &[&str]) {
         for (alias, (argct, f)) in &self.map {
             let aliases: Vec<_> = prefixes.iter().map(|prefix| format!("{}-{}", prefix, alias)).collect();
-            opt.match_n(aliases, *argct, move |rs, a| {
+            let aliases: Vec<_> = aliases.iter().map(|s| s as &str).collect();
+            opt.match_n(&aliases, *argct, move |rs, a| {
                 let a: Vec<_> = a.iter().map(|s| s as &str).collect();
                 rs.as_mut().push(f(&a));
             });
