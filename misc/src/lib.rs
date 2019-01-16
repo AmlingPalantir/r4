@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 #[derive(Clone)]
 #[derive(Debug)]
 pub enum Either<L, R> {
@@ -50,4 +52,15 @@ impl<T> Either<T, T> {
             Either::Right(t) => t,
         };
     }
+}
+
+pub struct PointerRc<T: ?Sized>(pub Rc<T>);
+
+impl<T: ?Sized> PartialEq for PointerRc<T> {
+    fn eq(&self, rhs: &PointerRc<T>) -> bool {
+        return Rc::ptr_eq(&self.0, &rhs.0);
+    }
+}
+
+impl<T: ?Sized> Eq for PointerRc<T> {
 }
