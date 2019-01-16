@@ -383,6 +383,7 @@ dependencies = [
 name = "opts"
 version = "1.0.0"
 dependencies = [
+ "misc 1.0.0",
  "validates 1.0.0",
 ]
 

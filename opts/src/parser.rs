@@ -1,5 +1,7 @@
+use misc::PointerRc;
 use std::rc::Rc;
 use super::trie::NameTrie;
+use super::trie::NameTrieResult;
 
 enum ExtraHandler<P> {
     Soft(Rc<Fn(&mut P, &str) -> bool>),
@@ -40,7 +42,7 @@ impl<'a, P: 'static> OptParserView<'a, P> {
 
 #[derive(Default)]
 pub struct OptParser<P> {
-    named: NameTrie<(String, usize, Rc<Fn(&mut P, &[String])>)>,
+    named: NameTrie<(usize, PointerRc<Fn(&mut P, &[String])>)>,
     extra: Vec<ExtraHandler<P>>,
 }
 
@@ -75,20 +77,17 @@ impl<P: 'static> OptParser<P> {
                 }
 
                 if let Some(name) = name_from_arg(&args[next_index]) {
-                    let (_, argct, f) = self.named.get(name).iter().fold(None, |hit, (name2, argct2, f2)| {
-                        if let Some((name1, _, f1)) = hit {
-                            if !Rc::ptr_eq(f1, f2) {
-                                panic!("Option {} is ambiguous (e.g.  {} and {})", name, name1, name2);
-                            }
-                        }
-                        return Some((name2, argct2, f2));
-                    }).unwrap_or_else(|| panic!("No such option {}", name));
+                    let (argct, f) = match self.named.get(name) {
+                        NameTrieResult::None() => panic!("No such option {}", name),
+                        NameTrieResult::Unique(_, e) => e,
+                        NameTrieResult::Collision(name1, name2) => panic!("Option {} is ambiguous (e.g.  {} and {})", name, name1, name2),
+                    };
                     let start = next_index + 1;
                     let end = start + argct;
                     if end > args.len() {
                         panic!("Not enough arguments for {}", args[next_index]);
                     }
-                    f(p, &args[start..end]);
+                    (f.0)(p, &args[start..end]);
                     next_index = end;
                     continue;
                 }
@@ -126,7 +125,7 @@ impl<P: Default + 'static> OptParser<P> {
 impl<'a, P: 'static> OptParserMatch<P> for &'a mut OptParser<P> {
     fn match_n(&mut self, aliases: &[&str], argct: usize, f: Rc<Fn(&mut P, &[String])>) {
         for alias in aliases {
-            self.named.insert(alias, (alias.to_string(), argct, f.clone()));
+            self.named.insert(alias, (argct, PointerRc(f.clone())));
         }
     }
 

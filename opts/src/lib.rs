@@ -1,3 +1,4 @@
+extern crate misc;
 extern crate validates;
 
 pub mod parser;
