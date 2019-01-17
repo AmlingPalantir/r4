@@ -34,13 +34,13 @@ impl OperationBe2 for ImplBe2 {
         SortOptions::options(&mut opt.sub(|p| &mut p.sorts), &["s", "sort"]);
         opt.match_single(&["l", "lex", "lexical"], |p, a| {
             for a in a.split(',') {
-                p.sorts.push(sorts::lexical::Impl::init(&[a]));
+                p.sorts.push(sorts::lexical::Impl::init(&[a])?);
             }
             return Result::Ok(());
         });
         opt.match_single(&["n", "num", "numeric"], |p, a| {
             for a in a.split(',') {
-                p.sorts.push(sorts::numeric::Impl::init(&[a]));
+                p.sorts.push(sorts::numeric::Impl::init(&[a])?);
             }
             return Result::Ok(());
         });

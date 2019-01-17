@@ -22,7 +22,7 @@ impl Validates for SubOperationOption {
 
     fn validate(mut self) -> ValidationResult<SubOperationOptionValidated> {
         let name = self.0.remove(0);
-        let op = super::REGISTRY.find(&name, &[]);
+        let op = super::REGISTRY.find(&name, &[])?;
         let wr = op.parse(&mut self.0);
         return Result::Ok(SubOperationOptionValidated {
             extra: self.0,

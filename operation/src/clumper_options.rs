@@ -17,7 +17,7 @@ impl ClumperOptions {
         clumper::REGISTRY.multiple_options(&mut opt.sub(|p| &mut (p.0).0), &["c", "clumper"]);
         opt.match_single(&["k", "key"], |p, a| {
             for a in a.split(',') {
-                (p.0).0.push(clumper::key::Impl::init(&[a]));
+                (p.0).0.push(clumper::key::Impl::init(&[a])?);
             }
             return Result::Ok(());
         });

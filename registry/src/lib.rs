@@ -1,13 +1,16 @@
 extern crate opts;
+extern crate validates;
 
 pub mod args;
 use self::args::RegistryArgs;
 
 use opts::parser::OptParserView;
 use std::collections::HashMap;
+use validates::ValidationError;
+use validates::ValidationResult;
 
 pub struct Registry<R> {
-    map: HashMap<String, (usize, Box<Fn(&[&str]) -> R + Send + Sync>)>,
+    map: HashMap<String, (usize, Box<Fn(&[&str]) -> ValidationResult<R> + Send + Sync>)>,
 }
 
 impl<R> Default for Registry<R> {
@@ -19,19 +22,19 @@ impl<R> Default for Registry<R> {
 }
 
 impl<R> Registry<R> {
-    pub fn add<F: Fn(&[&str]) -> R + Send + Sync + 'static>(&mut self, name: &str, argct: usize, f: F) {
+    pub fn add<F: Fn(&[&str]) -> ValidationResult<R> + Send + Sync + 'static>(&mut self, name: &str, argct: usize, f: F) {
         let prev = self.map.insert(name.to_string(), (argct, Box::new(f)));
         assert!(prev.is_none(), "registry collision for {}", name);
     }
 
-    pub fn find(&self, name: &str, args: &[&str]) -> R {
+    pub fn find(&self, name: &str, args: &[&str]) -> ValidationResult<R> {
         match self.map.get(name) {
             None => {
-                panic!("No implementation named {}", name);
+                return ValidationError::message(format!("No implementation named {}", name));
             }
             Some((argct, f)) => {
                 if args.len() != *argct {
-                    panic!("Wrong number of args for {}", name);
+                    return ValidationError::message(format!("Wrong number of args for {}", name));
                 }
                 return f(args);
             }
@@ -46,7 +49,7 @@ impl<R> Registry<R> {
                 let mut iter = a.iter();
                 let label = iter.next().unwrap().to_string();
                 let a: Vec<_> = iter.map(|s| s as &str).collect();
-                rs.as_mut().push((label, f(&a)));
+                rs.as_mut().push((label, f(&a)?));
                 return Result::Ok(());
             });
         }
@@ -61,7 +64,7 @@ impl<R> Registry<R> {
             let mut parts = a.split(',');
             let name = parts.next().unwrap();
             let args: Vec<&str> = parts.collect();
-            let r = self.find(name, &args);
+            let r = self.find(name, &args)?;
             rs.as_mut().push((label, r));
             return Result::Ok(());
         });
@@ -73,7 +76,7 @@ impl<R> Registry<R> {
             let aliases: Vec<_> = aliases.iter().map(|s| s as &str).collect();
             opt.match_n(&aliases, *argct, move |rs, a| {
                 let a: Vec<_> = a.iter().map(|s| s as &str).collect();
-                rs.as_mut().push(f(&a));
+                rs.as_mut().push(f(&a)?);
                 return Result::Ok(());
             });
         }
@@ -84,7 +87,7 @@ impl<R> Registry<R> {
             let mut parts = a.split(',');
             let name = parts.next().unwrap();
             let args: Vec<_> = parts.collect();
-            let r = self.find(name, &args);
+            let r = self.find(name, &args)?;
             rs.as_mut().push(r);
             return Result::Ok(());
         });
@@ -122,7 +125,7 @@ pub trait Registrant<R> {
         return Self::Args::argct();
     }
 
-    fn init(args: &[&str]) -> R {
-        return Self::init2(Self::Args::parse(args));
+    fn init(args: &[&str]) -> ValidationResult<R> {
+        return Result::Ok(Self::init2(Self::Args::parse(args)?));
     }
 }

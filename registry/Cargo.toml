@@ -5,3 +5,4 @@ authors = ["Keith Amling <me@amling2.org>"]
 
 [dependencies]
 opts = { path = "../opts" }
+validates = { path = "../validates" }

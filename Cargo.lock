@@ -6,6 +6,7 @@ dependencies = [
  "misc 1.0.0",
  "record 1.0.0",
  "registry 1.0.0",
+ "validates 1.0.0",
 ]
 
 [[package]]
@@ -579,6 +580,7 @@ name = "registry"
 version = "1.0.0"
 dependencies = [
  "opts 1.0.0",
+ "validates 1.0.0",
 ]
 
 [[package]]

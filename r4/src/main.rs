@@ -14,7 +14,7 @@ fn main() {
     let mut args = env::args();
     args.next().unwrap();
     let op = args.next().unwrap_or_else(|| "help".to_string());
-    let op = operation::REGISTRY.find(&op, &[]);
+    let op = operation::REGISTRY.find(&op, &[]).unwrap();
     let mut args = args.collect();
     let op = op.parse(&mut args);
 

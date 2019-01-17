@@ -4,6 +4,7 @@ extern crate misc;
 extern crate record;
 #[macro_use]
 extern crate registry;
+extern crate validates;
 
 use record::Record;
 use registry::Registrant;

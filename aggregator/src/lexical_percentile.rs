@@ -5,6 +5,8 @@ use std::cmp::Ord;
 use std::sync::Arc;
 use super::AggregatorBe;
 use super::AggregatorRegistrant;
+use validates::ValidationError;
+use validates::ValidationResult;
 
 #[derive(Clone)]
 pub struct PercentileState<K>(Vec<(K, Record)>);
@@ -40,11 +42,14 @@ impl RegistryArgs for PercentileArgs {
         return 2;
     }
 
-    fn parse(args: &[&str]) -> (f64, Arc<str>) {
+    fn parse(args: &[&str]) -> ValidationResult<(f64, Arc<str>)> {
         assert_eq!(2, args.len());
-        let prop = args[0].parse::<f64>().unwrap() / 100.0;
-        assert!(0.0 <= prop && prop <= 1.0);
-        return (prop, Arc::from(&*args[1]));
+        let perc = args[0].parse::<f64>()?;
+        let prop = perc / 100.0;
+        if !(0.0 <= prop && prop <= 1.0) {
+            return ValidationError::message(format!("Percentile must be between 0 and 100: {}", prop));
+        }
+        return Result::Ok((prop, Arc::from(&*args[1])));
     }
 }
 
