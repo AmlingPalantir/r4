@@ -2,6 +2,7 @@ use misc::PointerRc;
 use std::rc::Rc;
 use super::trie::NameTrie;
 use super::trie::NameTrieResult;
+use validates::ValidationError;
 use validates::ValidationResult;
 
 type CbMany<P> = PointerRc<Fn(&mut P, &[String]) -> ValidationResult<()>>;
@@ -82,14 +83,14 @@ impl<P: 'static> OptParser<P> {
 
                 if let Some(name) = name_from_arg(&args[next_index]) {
                     let (argct, f) = match self.named.get(name) {
-                        NameTrieResult::None() => panic!("No such option {}", name),
+                        NameTrieResult::None() => return ValidationError::message(format!("No such option {}", name)),
                         NameTrieResult::Unique(_, e) => e,
-                        NameTrieResult::Collision(name1, name2) => panic!("Option {} is ambiguous (e.g.  {} and {})", name, name1, name2),
+                        NameTrieResult::Collision(name1, name2) => return ValidationError::message(format!("Option {} is ambiguous (e.g.  {} and {})", name, name1, name2)),
                     };
                     let start = next_index + 1;
                     let end = start + argct;
                     if end > args.len() {
-                        panic!("Not enough arguments for {}", args[next_index]);
+                        return ValidationError::message(format!("Not enough arguments for {}", args[next_index]));
                     }
                     (f.0)(p, &args[start..end])?;
                     next_index = end;
@@ -113,7 +114,7 @@ impl<P: 'static> OptParser<P> {
                 }
             }
 
-            panic!("No handler at {}", args[next_index]);
+            return ValidationError::message(format!("Unexpected extra arguments: {:?}", &args[next_index..]));
         }
     }
 }

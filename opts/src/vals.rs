@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use validates::Validates;
+use validates::ValidationError;
 use validates::ValidationResult;
 
 #[derive(Default)]
@@ -69,7 +70,7 @@ impl<T, P: OptionDefaulter<T>> Validates for DefaultedOption<T, P> {
 impl<T, P> DefaultedOption<T, P> {
     pub fn set(&mut self, t: T) -> ValidationResult<()> {
         if self.0.is_some() {
-            panic!("DefaultedOption specified multiple times");
+            return ValidationError::message("DefaultedOption specified multiple times".to_string());
         }
         self.0 = Some(t);
         return Result::Ok(());
@@ -122,7 +123,7 @@ pub type OptionalOption<T> = UnvalidatedOption<Option<T>>;
 impl<T> OptionalOption<T> {
     pub fn set(&mut self, t: T) -> ValidationResult<()> {
         if self.0.is_some() {
-            panic!("OptionalOption specified multiple times");
+            return ValidationError::message("OptionalOption specified multiple times".to_string());
         }
         self.0 = Some(t);
         return Result::Ok(());

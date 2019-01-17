@@ -8,6 +8,7 @@ use super::OperationRegistrant;
 use super::StreamWrapper;
 use super::SubOperationOption;
 use validates::Validates;
+use validates::ValidationError;
 use validates::ValidationResult;
 
 #[derive(Default)]
@@ -94,7 +95,7 @@ impl Validates for CmdsOption {
                 }
                 Some(_) => {
                     if !so.extra.is_empty() {
-                        panic!("Unexpected extra args for non-first chain stage?");
+                        return ValidationError::message(format!("Unexpected extra args for non-first chain stage: {:?}", so.extra));
                     }
                 }
             }

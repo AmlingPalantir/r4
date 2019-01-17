@@ -14,6 +14,12 @@ impl<E: Error + 'static> From<E> for ValidationError {
     }
 }
 
+impl ValidationError {
+    pub fn message<R>(msg: String) -> ValidationResult<R> {
+        return Result::Err(ValidationError::Message(msg));
+    }
+}
+
 pub type ValidationResult<T> = Result<T, ValidationError>;
 
 impl Debug for ValidationError {

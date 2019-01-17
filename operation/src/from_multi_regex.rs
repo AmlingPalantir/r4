@@ -11,6 +11,7 @@ use stream::Stream;
 use super::OperationBe2;
 use super::OperationBeForBe2;
 use super::OperationRegistrant;
+use validates::ValidationError;
 use validates::ValidationResult;
 
 #[derive(Default)]
@@ -46,7 +47,7 @@ impl OperationBe2 for ImplBe2 {
                     p.res.0.push((pre_flush, post_flush, keys, re));
                 }
                 None => {
-                    panic!("No equals in regex spec");
+                    return ValidationError::message(format!("No equals in regex spec: {}", s));
                 }
             }
             return Result::Ok(());
