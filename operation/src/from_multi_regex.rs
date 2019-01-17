@@ -43,7 +43,7 @@ impl OperationBe2 for ImplBe2 {
             match s.find('=') {
                 Some(idx) => {
                     let keys = (&s[0..idx]).split(',').map(|s| s.to_string()).collect();
-                    let re = Regex::new(&s[(idx + 1)..]).unwrap();
+                    let re = Regex::new(&s[(idx + 1)..])?;
                     p.res.0.push((pre_flush, post_flush, keys, re));
                 }
                 None => {

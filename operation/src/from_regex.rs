@@ -26,7 +26,7 @@ impl Validates for RegexOption {
     type Target = Arc<Regex>;
 
     fn validate(self) -> ValidationResult<Arc<Regex>> {
-        return Result::Ok(Arc::new(Regex::new(&self.0.validate()?).unwrap()));
+        return Result::Ok(Arc::new(Regex::new(&self.0.validate()?)?));
     }
 }
 

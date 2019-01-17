@@ -180,7 +180,7 @@ pub type OptionalUsizeOption = OptionalOption<usize>;
 
 impl OptionalUsizeOption {
     pub fn parse(&mut self, a: &str) -> ValidationResult<()> {
-        return self.set(a.parse().unwrap());
+        return self.set(a.parse()?);
     }
 }
 

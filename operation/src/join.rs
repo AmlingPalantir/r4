@@ -26,7 +26,7 @@ impl Validates for DbOption {
     type Target = Db;
 
     fn validate(self) -> ValidationResult<Db> {
-        return Result::Ok(Db::new(&self.file.validate()?, &self.pairs.validate()?));
+        return Result::Ok(Db::read(&self.file.validate()?, &self.pairs.validate()?)?);
     }
 }
 
@@ -37,17 +37,17 @@ struct Db {
 }
 
 impl Db {
-    fn new(file: &str, pairs: &[(String, String)]) -> Db {
+    fn read(file: &str, pairs: &[(String, String)]) -> ValidationResult<Db> {
         let mut db = Db {
             db: HashMap::new(),
             rks: Arc::new(pairs.iter().map(|(_lk, rk)| rk.clone()).collect()),
         };
-        for line in BufReader::new(File::open(&file).unwrap()).lines() {
-            let r = Record::parse(&line.unwrap());
+        for line in BufReader::new(File::open(&file)?).lines() {
+            let r = Record::parse(&line?);
             let ks = pairs.iter().map(|(lk, _rk)| r.get_path(lk)).collect();
             db.db.entry(ks).or_insert_with(|| (false, Vec::new())).1.push(r);
         }
-        return db;
+        return Result::Ok(db);
     }
 
     fn query(&mut self, r: &Record) -> Option<impl Iterator<Item = &Record>> {
