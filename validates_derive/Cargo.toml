@@ -7,5 +7,6 @@ authors = ["Keith Amling <me@amling2.org>"]
 proc-macro = true
 
 [dependencies]
+"proc-macro2" = "0.4.21"
 "quote" = "0.6"
 "syn" = "0.15.23"

@@ -804,6 +804,7 @@ version = "1.0.0"
 name = "validates_derive"
 version = "1.0.0"
 dependencies = [
+ "proc-macro2 0.4.24 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 0.6.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "syn 0.15.23 (registry+https://github.com/rust-lang/crates.io-index)",
 ]

@@ -1,3 +1,4 @@
+extern crate proc_macro2;
 extern crate proc_macro;
 #[macro_use]
 extern crate syn;
@@ -5,14 +6,17 @@ extern crate syn;
 extern crate quote;
 
 use proc_macro::TokenStream;
+use syn::Attribute;
 use syn::Data;
 use syn::DeriveInput;
 use syn::Fields;
 use syn::Ident;
+use syn::Lit;
 use syn::LitStr;
+use syn::Meta;
 use syn::export::Span;
 
-#[proc_macro_derive(Validates)]
+#[proc_macro_derive(Validates, attributes(ValidatesName))]
 pub fn derive_validates(input: TokenStream) -> TokenStream {
     let ast = parse_macro_input!(input as DeriveInput);
 
@@ -24,9 +28,9 @@ pub fn derive_validates(input: TokenStream) -> TokenStream {
             Fields::Named(d) => {
                 let ctor_fields: Vec<_> = d.named.iter().map(|f| {
                     let name = f.ident.as_ref().unwrap();
-                    let prefix = LitStr::new(&format!("While validating {}", name), Span::call_site());
+                    let mangle = compute_mangle_expr(&f.attrs, name.to_string());
                     return quote! {
-                        #name: ::validates::Validates::validate(self.#name).map_err(|e| e.label(#prefix))?,
+                        #name: ::validates::Validates::validate(self.#name) #mangle ?,
                     };
                 }).collect();
                 ctor_args = quote! { { #( #ctor_fields )* } };
@@ -48,10 +52,10 @@ pub fn derive_validates(input: TokenStream) -> TokenStream {
                 clone_args = quote! { { #( #clone_fields )* } };
             },
             Fields::Unnamed(d) => {
-                let ctor_fields: Vec<_> = d.unnamed.iter().enumerate().map(|(name, _f)| {
-                    let prefix = LitStr::new(&format!("While validating #{}", name), Span::call_site());
+                let ctor_fields: Vec<_> = d.unnamed.iter().enumerate().map(|(name, f)| {
+                    let mangle = compute_mangle_expr(&f.attrs, format!("#{}", name));
                     return quote! {
-                        ::validates::Validates::validate(self.#name).map_err(|e| e.label(#prefix))?,
+                        ::validates::Validates::validate(self.#name) #mangle ?,
                     };
                 }).collect();
                 ctor_args = quote! { ( #( #ctor_fields )* ) };
@@ -102,4 +106,34 @@ pub fn derive_validates(input: TokenStream) -> TokenStream {
     };
 
     return TokenStream::from(gen);
+}
+
+fn compute_mangle_expr(attrs: &Vec<Attribute>, default_name: String) -> proc_macro2::TokenStream {
+    let user_name = attrs.iter().filter_map(|a| {
+        let a = a.interpret_meta()?;
+        if a.name() != "ValidatesName" {
+            return None;
+        }
+        match a {
+            Meta::NameValue(ref nv) => {
+                match nv.lit {
+                    Lit::Str(ref s) => {
+                        return Some(s.value());
+                    }
+                    _ => {
+                        panic!("Unexpected ValidatesName attribute: {:?}", a);
+                    }
+                }
+            }
+            _ => {
+                panic!("Unexpected ValidatesName attribute: {:?}", a);
+            }
+        }
+    }).next().unwrap_or(default_name);
+    if user_name.is_empty() {
+        return quote! { };
+    }
+
+    let prefix = LitStr::new(&format!("While validating {}", user_name), Span::call_site());
+    return quote! { .map_err(|e| e.label(#prefix)) };
 }
