@@ -9,6 +9,7 @@ use syn::Data;
 use syn::DeriveInput;
 use syn::Fields;
 use syn::Ident;
+use syn::LitStr;
 use syn::export::Span;
 
 #[proc_macro_derive(Validates)]
@@ -23,8 +24,9 @@ pub fn derive_validates(input: TokenStream) -> TokenStream {
             Fields::Named(d) => {
                 let ctor_fields: Vec<_> = d.named.iter().map(|f| {
                     let name = f.ident.as_ref().unwrap();
+                    let prefix = LitStr::new(&format!("While validating {}", name), Span::call_site());
                     return quote! {
-                        #name: ::validates::Validates::validate(self.#name)?,
+                        #name: ::validates::Validates::validate(self.#name).map_err(|e| e.label(#prefix))?,
                     };
                 }).collect();
                 ctor_args = quote! { { #( #ctor_fields )* } };
@@ -47,8 +49,9 @@ pub fn derive_validates(input: TokenStream) -> TokenStream {
             },
             Fields::Unnamed(d) => {
                 let ctor_fields: Vec<_> = d.unnamed.iter().enumerate().map(|(name, _f)| {
+                    let prefix = LitStr::new(&format!("While validating #{}", name), Span::call_site());
                     return quote! {
-                        ::validates::Validates::validate(self.#name)?,
+                        ::validates::Validates::validate(self.#name).map_err(|e| e.label(#prefix))?,
                     };
                 }).collect();
                 ctor_args = quote! { ( #( #ctor_fields )* ) };
