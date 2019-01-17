@@ -14,6 +14,7 @@ use super::OperationBeForBe2;
 use super::OperationRegistrant;
 use super::SortOptions;
 use super::SortOptionsValidated;
+use validates::ValidationError;
 
 #[derive(Default)]
 #[derive(Validates)]
@@ -43,7 +44,9 @@ impl OperationBe2 for ImplBe2 {
         opt.sub(|p| &mut p.xk).match_single(&["x"], StringVecOption::push_split);
         opt.sub(|p| &mut p.yk).match_single(&["y"], StringVecOption::push_split);
         opt.match_n(&["p"], 2, |p, a| {
-            assert!(p.pins.0.insert(a[0].clone(), a[1].clone()).is_none());
+            if let Some(_) = p.pins.0.insert(a[0].clone(), a[1].clone()) {
+                return ValidationError::message(format!("Pin {} specified twice", a[0]));
+            }
             return Result::Ok(());
         });
         opt.sub(|p| &mut p.vk).match_single(&["v"], StringVecOption::push_split);
