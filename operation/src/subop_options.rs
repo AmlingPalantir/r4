@@ -7,8 +7,9 @@ use validates::ValidationResult;
 pub struct SubOperationOption(Vec<String>);
 
 impl SubOperationOption {
-    pub fn push(&mut self, a: &[String]) {
+    pub fn push(&mut self, a: &[String]) -> ValidationResult<()> {
         self.0.extend_from_slice(a);
+        return Result::Ok(());
     }
 
     pub fn of(a: Vec<String>) -> SubOperationOption {

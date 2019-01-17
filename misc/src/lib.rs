@@ -64,3 +64,9 @@ impl<T: ?Sized> PartialEq for PointerRc<T> {
 
 impl<T: ?Sized> Eq for PointerRc<T> {
 }
+
+impl<T: ?Sized> Clone for PointerRc<T> {
+    fn clone(&self) -> PointerRc<T> {
+        return PointerRc(self.0.clone());
+    }
+}

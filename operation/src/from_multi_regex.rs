@@ -11,6 +11,7 @@ use stream::Stream;
 use super::OperationBe2;
 use super::OperationBeForBe2;
 use super::OperationRegistrant;
+use validates::ValidationResult;
 
 #[derive(Default)]
 #[derive(Validates)]
@@ -37,7 +38,7 @@ impl OperationBe2 for ImplBe2 {
     }
 
     fn options<'a>(opt: &mut OptParserView<'a, Options>) {
-        fn _add_re(p: &mut Options, pre_flush: bool, post_flush: bool, s: &str) {
+        fn _add_re(p: &mut Options, pre_flush: bool, post_flush: bool, s: &str) -> ValidationResult<()> {
             match s.find('=') {
                 Some(idx) => {
                     let keys = (&s[0..idx]).split(',').map(|s| s.to_string()).collect();
@@ -48,6 +49,7 @@ impl OperationBe2 for ImplBe2 {
                     panic!("No equals in regex spec");
                 }
             }
+            return Result::Ok(());
         }
 
         opt.match_single(&["re"], |p, a| _add_re(p, false, false, a));

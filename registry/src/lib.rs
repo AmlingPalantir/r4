@@ -47,6 +47,7 @@ impl<R> Registry<R> {
                 let label = iter.next().unwrap().to_string();
                 let a: Vec<_> = iter.map(|s| s as &str).collect();
                 rs.as_mut().push((label, f(&a)));
+                return Result::Ok(());
             });
         }
     }
@@ -62,6 +63,7 @@ impl<R> Registry<R> {
             let args: Vec<&str> = parts.collect();
             let r = self.find(name, &args);
             rs.as_mut().push((label, r));
+            return Result::Ok(());
         });
     }
 
@@ -72,6 +74,7 @@ impl<R> Registry<R> {
             opt.match_n(&aliases, *argct, move |rs, a| {
                 let a: Vec<_> = a.iter().map(|s| s as &str).collect();
                 rs.as_mut().push(f(&a));
+                return Result::Ok(());
             });
         }
     }
@@ -83,6 +86,7 @@ impl<R> Registry<R> {
             let args: Vec<_> = parts.collect();
             let r = self.find(name, &args);
             rs.as_mut().push(r);
+            return Result::Ok(());
         });
     }
 }

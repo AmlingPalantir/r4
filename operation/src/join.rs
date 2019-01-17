@@ -86,11 +86,18 @@ impl OperationBe2 for ImplBe2 {
 
     fn options<'a>(opt: &mut OptParserView<'a, Options>) {
         TwoRecordUnionOption::options(&mut opt.sub(|p| &mut p.tru));
-        opt.match_zero(&["inner"], |p| p.fills.0 = (false, false));
-        opt.match_zero(&["left"], |p| p.fills.0 = (true, false));
-        opt.match_zero(&["right"], |p| p.fills.0 = (false, true));
-        opt.match_zero(&["outer"], |p| p.fills.0 = (true, true));
-        opt.match_n(&["on"], 2, |p, a| p.db.pairs.0.push((a[0].to_string(), a[1].to_string())));
+        fn _set_fills(p: &mut Options, left: bool, right: bool) -> ValidationResult<()> {
+            p.fills.0 = (left, right);
+            return Result::Ok(());
+        }
+        opt.match_zero(&["inner"], |p| _set_fills(p, false, false));
+        opt.match_zero(&["left"], |p| _set_fills(p, true, false));
+        opt.match_zero(&["right"], |p| _set_fills(p, false, true));
+        opt.match_zero(&["outer"], |p| _set_fills(p, true, true));
+        opt.match_n(&["on"], 2, |p, a| {
+            p.db.pairs.0.push((a[0].to_string(), a[1].to_string()));
+            return Result::Ok(());
+        });
         opt.sub(|p| &mut p.db.file).match_extra_soft(RequiredStringOption::maybe_set_str);
     }
 

@@ -30,7 +30,10 @@ impl OperationBe for ImplBe {
 
     fn options<'a>(opt: &mut OptParserView<'a, Options>) {
         opt.sub(|p| &mut p.cmds.delim).match_single(&["d", "delim"], OptionalStringOption::set_str);
-        opt.match_extra_hard(|p, a| p.cmds.args.extend_from_slice(a));
+        opt.match_extra_hard(|p, a| {
+            p.cmds.args.extend_from_slice(a);
+            return Result::Ok(());
+        });
         opt.sub(|p| &mut p.keep_bof).match_zero(&["keep-bof"], BooleanOption::set);
         opt.sub(|p| &mut p.keep_bof).match_zero(&["no-keep-bof"], BooleanOption::clear);
     }

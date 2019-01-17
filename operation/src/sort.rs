@@ -36,11 +36,13 @@ impl OperationBe2 for ImplBe2 {
             for a in a.split(',') {
                 p.sorts.push(sorts::lexical::Impl::init(&[a]));
             }
+            return Result::Ok(());
         });
         opt.match_single(&["n", "num", "numeric"], |p, a| {
             for a in a.split(',') {
                 p.sorts.push(sorts::numeric::Impl::init(&[a]));
             }
+            return Result::Ok(());
         });
         opt.sub(|p| &mut p.partial).match_single(&["p", "partial"], OptionalUsizeOption::parse);
     }

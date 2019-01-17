@@ -44,6 +44,7 @@ impl OperationBe2 for ImplBe2 {
         opt.sub(|p| &mut p.yk).match_single(&["y"], StringVecOption::push_split);
         opt.match_n(&["p"], 2, |p, a| {
             assert!(p.pins.0.insert(a[0].clone(), a[1].clone()).is_none());
+            return Result::Ok(());
         });
         opt.sub(|p| &mut p.vk).match_single(&["v"], StringVecOption::push_split);
         SortOptions::options(&mut opt.sub(|p| &mut p.xs), &["xs"]);
