@@ -16,6 +16,7 @@ use rlua::Value;
 use std::sync::Arc;
 use super::ExecutorBe;
 use super::ExecutorRegistrant;
+use validates::ValidationResult;
 
 #[derive(Clone)]
 struct MRecordHolder(MRecord);
@@ -132,8 +133,8 @@ impl ExecutorBe for ImplBe {
         return vec!["lua"];
     }
 
-    fn parse(code: &str) -> String {
-        return code.to_string();
+    fn parse(code: &str) -> ValidationResult<String> {
+        return Result::Ok(code.to_string());
     }
 
     fn stream(code: &String, ret: bool) -> Box<FnMut(Record) -> Record> {

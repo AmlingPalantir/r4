@@ -203,6 +203,7 @@ dependencies = [
  "regex 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "registry 1.0.0",
  "rlua 0.15.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "validates 1.0.0",
 ]
 
 [[package]]

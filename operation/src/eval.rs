@@ -54,7 +54,7 @@ impl Validates for CodeOptions {
     fn validate(self) -> ValidationResult<BoxedExecutor2> {
         let engine = self.engine.validate()?.unwrap_or_else(|| executor::r4l::Impl::names()[0].to_string());
         let executor = executor::REGISTRY.find(&engine, &[]);
-        let executor = executor.parse(&self.code.validate()?);
+        let executor = executor.parse(&self.code.validate()?)?;
         return Result::Ok(executor);
     }
 }

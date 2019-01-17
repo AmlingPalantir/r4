@@ -7,10 +7,12 @@ extern crate record;
 #[macro_use]
 extern crate registry;
 extern crate rlua;
+extern crate validates;
 
 use record::Record;
 use registry::Registrant;
 use registry::args::ZeroArgs;
+use validates::ValidationResult;
 
 pub type BoxedExecutor = Box<ExecutorInbox>;
 pub type BoxedExecutor2 = Box<Executor2Inbox>;
@@ -22,7 +24,7 @@ registry! {
 }
 
 pub trait ExecutorInbox {
-    fn parse(&self, code: &str) -> BoxedExecutor2;
+    fn parse(&self, code: &str) -> ValidationResult<BoxedExecutor2>;
 }
 
 pub trait Executor2Inbox: Send + Sync {
@@ -40,7 +42,7 @@ pub trait ExecutorBe {
     type Code: Clone + Send + Sync;
 
     fn names() -> Vec<&'static str>;
-    fn parse(code: &str) -> Self::Code;
+    fn parse(code: &str) -> ValidationResult<Self::Code>;
     fn stream(code: &Self::Code, ret: bool) -> Box<FnMut(Record) -> Record>;
 }
 
@@ -71,10 +73,10 @@ impl<B: ExecutorBe + 'static> Registrant<BoxedExecutor> for ExecutorRegistrant<B
 }
 
 impl<B: ExecutorBe + 'static> ExecutorInbox for ExecutorInboxImpl<B> {
-    fn parse(&self, code: &str) -> BoxedExecutor2 {
-        return Box::new(Executor2InboxImpl::<B> {
-            code: B::parse(code),
-        });
+    fn parse(&self, code: &str) -> ValidationResult<BoxedExecutor2> {
+        return Result::Ok(Box::new(Executor2InboxImpl::<B> {
+            code: B::parse(code)?,
+        }));
     }
 }
 

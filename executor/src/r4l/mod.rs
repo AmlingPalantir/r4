@@ -15,6 +15,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use super::ExecutorBe;
 use super::ExecutorRegistrant;
+use validates::ValidationError;
+use validates::ValidationResult;
 
 #[derive(Default)]
 struct State {
@@ -200,8 +202,10 @@ impl ExecutorBe for ImplBe {
         return vec!["r4l"];
     }
 
-    fn parse(code: &str) -> Code {
-        return Code(Arc::new(parse::StatementParser::new().parse(code).unwrap()));
+    fn parse(code: &str) -> ValidationResult<Code> {
+        let parsed = parse::StatementParser::new().parse(code);
+        let expr = parsed.map_err(|e| ValidationError::Message(format!("Parse error: {:?}", e)))?;
+        return Result::Ok(Code(Arc::new(expr)));
     }
 
     fn stream(code: &Code, ret: bool) -> Box<FnMut(Record) -> Record> {
