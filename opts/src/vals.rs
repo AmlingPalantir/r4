@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use validates::Validates;
+use validates::ValidationResult;
 
 #[derive(Default)]
 pub struct BooleanOption(bool);
@@ -7,8 +8,8 @@ pub struct BooleanOption(bool);
 impl Validates for BooleanOption {
     type Target = bool;
 
-    fn validate(self) -> bool {
-        return self.0;
+    fn validate(self) -> ValidationResult<bool> {
+        return Result::Ok(self.0);
     }
 }
 
@@ -55,11 +56,11 @@ impl<T, P> Default for DefaultedOption<T, P> {
 impl<T, P: OptionDefaulter<T>> Validates for DefaultedOption<T, P> {
     type Target = T;
 
-    fn validate(self) -> T {
+    fn validate(self) -> ValidationResult<T> {
         if let Some(t) = self.0 {
-            return t;
+            return Result::Ok(t);
         }
-        return P::default();
+        return Result::Ok(P::default());
     }
 }
 
@@ -138,8 +139,8 @@ pub struct UnvalidatedOption<T>(pub T);
 impl<T> Validates for UnvalidatedOption<T> {
     type Target = T;
 
-    fn validate(self) -> T {
-        return self.0;
+    fn validate(self) -> ValidationResult<T> {
+        return Result::Ok(self.0);
     }
 }
 
@@ -182,8 +183,8 @@ pub struct IntoArcOption<P>(pub P);
 impl<P: Validates> Validates for IntoArcOption<P> {
     type Target = Arc<P::Target>;
 
-    fn validate(self) -> Arc<P::Target> {
-        return Arc::new(self.0.validate());
+    fn validate(self) -> ValidationResult<Arc<P::Target>> {
+        return self.0.validate().map(Arc::new);
     }
 }
 
@@ -193,6 +194,7 @@ pub struct EmptyOption();
 impl Validates for EmptyOption {
     type Target = ();
 
-    fn validate(self) {
+    fn validate(self) -> ValidationResult<()> {
+        return Result::Ok(());
     }
 }

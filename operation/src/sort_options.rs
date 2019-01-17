@@ -6,7 +6,6 @@ use sorts::bucket::SortBucket;
 use sorts::bucket::VecDequeSortBucket;
 use std::collections::HashMap;
 use std::rc::Rc;
-use validates::Validates;
 
 #[derive(Default)]
 #[derive(Validates)]

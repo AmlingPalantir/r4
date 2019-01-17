@@ -24,7 +24,7 @@ pub fn derive_validates(input: TokenStream) -> TokenStream {
                 let ctor_fields: Vec<_> = d.named.iter().map(|f| {
                     let name = f.ident.as_ref().unwrap();
                     return quote! {
-                        #name: ::validates::Validates::validate(self.#name),
+                        #name: ::validates::Validates::validate(self.#name)?,
                     };
                 }).collect();
                 ctor_args = quote! { { #( #ctor_fields )* } };
@@ -48,7 +48,7 @@ pub fn derive_validates(input: TokenStream) -> TokenStream {
             Fields::Unnamed(d) => {
                 let ctor_fields: Vec<_> = d.unnamed.iter().enumerate().map(|(name, _f)| {
                     return quote! {
-                        ::validates::Validates::validate(self.#name),
+                        ::validates::Validates::validate(self.#name)?,
                     };
                 }).collect();
                 ctor_args = quote! { ( #( #ctor_fields )* ) };
@@ -81,11 +81,11 @@ pub fn derive_validates(input: TokenStream) -> TokenStream {
     let (impl_generics, ty_generics, where_clause) = ast.generics.split_for_impl();
     let ident_validated = Ident::new(&format!("{}Validated", ident), Span::call_site());
     let gen = quote! {
-        impl #impl_generics Validates for #ident #ty_generics #where_clause {
+        impl #impl_generics ::validates::Validates for #ident #ty_generics #where_clause {
             type Target = #ident_validated #ty_generics;
 
-            fn validate(self) -> Self::Target {
-                return #ident_validated #ctor_args;
+            fn validate(self) -> ::validates::ValidationResult<Self::Target> {
+                return Result::Ok(#ident_validated #ctor_args);
             }
         }
 

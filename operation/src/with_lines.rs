@@ -9,7 +9,6 @@ use super::OperationBeForBe2;
 use super::OperationRegistrant;
 use super::SubOperationOption;
 use super::TwoRecordUnionOption;
-use validates::Validates;
 
 option_defaulters! {
     LineDefaulter: String => "LINE".to_string(),

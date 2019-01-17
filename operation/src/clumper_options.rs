@@ -6,7 +6,6 @@ use registry::Registrant;
 use std::rc::Rc;
 use std::sync::Arc;
 use stream::Stream;
-use validates::Validates;
 
 #[derive(Default)]
 #[derive(Validates)]

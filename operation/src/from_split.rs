@@ -10,7 +10,6 @@ use stream::Stream;
 use super::OperationBe2;
 use super::OperationBeForBe2;
 use super::OperationRegistrant;
-use validates::Validates;
 
 #[derive(Clone)]
 enum DelimiterOption {

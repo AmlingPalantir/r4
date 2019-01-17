@@ -8,7 +8,6 @@ use stream::Stream;
 use super::OperationBe;
 use super::OperationRegistrant;
 use super::SubOperationOption;
-use validates::Validates;
 
 option_defaulters! {
     FileDefaulter: String => "FILE".to_string(),

@@ -8,6 +8,7 @@ use super::OperationRegistrant;
 use super::StreamWrapper;
 use super::SubOperationOption;
 use validates::Validates;
+use validates::ValidationResult;
 
 #[derive(Default)]
 #[derive(Validates)]
@@ -57,8 +58,8 @@ struct CmdsOption {
 impl Validates for CmdsOption {
     type Target = CmdsOptions;
 
-    fn validate(self) -> CmdsOptions {
-        let delim = self.delim.validate().unwrap_or("|".to_string());
+    fn validate(self) -> ValidationResult<CmdsOptions> {
+        let delim = self.delim.validate()?.unwrap_or("|".to_string());
         let mut iter = self.args.into_iter();
         let mut cmds = Vec::new();
         'TOP: loop {
@@ -83,7 +84,7 @@ impl Validates for CmdsOption {
         let mut extra = None;
         let mut wrs = Vec::new();
         for cmd in cmds {
-            let so = SubOperationOption::of(cmd).validate();
+            let so = SubOperationOption::of(cmd).validate()?;
             match extra {
                 None => {
                     extra = Some(so.extra);
@@ -97,10 +98,10 @@ impl Validates for CmdsOption {
             wrs.push(so.wr);
         }
 
-        return CmdsOptions {
+        return Result::Ok(CmdsOptions {
             extra: extra.unwrap(),
             wrs: wrs,
-        };
+        });
     }
 }
 

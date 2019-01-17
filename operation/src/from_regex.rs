@@ -11,6 +11,7 @@ use super::OperationBe2;
 use super::OperationBeForBe2;
 use super::OperationRegistrant;
 use validates::Validates;
+use validates::ValidationResult;
 
 pub(crate) type Impl = OperationRegistrant<ImplBe>;
 
@@ -24,8 +25,8 @@ struct RegexOption(RequiredStringOption);
 impl Validates for RegexOption {
     type Target = Arc<Regex>;
 
-    fn validate(self) -> Arc<Regex> {
-        return Arc::new(Regex::new(&self.0.validate()).unwrap());
+    fn validate(self) -> ValidationResult<Arc<Regex>> {
+        return Result::Ok(Arc::new(Regex::new(&self.0.validate()?).unwrap()));
     }
 }
 

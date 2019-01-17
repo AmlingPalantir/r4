@@ -15,6 +15,7 @@ use super::OperationBe2;
 use super::OperationBeForBe2;
 use super::OperationRegistrant;
 use validates::Validates;
+use validates::ValidationResult;
 
 option_defaulters! {
     InputRecordsDefaulter: InputType => InputType::Records(),
@@ -50,11 +51,11 @@ struct CodeOptions {
 impl Validates for CodeOptions {
     type Target = BoxedExecutor2;
 
-    fn validate(self) -> BoxedExecutor2 {
-        let engine = self.engine.validate().unwrap_or_else(|| executor::r4l::Impl::names()[0].to_string());
+    fn validate(self) -> ValidationResult<BoxedExecutor2> {
+        let engine = self.engine.validate()?.unwrap_or_else(|| executor::r4l::Impl::names()[0].to_string());
         let executor = executor::REGISTRY.find(&engine, &[]);
-        let executor = executor.parse(&self.code.validate());
-        return executor;
+        let executor = executor.parse(&self.code.validate()?);
+        return Result::Ok(executor);
     }
 }
 

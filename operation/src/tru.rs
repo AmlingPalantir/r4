@@ -2,7 +2,6 @@ use opts::parser::OptParserView;
 use opts::vals::OptionalStringOption;
 use record::Record;
 use record::RecordTrait;
-use validates::Validates;
 
 #[derive(Default)]
 #[derive(Validates)]

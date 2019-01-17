@@ -111,7 +111,7 @@ impl<B: OperationBe + 'static> OperationInbox for OperationInboxImpl<B> where <B
     fn parse(&self, args: &mut Vec<String>) -> StreamWrapper {
         let mut opt = OptParser::<B::Options>::default();
         B::options(&mut opt.view());
-        let o = opt.parse(args).validate();
+        let o = opt.parse(args).validate().unwrap();
         let o = Arc::new(o);
         *args = B::get_extra(o.clone());
 

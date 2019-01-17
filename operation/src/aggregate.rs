@@ -11,7 +11,6 @@ use super::OperationBe2;
 use super::OperationBeForBe2;
 use super::OperationRegistrant;
 use super::TwoRecordUnionOption;
-use validates::Validates;
 
 #[derive(Default)]
 #[derive(Validates)]

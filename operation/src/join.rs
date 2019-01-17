@@ -14,6 +14,7 @@ use super::OperationBeForBe2;
 use super::OperationRegistrant;
 use super::TwoRecordUnionOption;
 use validates::Validates;
+use validates::ValidationResult;
 
 #[derive(Default)]
 struct DbOption {
@@ -24,8 +25,8 @@ struct DbOption {
 impl Validates for DbOption {
     type Target = Db;
 
-    fn validate(self) -> Db {
-        return Db::new(&self.file.validate(), &self.pairs.validate());
+    fn validate(self) -> ValidationResult<Db> {
+        return Result::Ok(Db::new(&self.file.validate()?, &self.pairs.validate()?));
     }
 }
 

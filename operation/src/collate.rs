@@ -6,7 +6,6 @@ use super::ClumperOptions;
 use super::OperationBe;
 use super::OperationRegistrant;
 use super::aggregate;
-use validates::Validates;
 
 #[derive(Default)]
 #[derive(Validates)]
