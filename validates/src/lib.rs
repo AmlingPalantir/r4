@@ -2,6 +2,7 @@ use std::error::Error;
 use std::fmt::Debug;
 use std::fmt::Formatter;
 use std::fmt::Result as FmtResult;
+use std::ops::Deref;
 
 pub enum ValidationError {
     Message(String),
@@ -17,6 +18,10 @@ impl<E: Error + 'static> From<E> for ValidationError {
 impl ValidationError {
     pub fn message<R>(msg: String) -> ValidationResult<R> {
         return Result::Err(ValidationError::Message(msg));
+    }
+
+    pub fn label<S: Deref<Target = str>>(&self, prefix: S) -> ValidationError {
+        return ValidationError::Message(format!("{}: {:?}", &*prefix, self));
     }
 }
 
