@@ -149,6 +149,7 @@ pub trait OperationBe2 {
 #[derive(Default)]
 #[derive(Validates)]
 pub struct AndArgsOptions<P: Validates> {
+    #[ValidatesName = ""]
     p: IntoArcOption<P>,
     args: StringVecOption,
 }
