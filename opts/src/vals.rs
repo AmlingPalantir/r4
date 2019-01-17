@@ -27,7 +27,7 @@ impl BooleanOption {
 }
 
 pub trait OptionDefaulter<T> {
-    fn default() -> T;
+    fn default() -> ValidationResult<T>;
 }
 
 #[macro_export]
@@ -40,8 +40,8 @@ macro_rules! option_defaulters {
             pub struct $id();
 
             impl $crate::vals::OptionDefaulter<$r> for $id {
-                fn default() -> $r {
-                    return $e;
+                fn default() -> ::validates::ValidationResult<$r> {
+                    return Result::Ok($e);
                 }
             }
         )*
@@ -63,7 +63,7 @@ impl<T, P: OptionDefaulter<T>> Validates for DefaultedOption<T, P> {
         if let Some(t) = self.0 {
             return Result::Ok(t);
         }
-        return Result::Ok(P::default());
+        return P::default();
     }
 }
 
@@ -93,9 +93,9 @@ impl<T, P> DefaultedOption<T, P> {
     }
 }
 
-impl<T> OptionDefaulter<T> for PanicDefaulter {
-    fn default() -> T {
-        panic!("Missing option");
+impl<T> OptionDefaulter<T> for ErrDefaulter {
+    fn default() -> ValidationResult<T> {
+        return ValidationError::message("Missing option".to_string());
     }
 }
 
@@ -111,12 +111,12 @@ impl<P> DefaultedStringOption<P> {
     }
 }
 
-pub enum PanicDefaulter {
+pub enum ErrDefaulter {
 }
 
-pub type RequiredOption<T> = DefaultedOption<T, PanicDefaulter>;
+pub type RequiredOption<T> = DefaultedOption<T, ErrDefaulter>;
 
-pub type RequiredStringOption = DefaultedStringOption<PanicDefaulter>;
+pub type RequiredStringOption = DefaultedStringOption<ErrDefaulter>;
 
 pub type OptionalOption<T> = UnvalidatedOption<Option<T>>;
 
