@@ -1,4 +1,5 @@
 use misc::PointerRc;
+use std::ops::Deref;
 use std::rc::Rc;
 use super::trie::NameTrie;
 use super::trie::NameTrieResult;
@@ -16,6 +17,8 @@ enum ExtraHandler<P> {
 
 pub struct OptionsPileElement<P> {
     m: OptionsPileElementMatch<P>,
+    help_meta: Option<String>,
+    help_msg: Option<String>,
 }
 
 enum OptionsPileElementMatch<P> {
@@ -33,26 +36,44 @@ impl<P> OptionsPileElement<P> {
     }
 
     pub fn match_n<F: Fn(&mut P, &[String]) -> ValidationResult<()> + 'static>(aliases: &[&str], argct: usize, f: F) -> OptionsPileElement<P> {
-        return OptionsPileElement {
-            m: OptionsPileElementMatch::Args(aliases.iter().map(|s| s.to_string()).collect(), argct, PointerRc(Rc::new(f))),
-        };
+        return Self::raw(OptionsPileElementMatch::Args(aliases.iter().map(|s| s.to_string()).collect(), argct, PointerRc(Rc::new(f))));
     }
 
     pub fn match_extra_soft<F: Fn(&mut P, &str) -> ValidationResult<bool> + 'static>(f: F) -> OptionsPileElement<P> {
-        return OptionsPileElement {
-            m: OptionsPileElementMatch::Extra(ExtraHandler::Soft(PointerRc(Rc::new(f)))),
-        };
+        return Self::raw(OptionsPileElementMatch::Extra(ExtraHandler::Soft(PointerRc(Rc::new(f)))));
     }
 
     pub fn match_extra_hard<F: Fn(&mut P, &[String]) -> ValidationResult<()> + 'static>(f: F) -> OptionsPileElement<P> {
+        return Self::raw(OptionsPileElementMatch::Extra(ExtraHandler::Hard(PointerRc(Rc::new(f)))));
+    }
+
+    fn raw(m: OptionsPileElementMatch<P>) -> OptionsPileElement<P> {
         return OptionsPileElement {
-            m: OptionsPileElementMatch::Extra(ExtraHandler::Hard(PointerRc(Rc::new(f)))),
+            m: m,
+            help_meta: None,
+            help_msg: None,
         };
     }
 
     fn map_match<P2, F: FnOnce(OptionsPileElementMatch<P>) -> OptionsPileElementMatch<P2>>(self, f: F) -> OptionsPileElement<P2> {
         return OptionsPileElement {
             m: f(self.m),
+            help_meta: self.help_meta,
+            help_msg: self.help_msg,
+        };
+    }
+
+    pub fn help_meta<S: Deref<Target = str>>(self, s: S) -> OptionsPileElement<P> {
+        return OptionsPileElement {
+            help_meta: Some(s.to_string()),
+            ..self
+        };
+    }
+
+    pub fn help_msg<S: Deref<Target = str>>(self, s: S) -> OptionsPileElement<P> {
+        return OptionsPileElement {
+            help_msg: Some(s.to_string()),
+            ..self
         };
     }
 }
