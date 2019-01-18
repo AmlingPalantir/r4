@@ -104,12 +104,43 @@ impl<B: OperationBe> Default for OperationInboxImpl<B> {
     }
 }
 
+#[derive(Default)]
+pub struct AndHelpOptions<P: Validates> {
+    p: P,
+    help: bool,
+}
+
 impl<B: OperationBe + 'static> OperationInbox for OperationInboxImpl<B> where <B::Options as Validates>::Target: Send + Sync {
     fn parse(&self, args: &mut Vec<String>) -> StreamWrapper {
-        let mut opt = OptionsPile::new();
-        B::options(&mut opt);
-        let opt = opt.to_parser();
-        let o = opt.parse(args).unwrap().validate().unwrap();
+        let mut opt = OptionsPile::<AndHelpOptions<B::Options>>::new();
+        opt.add_sub(|p| &mut p.p, B::new_options());
+        opt.match_zero(&["help"], |p| {
+            p.help = true;
+            return Result::Ok(());
+        });
+        let o = opt.to_parser().parse(args);
+        let o = match o {
+            Result::Ok(o) => o,
+            Result::Err(e) => {
+                println!("Error parsing arguments: {:?}", e);
+                opt.dump_help();
+                std::process::exit(1);
+            }
+        };
+        if o.help {
+            opt.dump_help();
+            std::process::exit(0);
+        }
+        let o = o.p;
+        let o = o.validate();
+        let o = match o {
+            Result::Ok(o) => o,
+            Result::Err(e) => {
+                println!("Error validating arguments: {:?}", e);
+                opt.dump_help();
+                std::process::exit(1);
+            }
+        };
         let o = Arc::new(o);
         *args = B::get_extra(o.clone());
 
