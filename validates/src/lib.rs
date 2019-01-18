@@ -16,8 +16,8 @@ impl<E: Error + 'static> From<E> for ValidationError {
 }
 
 impl ValidationError {
-    pub fn message<R>(msg: String) -> ValidationResult<R> {
-        return Result::Err(ValidationError::Message(msg));
+    pub fn message<S: Deref<Target = str>, R>(msg: S) -> ValidationResult<R> {
+        return Result::Err(ValidationError::Message(msg.to_string()));
     }
 
     pub fn label<S: Deref<Target = str>>(&self, prefix: S) -> ValidationError {
