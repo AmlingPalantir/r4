@@ -146,6 +146,62 @@ impl<P: 'static> OptionsPile<P> {
             });
         }).collect());
     }
+
+    pub fn dump_help(&self) {
+        let lines: Vec<_> = self.0.iter().map(|e| {
+            let mut lhs;
+            match e.m {
+                OptionsPileElementMatch::Args(ref aliases, argct, _) => {
+                    lhs = String::new();
+                    for (i, alias) in aliases.iter().enumerate() {
+                        if i > 0 {
+                            lhs.push_str("|")
+                        }
+                        lhs.push_str("-");
+                        if alias.len() > 1 {
+                            lhs.push_str("-");
+                        }
+                        lhs.push_str(alias);
+                    }
+                    if argct > 0 {
+                        match e.help_meta {
+                            Some(ref s) => {
+                                lhs.push_str(" ");
+                                lhs.push_str(s);
+                            }
+                            None => {
+                                for _ in 0..argct {
+                                    lhs.push_str(" <arg>");
+                                }
+                            }
+                        }
+                    }
+                }
+                OptionsPileElementMatch::Extra(ExtraHandler::Soft(_)) => {
+                    lhs = match e.help_meta {
+                        Some(ref s) => s.clone(),
+                        None => "<arg>".to_string(),
+                    };
+                }
+                OptionsPileElementMatch::Extra(ExtraHandler::Hard(_)) => {
+                    lhs = match e.help_meta {
+                        Some(ref s) => s.clone(),
+                        None => "<args>".to_string(),
+                    };
+                }
+            }
+
+            let rhs = e.help_msg.clone().unwrap_or_else(String::new);
+
+            return (lhs, rhs);
+        }).collect();
+
+        let width = lines.iter().map(|(lhs, _rhs)| lhs.len()).max().unwrap();
+
+        for (lhs, rhs) in lines {
+            println!("{:width$}   {}", lhs, rhs, width = width);
+        }
+    }
 }
 
 
