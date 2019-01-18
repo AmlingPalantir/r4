@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use super::StreamWrapper;
 use validates::Validates;
+use validates::ValidationError;
 use validates::ValidationResult;
 
 #[derive(Default)]
@@ -21,6 +22,9 @@ impl Validates for SubOperationOption {
     type Target = SubOperationOptionValidated;
 
     fn validate(mut self) -> ValidationResult<SubOperationOptionValidated> {
+        if self.0.len() == 0 {
+            return ValidationError::message("No sub-operation specified");
+        }
         let name = self.0.remove(0);
         let op = super::REGISTRY.find(&name, &[])?;
         let wr = op.parse(&mut self.0);
