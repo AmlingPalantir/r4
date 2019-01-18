@@ -54,17 +54,20 @@ impl<P: 'static> OptionsPile<P> {
         self.add(other.sub(f));
     }
 
-    pub fn to_parser(self) -> OptParser<P> {
+    pub fn to_parser(&self) -> OptParser<P> {
         let mut opt = OptParser::default();
-        for e in self.0 {
+        for e in self.0.iter() {
             match e {
                 OptionsPileElement::Args(aliases, argct, f) => {
                     for alias in aliases {
-                        opt.named.insert(&alias, (argct, f.clone()));
+                        opt.named.insert(&alias, (*argct, f.clone()));
                     }
                 }
-                OptionsPileElement::Extra(h) => {
-                    opt.extra.push(h);
+                OptionsPileElement::Extra(ExtraHandler::Soft(h)) => {
+                    opt.extra.push(ExtraHandler::Soft(h.clone()));
+                }
+                OptionsPileElement::Extra(ExtraHandler::Hard(h)) => {
+                    opt.extra.push(ExtraHandler::Hard(h.clone()));
                 }
             }
         }
