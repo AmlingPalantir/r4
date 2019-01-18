@@ -1,5 +1,6 @@
 use clumper::BoxedClumper;
-use opts::parser::OptParserView;
+use opts::parser::OptionsPile;
+use opts::parser::Optionsable;
 use opts::vals::UnvalidatedOption;
 use record::Record;
 use registry::Registrant;
@@ -11,10 +12,12 @@ use stream::Stream;
 #[derive(Validates)]
 pub struct ClumperOptions(UnvalidatedOption<Vec<BoxedClumper>>);
 
-impl ClumperOptions {
-    pub fn options<'a>(opt: &mut OptParserView<'a, ClumperOptions>) {
-        clumper::REGISTRY.single_options(&mut opt.sub(|p| &mut (p.0).0), &["c", "clumper"]);
-        clumper::REGISTRY.multiple_options(&mut opt.sub(|p| &mut (p.0).0), &["c", "clumper"]);
+impl Optionsable for ClumperOptions {
+    type Options = ClumperOptions;
+
+    fn options(opt: &mut OptionsPile<ClumperOptions>) {
+        opt.add_sub(|p| &mut (p.0).0, clumper::REGISTRY.single_options(&["c", "clumper"]));
+        opt.add_sub(|p| &mut (p.0).0, clumper::REGISTRY.multiple_options(&["c", "clumper"]));
         opt.match_single(&["k", "key"], |p, a| {
             for a in a.split(',') {
                 (p.0).0.push(clumper::key::Impl::init(&[a])?);

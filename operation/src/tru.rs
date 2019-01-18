@@ -1,4 +1,5 @@
-use opts::parser::OptParserView;
+use opts::parser::OptionsPile;
+use opts::parser::Optionsable;
 use opts::vals::OptionalStringOption;
 use record::Record;
 use record::RecordTrait;
@@ -10,10 +11,12 @@ pub struct TwoRecordUnionOption {
     right_prefix: OptionalStringOption,
 }
 
-impl TwoRecordUnionOption {
-    pub fn options<'a>(opt: &mut OptParserView<'a, TwoRecordUnionOption>) {
-        opt.sub(|p| &mut p.left_prefix).match_single(&["lp", "left-prefix"], OptionalStringOption::set_str);
-        opt.sub(|p| &mut p.right_prefix).match_single(&["rp", "right-prefix"], OptionalStringOption::set_str);
+impl Optionsable for TwoRecordUnionOption {
+    type Options = TwoRecordUnionOption;
+
+    fn options(opt: &mut OptionsPile<TwoRecordUnionOption>) {
+        opt.match_single(&["lp", "left-prefix"], |p, a| p.left_prefix.set_str(a));
+        opt.match_single(&["rp", "right-prefix"], |p, a| p.right_prefix.set_str(a));
     }
 }
 

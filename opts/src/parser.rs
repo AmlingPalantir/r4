@@ -2,6 +2,7 @@ use misc::PointerRc;
 use std::rc::Rc;
 use super::trie::NameTrie;
 use super::trie::NameTrieResult;
+use validates::Validates;
 use validates::ValidationError;
 use validates::ValidationResult;
 
@@ -13,15 +14,18 @@ enum ExtraHandler<P> {
     Hard(CbMany<P>),
 }
 
-trait OptParserMatch<P: 'static> {
-    fn match_n(&mut self, aliases: &[&str], argct: usize, f: CbMany<P>);
-    fn match_extra_soft(&mut self, f: CbOne<P>);
-    fn match_extra_hard(&mut self, f: CbMany<P>);
+enum OptionsPileElement<P> {
+    Args(Vec<String>, usize, CbMany<P>),
+    Extra(ExtraHandler<P>),
 }
 
-pub struct OptParserView<'a, P: 'a>(Box<OptParserMatch<P> + 'a>);
+pub struct OptionsPile<P>(Vec<OptionsPileElement<P>>);
 
-impl<'a, P: 'static> OptParserView<'a, P> {
+impl<P: 'static> OptionsPile<P> {
+    pub fn new() -> Self {
+        return OptionsPile(Vec::new());
+    }
+
     pub fn match_single<F: Fn(&mut P, &str) -> ValidationResult<()> + 'static>(&mut self, aliases: &[&str], f: F) {
         self.match_n(aliases, 1, move |p, a| f(p, &a[0]));
     }
@@ -31,24 +35,83 @@ impl<'a, P: 'static> OptParserView<'a, P> {
     }
 
     pub fn match_n<F: Fn(&mut P, &[String]) -> ValidationResult<()> + 'static>(&mut self, aliases: &[&str], argct: usize, f: F) {
-        self.0.match_n(aliases, argct, PointerRc(Rc::new(f)));
+        self.0.push(OptionsPileElement::Args(aliases.iter().map(|s| s.to_string()).collect(), argct, PointerRc(Rc::new(f))));
     }
 
     pub fn match_extra_soft<F: Fn(&mut P, &str) -> ValidationResult<bool> + 'static>(&mut self, f: F) {
-        self.0.match_extra_soft(PointerRc(Rc::new(f)));
+        self.0.push(OptionsPileElement::Extra(ExtraHandler::Soft(PointerRc(Rc::new(f)))));
     }
 
     pub fn match_extra_hard<F: Fn(&mut P, &[String]) -> ValidationResult<()> + 'static>(&mut self, f: F) {
-        self.0.match_extra_hard(PointerRc(Rc::new(f)));
+        self.0.push(OptionsPileElement::Extra(ExtraHandler::Hard(PointerRc(Rc::new(f)))));
+    }
+
+    pub fn add(&mut self, mut other: OptionsPile<P>) {
+        self.0.append(&mut other.0);
+    }
+
+    pub fn add_sub<P2: 'static, F: Fn(&mut P) -> &mut P2 + 'static>(&mut self, f: F, other: OptionsPile<P2>) {
+        self.add(other.sub(f));
+    }
+
+    pub fn to_parser(self) -> OptParser<P> {
+        let mut opt = OptParser::default();
+        for e in self.0 {
+            match e {
+                OptionsPileElement::Args(aliases, argct, f) => {
+                    for alias in aliases {
+                        opt.named.insert(&alias, (argct, f.clone()));
+                    }
+                }
+                OptionsPileElement::Extra(h) => {
+                    opt.extra.push(h);
+                }
+            }
+        }
+        return opt;
+    }
+
+    pub fn sub<P2, F: Fn(&mut P2) -> &mut P + 'static>(self, f1: F) -> OptionsPile<P2> {
+        let f1 = Rc::new(f1);
+        return OptionsPile(self.0.into_iter().map(|e| {
+            let f1 = f1.clone();
+            return match e {
+                OptionsPileElement::Args(aliases, argct, f) => OptionsPileElement::Args(aliases, argct, PointerRc(Rc::new(move |p, a| (f.0)(f1(p), a)))),
+                OptionsPileElement::Extra(ExtraHandler::Soft(h)) => OptionsPileElement::Extra(ExtraHandler::Soft(PointerRc(Rc::new(move |p, a| (h.0)(f1(p), a))))),
+                OptionsPileElement::Extra(ExtraHandler::Hard(h)) => OptionsPileElement::Extra(ExtraHandler::Hard(PointerRc(Rc::new(move |p, a| (h.0)(f1(p), a))))),
+            };
+        }).collect());
     }
 }
 
 
 
-#[derive(Default)]
+pub trait Optionsable {
+    type Options: Default + Validates + 'static;
+
+    fn options(opt: &mut OptionsPile<Self::Options>);
+
+    fn new_options() -> OptionsPile<Self::Options> {
+        let mut opt = OptionsPile::new();
+        Self::options(&mut opt);
+        return opt;
+    }
+}
+
+
+
 pub struct OptParser<P> {
     named: NameTrie<(usize, CbMany<P>)>,
     extra: Vec<ExtraHandler<P>>,
+}
+
+impl<P> Default for OptParser<P> {
+    fn default() -> Self {
+        return OptParser {
+            named: NameTrie::default(),
+            extra: Vec::default(),
+        };
+    }
 }
 
 fn name_from_arg(name: &str) -> Option<&str> {
@@ -62,10 +125,6 @@ fn name_from_arg(name: &str) -> Option<&str> {
 }
 
 impl<P: 'static> OptParser<P> {
-    pub fn view<'a>(&'a mut self) -> OptParserView<'a, P> {
-        return OptParserView(Box::new(self));
-    }
-
     pub fn parse_mut(&self, args: &[String], p: &mut P) -> ValidationResult<()> {
         let mut next_index = 0;
         let mut refuse_opt = false;
@@ -124,54 +183,5 @@ impl<P: Default + 'static> OptParser<P> {
         let mut p = P::default();
         self.parse_mut(args, &mut p)?;
         return Result::Ok(p);
-    }
-}
-
-impl<'a, P: 'static> OptParserMatch<P> for &'a mut OptParser<P> {
-    fn match_n(&mut self, aliases: &[&str], argct: usize, f: CbMany<P>) {
-        for alias in aliases {
-            self.named.insert(alias, (argct, f.clone()));
-        }
-    }
-
-    fn match_extra_soft(&mut self, f: CbOne<P>) {
-        self.extra.push(ExtraHandler::Soft(f));
-    }
-
-    fn match_extra_hard(&mut self, f: CbMany<P>) {
-        self.extra.push(ExtraHandler::Hard(f));
-    }
-}
-
-
-
-struct OptParserSubMatch<'a, PP: 'a, P> {
-    parent: &'a mut OptParserMatch<PP>,
-    f: Rc<Fn(&mut PP) -> &mut P>,
-}
-
-impl<'a, PP: 'static, P: 'static> OptParserMatch<P> for OptParserSubMatch<'a, PP, P> {
-    fn match_n(&mut self, aliases: &[&str], argct: usize, f: CbMany<P>) {
-        let f1 = self.f.clone();
-        self.parent.match_n(aliases, argct, PointerRc(Rc::new(move |p, a| (f.0)(f1(p), a))));
-    }
-
-    fn match_extra_soft(&mut self, f: CbOne<P>) {
-        let f1 = self.f.clone();
-        self.parent.match_extra_soft(PointerRc(Rc::new(move |p, a| (f.0)(f1(p), a))));
-    }
-
-    fn match_extra_hard(&mut self, f: CbMany<P>) {
-        let f1 = self.f.clone();
-        self.parent.match_extra_hard(PointerRc(Rc::new(move |p, a| (f.0)(f1(p), a))));
-    }
-}
-
-impl<'a, P: 'static> OptParserView<'a, P> {
-    pub fn sub<'b, P2: 'static, F: Fn(&mut P) -> &mut P2 + 'static>(&'b mut self, f: F) -> OptParserView<'b, P2> where 'a: 'b {
-        return OptParserView(Box::new(OptParserSubMatch {
-            parent: &mut *self.0,
-            f: Rc::new(f),
-        }));
     }
 }

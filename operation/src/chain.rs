@@ -1,4 +1,5 @@
-use opts::parser::OptParserView;
+use opts::parser::OptionsPile;
+use opts::parser::Optionsable;
 use opts::vals::BooleanOption;
 use opts::vals::OptionalStringOption;
 use std::sync::Arc;
@@ -22,21 +23,23 @@ pub(crate) type Impl = OperationRegistrant<ImplBe>;
 
 pub(crate) struct ImplBe();
 
-impl OperationBe for ImplBe {
+impl Optionsable for ImplBe {
     type Options = Options;
 
-    fn names() -> Vec<&'static str> {
-        return vec!["chain"];
-    }
-
-    fn options<'a>(opt: &mut OptParserView<'a, Options>) {
-        opt.sub(|p| &mut p.cmds.delim).match_single(&["d", "delim"], OptionalStringOption::set_str);
+    fn options(opt: &mut OptionsPile<Options>) {
+        opt.match_single(&["d", "delim"], |p, a| p.cmds.delim.set_str(a));
         opt.match_extra_hard(|p, a| {
             p.cmds.args.extend_from_slice(a);
             return Result::Ok(());
         });
-        opt.sub(|p| &mut p.keep_bof).match_zero(&["keep-bof"], BooleanOption::set);
-        opt.sub(|p| &mut p.keep_bof).match_zero(&["no-keep-bof"], BooleanOption::clear);
+        opt.match_zero(&["keep-bof"], |p| p.keep_bof.set());
+        opt.match_zero(&["no-keep-bof"], |p| p.keep_bof.clear());
+    }
+}
+
+impl OperationBe for ImplBe {
+    fn names() -> Vec<&'static str> {
+        return vec!["chain"];
     }
 
     fn get_extra(o: Arc<OptionsValidated>) -> Vec<String> {

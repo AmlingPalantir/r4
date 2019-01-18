@@ -4,7 +4,7 @@ extern crate validates;
 pub mod args;
 use self::args::RegistryArgs;
 
-use opts::parser::OptParserView;
+use opts::parser::OptionsPile;
 use std::collections::HashMap;
 use validates::ValidationError;
 use validates::ValidationResult;
@@ -41,7 +41,8 @@ impl<R> Registry<R> {
         }
     }
 
-    pub fn labelled_multiple_options<'a, O: AsMut<Vec<(String, R)>> + 'static>(&'static self, opt: &mut OptParserView<'a, O>, prefixes: &[&str]) {
+    pub fn labelled_multiple_options(&'static self, prefixes: &[&str]) -> OptionsPile<Vec<(String, R)>> {
+        let mut opt = OptionsPile::<Vec<(String, R)>>::new();
         for (alias, (argct, f)) in &self.map {
             let aliases: Vec<_> = prefixes.iter().map(|prefix| format!("{}-{}", prefix, alias)).collect();
             let aliases: Vec<_> = aliases.iter().map(|s| s as &str).collect();
@@ -49,13 +50,15 @@ impl<R> Registry<R> {
                 let mut iter = a.iter();
                 let label = iter.next().unwrap().to_string();
                 let a: Vec<_> = iter.map(|s| s as &str).collect();
-                rs.as_mut().push((label, f(&a)?));
+                rs.push((label, f(&a)?));
                 return Result::Ok(());
             });
         }
+        return opt;
     }
 
-    pub fn labelled_single_options<'a, O: AsMut<Vec<(String, R)>> + 'static>(&'static self, opt: &mut OptParserView<'a, O>, aliases: &[&str]) {
+    pub fn labelled_single_options(&'static self, aliases: &[&str]) -> OptionsPile<Vec<(String, R)>> {
+        let mut opt = OptionsPile::<Vec<(String, R)>>::new();
         opt.match_single(aliases, move |rs, a| {
             let (label, a) = match a.find('=') {
                 Some(i) => (a[0..i].to_string(), &a[(i + 1)..]),
@@ -65,32 +68,37 @@ impl<R> Registry<R> {
             let name = parts.next().unwrap();
             let args: Vec<&str> = parts.collect();
             let r = self.find(name, &args)?;
-            rs.as_mut().push((label, r));
+            rs.push((label, r));
             return Result::Ok(());
         });
+        return opt;
     }
 
-    pub fn multiple_options<'a, O: AsMut<Vec<R>> + 'static>(&'static self, opt: &mut OptParserView<'a, O>, prefixes: &[&str]) {
+    pub fn multiple_options(&'static self, prefixes: &[&str]) -> OptionsPile<Vec<R>> {
+        let mut opt = OptionsPile::<Vec<R>>::new();
         for (alias, (argct, f)) in &self.map {
             let aliases: Vec<_> = prefixes.iter().map(|prefix| format!("{}-{}", prefix, alias)).collect();
             let aliases: Vec<_> = aliases.iter().map(|s| s as &str).collect();
             opt.match_n(&aliases, *argct, move |rs, a| {
                 let a: Vec<_> = a.iter().map(|s| s as &str).collect();
-                rs.as_mut().push(f(&a)?);
+                rs.push(f(&a)?);
                 return Result::Ok(());
             });
         }
+        return opt;
     }
 
-    pub fn single_options<'a, O: AsMut<Vec<R>> + 'static>(&'static self, opt: &mut OptParserView<'a, O>, aliases: &[&str]) {
+    pub fn single_options(&'static self, aliases: &[&str]) -> OptionsPile<Vec<R>> {
+        let mut opt = OptionsPile::<Vec<R>>::new();
         opt.match_single(aliases, move |rs, a| {
             let mut parts = a.split(',');
             let name = parts.next().unwrap();
             let args: Vec<_> = parts.collect();
             let r = self.find(name, &args)?;
-            rs.as_mut().push(r);
+            rs.push(r);
             return Result::Ok(());
         });
+        return opt;
     }
 }
 

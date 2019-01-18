@@ -1,4 +1,5 @@
-use opts::parser::OptParserView;
+use opts::parser::OptionsPile;
+use opts::parser::Optionsable;
 use opts::vals::DefaultedStringOption;
 use record::RecordTrait;
 use std::sync::Arc;
@@ -28,17 +29,19 @@ pub(crate) type ImplBe = OperationBeForBe2<ImplBe2>;
 
 pub(crate) struct ImplBe2();
 
-impl OperationBe2 for ImplBe2 {
+impl Optionsable for ImplBe2 {
     type Options = Options;
 
+    fn options(opt: &mut OptionsPile<Options>) {
+        opt.add_sub(|p| &mut p.tru, TwoRecordUnionOption::new_options());
+        opt.match_single(&["lk", "line-key"], |p, a| p.lk.set_str(a));
+        opt.match_extra_hard(|p, a| p.op.push(a));
+    }
+}
+
+impl OperationBe2 for ImplBe2 {
     fn names() -> Vec<&'static str> {
         return vec!["with-lines"];
-    }
-
-    fn options<'a>(opt: &mut OptParserView<'a, Options>) {
-        TwoRecordUnionOption::options(&mut opt.sub(|p| &mut p.tru));
-        opt.sub(|p| &mut p.lk).match_single(&["lk", "line-key"], DefaultedStringOption::set_str);
-        opt.sub(|p| &mut p.op).match_extra_hard(SubOperationOption::push);
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {

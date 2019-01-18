@@ -1,4 +1,5 @@
-use opts::parser::OptParserView;
+use opts::parser::OptionsPile;
+use opts::parser::Optionsable;
 use opts::vals::OptionalUsizeOption;
 use registry::Registrant;
 use std::sync::Arc;
@@ -23,15 +24,11 @@ pub(crate) type ImplBe = OperationBeForBe2<ImplBe2>;
 
 pub(crate) struct ImplBe2();
 
-impl OperationBe2 for ImplBe2 {
+impl Optionsable for ImplBe2 {
     type Options = Options;
 
-    fn names() -> Vec<&'static str> {
-        return vec!["sort"];
-    }
-
-    fn options<'a>(opt: &mut OptParserView<'a, Options>) {
-        SortOptions::options(&mut opt.sub(|p| &mut p.sorts), &["s", "sort"]);
+    fn options(opt: &mut OptionsPile<Options>) {
+        opt.add_sub(|p| &mut p.sorts, SortOptions::new_options(&["s", "sort"]));
         opt.match_single(&["l", "lex", "lexical"], |p, a| {
             for a in a.split(',') {
                 p.sorts.push(sorts::lexical::Impl::init(&[a])?);
@@ -44,7 +41,13 @@ impl OperationBe2 for ImplBe2 {
             }
             return Result::Ok(());
         });
-        opt.sub(|p| &mut p.partial).match_single(&["p", "partial"], OptionalUsizeOption::parse);
+        opt.match_single(&["p", "partial"], |p, a| p.partial.parse(a));
+    }
+}
+
+impl OperationBe2 for ImplBe2 {
+    fn names() -> Vec<&'static str> {
+        return vec!["sort"];
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {

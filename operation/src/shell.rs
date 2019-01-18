@@ -1,4 +1,5 @@
-use opts::parser::OptParserView;
+use opts::parser::OptionsPile;
+use opts::parser::Optionsable;
 use opts::vals::StringVecOption;
 use std::io::BufRead;
 use std::io::BufReader;
@@ -17,15 +18,17 @@ pub(crate) type Impl = OperationRegistrant<ImplBe>;
 
 pub(crate) struct ImplBe();
 
-impl OperationBe for ImplBe {
+impl Optionsable for ImplBe {
     type Options = StringVecOption;
 
+    fn options(opt: &mut OptionsPile<StringVecOption>) {
+        opt.match_extra_hard(StringVecOption::push_all);
+    }
+}
+
+impl OperationBe for ImplBe {
     fn names() -> Vec<&'static str> {
         return vec!["shell"];
-    }
-
-    fn options<'a>(opt: &mut OptParserView<'a, StringVecOption>) {
-        opt.match_extra_hard(StringVecOption::push_all);
     }
 
     fn get_extra(_o: Arc<Vec<String>>) -> Vec<String> {

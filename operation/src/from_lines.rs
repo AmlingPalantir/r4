@@ -1,4 +1,5 @@
-use opts::parser::OptParserView;
+use opts::parser::OptionsPile;
+use opts::parser::Optionsable;
 use opts::vals::DefaultedStringOption;
 use record::Record;
 use record::RecordTrait;
@@ -29,17 +30,19 @@ pub(crate) type ImplBe = OperationBeForBe2<ImplBe2>;
 
 pub(crate) struct ImplBe2();
 
-impl OperationBe2 for ImplBe2 {
+impl Optionsable for ImplBe2 {
     type Options = Options;
 
+    fn options(opt: &mut OptionsPile<Options>) {
+        opt.match_single(&["lk", "line-key"], |p, a| p.lk.set_str(a));
+        opt.match_single(&["lnk", "lineno-key"], |p, a| p.lnk.set_str(a));
+        opt.match_single(&["fk", "file-key"], |p, a| p.fk.set_str(a));
+    }
+}
+
+impl OperationBe2 for ImplBe2 {
     fn names() -> Vec<&'static str> {
         return vec!["from-lines"];
-    }
-
-    fn options<'a>(opt: &mut OptParserView<'a, Options>) {
-        opt.sub(|p| &mut p.lk).match_single(&["lk", "line-key"], DefaultedStringOption::set_str);
-        opt.sub(|p| &mut p.lnk).match_single(&["lnk", "lineno-key"], DefaultedStringOption::set_str);
-        opt.sub(|p| &mut p.fk).match_single(&["fk", "file-key"], DefaultedStringOption::set_str);
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {

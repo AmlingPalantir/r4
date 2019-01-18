@@ -1,4 +1,5 @@
-use opts::parser::OptParserView;
+use opts::parser::OptionsPile;
+use opts::parser::Optionsable;
 use std::sync::Arc;
 use stream::Stream;
 use super::ClumperOptions;
@@ -17,16 +18,18 @@ pub(crate) type Impl = OperationRegistrant<ImplBe>;
 
 pub(crate) struct ImplBe();
 
-impl OperationBe for ImplBe {
+impl Optionsable for ImplBe {
     type Options = Options;
 
+    fn options(opt: &mut OptionsPile<Options>) {
+        opt.match_extra_hard(|p, a| p.op.push(a));
+        opt.add_sub(|p| &mut p.cl, ClumperOptions::new_options());
+    }
+}
+
+impl OperationBe for ImplBe {
     fn names() -> Vec<&'static str> {
         return vec!["multiplex"];
-    }
-
-    fn options<'a>(opt: &mut OptParserView<'a, Options>) {
-        opt.sub(|p| &mut p.op).match_extra_hard(SubOperationOption::push);
-        ClumperOptions::options(&mut opt.sub(|p| &mut p.cl));
     }
 
     fn get_extra(o: Arc<OptionsValidated>) -> Vec<String> {

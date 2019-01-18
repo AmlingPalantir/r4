@@ -1,4 +1,5 @@
-use opts::parser::OptParserView;
+use opts::parser::OptionsPile;
+use opts::parser::Optionsable;
 use opts::vals::StringVecOption;
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -20,15 +21,17 @@ pub(crate) type ImplBe = OperationBeForBe2<ImplBe2>;
 
 pub(crate) struct ImplBe2();
 
-impl OperationBe2 for ImplBe2 {
+impl Optionsable for ImplBe2 {
     type Options = Options;
 
+    fn options(opt: &mut OptionsPile<Options>) {
+        opt.match_single(&["k", "key"], |p, a| p.keys.push_split(a));
+    }
+}
+
+impl OperationBe2 for ImplBe2 {
     fn names() -> Vec<&'static str> {
         return vec!["to-table"];
-    }
-
-    fn options<'a>(opt: &mut OptParserView<'a, Options>) {
-        opt.sub(|p| &mut p.keys).match_single(&["k", "key"], StringVecOption::push_split);
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {

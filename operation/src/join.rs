@@ -1,4 +1,5 @@
-use opts::parser::OptParserView;
+use opts::parser::OptionsPile;
+use opts::parser::Optionsable;
 use opts::vals::RequiredStringOption;
 use opts::vals::UnvalidatedOption;
 use record::Record;
@@ -77,15 +78,11 @@ pub(crate) type ImplBe = OperationBeForBe2<ImplBe2>;
 
 pub(crate) struct ImplBe2();
 
-impl OperationBe2 for ImplBe2 {
+impl Optionsable for ImplBe2 {
     type Options = Options;
 
-    fn names() -> Vec<&'static str> {
-        return vec!["join"];
-    }
-
-    fn options<'a>(opt: &mut OptParserView<'a, Options>) {
-        TwoRecordUnionOption::options(&mut opt.sub(|p| &mut p.tru));
+    fn options(opt: &mut OptionsPile<Options>) {
+        opt.add_sub(|p| &mut p.tru, TwoRecordUnionOption::new_options());
         fn _set_fills(p: &mut Options, left: bool, right: bool) -> ValidationResult<()> {
             p.fills.0 = (left, right);
             return Result::Ok(());
@@ -98,7 +95,13 @@ impl OperationBe2 for ImplBe2 {
             p.db.pairs.0.push((a[0].to_string(), a[1].to_string()));
             return Result::Ok(());
         });
-        opt.sub(|p| &mut p.db.file).match_extra_soft(RequiredStringOption::maybe_set_str);
+        opt.match_extra_soft(|p, a| p.db.file.maybe_set_str(a));
+    }
+}
+
+impl OperationBe2 for ImplBe2 {
+    fn names() -> Vec<&'static str> {
+        return vec!["join"];
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {

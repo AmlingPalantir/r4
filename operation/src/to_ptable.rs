@@ -1,4 +1,5 @@
-use opts::parser::OptParserView;
+use opts::parser::OptionsPile;
+use opts::parser::Optionsable;
 use opts::vals::StringVecOption;
 use opts::vals::UnvalidatedOption;
 use record::Record;
@@ -33,25 +34,27 @@ pub(crate) type ImplBe = OperationBeForBe2<ImplBe2>;
 
 pub(crate) struct ImplBe2();
 
-impl OperationBe2 for ImplBe2 {
+impl Optionsable for ImplBe2 {
     type Options = Options;
 
-    fn names() -> Vec<&'static str> {
-        return vec!["to-ptable"];
-    }
-
-    fn options<'a>(opt: &mut OptParserView<'a, Options>) {
-        opt.sub(|p| &mut p.xk).match_single(&["x"], StringVecOption::push_split);
-        opt.sub(|p| &mut p.yk).match_single(&["y"], StringVecOption::push_split);
+    fn options(opt: &mut OptionsPile<Options>) {
+        opt.match_single(&["x"], |p, a| p.xk.push_split(a));
+        opt.match_single(&["y"], |p, a| p.yk.push_split(a));
         opt.match_n(&["p"], 2, |p, a| {
             if let Some(_) = p.pins.0.insert(a[0].clone(), a[1].clone()) {
                 return ValidationError::message(format!("Pin {} specified twice", a[0]));
             }
             return Result::Ok(());
         });
-        opt.sub(|p| &mut p.vk).match_single(&["v"], StringVecOption::push_split);
-        SortOptions::options(&mut opt.sub(|p| &mut p.xs), &["xs"]);
-        SortOptions::options(&mut opt.sub(|p| &mut p.ys), &["ys"]);
+        opt.match_single(&["v"], |p, a| p.vk.push_split(a));
+        opt.add_sub(|p| &mut p.xs, SortOptions::new_options(&["xs"]));
+        opt.add_sub(|p| &mut p.ys, SortOptions::new_options(&["ys"]));
+    }
+}
+
+impl OperationBe2 for ImplBe2 {
+    fn names() -> Vec<&'static str> {
+        return vec!["to-ptable"];
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {

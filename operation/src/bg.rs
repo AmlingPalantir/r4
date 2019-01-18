@@ -1,4 +1,5 @@
-use opts::parser::OptParserView;
+use opts::parser::OptionsPile;
+use opts::parser::Optionsable;
 use std::sync::Arc;
 use std::thread;
 use stream::Stream;
@@ -16,15 +17,17 @@ pub(crate) type Impl = OperationRegistrant<ImplBe>;
 
 pub(crate) struct ImplBe();
 
-impl OperationBe for ImplBe {
+impl Optionsable for ImplBe {
     type Options = Options;
 
+    fn options(opt: &mut OptionsPile<Options>) {
+        opt.match_extra_hard(|p, a| p.op.push(a));
+    }
+}
+
+impl OperationBe for ImplBe {
     fn names() -> Vec<&'static str> {
         return vec!["bg"];
-    }
-
-    fn options<'a>(opt: &mut OptParserView<'a, Options>) {
-        opt.sub(|p| &mut p.op).match_extra_hard(SubOperationOption::push);
     }
 
     fn get_extra(o: Arc<OptionsValidated>) -> Vec<String> {

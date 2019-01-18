@@ -1,4 +1,5 @@
-use opts::parser::OptParserView;
+use opts::parser::OptionsPile;
+use opts::parser::Optionsable;
 use opts::vals::DefaultedOption;
 use opts::vals::StringVecOption;
 use record::Record;
@@ -34,17 +35,19 @@ pub(crate) type ImplBe = OperationBeForBe2<ImplBe2>;
 
 pub(crate) struct ImplBe2();
 
-impl OperationBe2 for ImplBe2 {
+impl Optionsable for ImplBe2 {
     type Options = Options;
 
-    fn names() -> Vec<&'static str> {
-        return vec!["from-split"];
-    }
-
-    fn options<'a>(opt: &mut OptParserView<'a, Options>) {
+    fn options(opt: &mut OptionsPile<Options>) {
         opt.match_single(&["d", "delim"], |p, a| p.delimiter.set(DelimiterOption::String(a.to_string())));
         opt.match_single(&["re", "regex"], |p, a| p.delimiter.set(DelimiterOption::Regex(Arc::new(Regex::new(a)?))));
-        opt.sub(|p| &mut p.keys).match_single(&["k", "keys"], StringVecOption::push_split);
+        opt.match_single(&["k", "keys"], |p, a| p.keys.push_split(a));
+    }
+}
+
+impl OperationBe2 for ImplBe2 {
+    fn names() -> Vec<&'static str> {
+        return vec!["from-split"];
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {

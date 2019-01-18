@@ -1,4 +1,5 @@
-use opts::parser::OptParserView;
+use opts::parser::OptionsPile;
+use opts::parser::Optionsable;
 use opts::vals::RequiredStringOption;
 use opts::vals::StringVecOption;
 use record::Record;
@@ -37,16 +38,18 @@ pub struct Options {
     keys: StringVecOption,
 }
 
-impl OperationBe2 for ImplBe2 {
+impl Optionsable for ImplBe2 {
     type Options = Options;
 
+    fn options(opt: &mut OptionsPile<Options>) {
+        opt.match_single(&["re", "regex"], |p, a| p.re.0.set_str(a));
+        opt.match_single(&["k", "keys"], |p, a| p.keys.push_split(a));
+    }
+}
+
+impl OperationBe2 for ImplBe2 {
     fn names() -> Vec<&'static str> {
         return vec!["from-regex"];
-    }
-
-    fn options<'a>(opt: &mut OptParserView<'a, Options>) {
-        opt.sub(|p| &mut p.re.0).match_single(&["re", "regex"], RequiredStringOption::set_str);
-        opt.sub(|p| &mut p.keys).match_single(&["k", "keys"], StringVecOption::push_split);
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {

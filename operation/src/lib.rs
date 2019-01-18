@@ -31,8 +31,8 @@ pub(crate) use self::sort_options::GenericSortBucket;
 pub(crate) use self::sort_options::SortOptions;
 pub(crate) use self::sort_options::SortOptionsValidated;
 
-use opts::parser::OptParser;
-use opts::parser::OptParserView;
+use opts::parser::OptionsPile;
+use opts::parser::Optionsable;
 use opts::vals::IntoArcOption;
 use opts::vals::StringVecOption;
 use registry::Registrant;
@@ -82,11 +82,8 @@ impl StreamWrapper {
     }
 }
 
-pub trait OperationBe {
-    type Options: Validates + Default + 'static;
-
+pub trait OperationBe: Optionsable {
     fn names() -> Vec<&'static str>;
-    fn options<'a>(opt: &mut OptParserView<'a, Self::Options>);
     fn get_extra(o: Arc<<Self::Options as Validates>::Target>) -> Vec<String>;
     fn stream(o: Arc<<Self::Options as Validates>::Target>) -> Stream;
 }
@@ -109,8 +106,9 @@ impl<B: OperationBe> Default for OperationInboxImpl<B> {
 
 impl<B: OperationBe + 'static> OperationInbox for OperationInboxImpl<B> where <B::Options as Validates>::Target: Send + Sync {
     fn parse(&self, args: &mut Vec<String>) -> StreamWrapper {
-        let mut opt = OptParser::<B::Options>::default();
-        B::options(&mut opt.view());
+        let mut opt = OptionsPile::new();
+        B::options(&mut opt);
+        let opt = opt.to_parser();
         let o = opt.parse(args).unwrap().validate().unwrap();
         let o = Arc::new(o);
         *args = B::get_extra(o.clone());
@@ -138,11 +136,8 @@ impl<B: OperationBe + 'static> Registrant<BoxedOperation> for OperationRegistran
 
 
 
-pub trait OperationBe2 {
-    type Options: Validates + Default + 'static;
-
+pub trait OperationBe2: Optionsable {
     fn names() -> Vec<&'static str>;
-    fn options<'a>(opt: &mut OptParserView<'a, Self::Options>);
     fn stream(o: Arc<<Self::Options as Validates>::Target>) -> Stream;
 }
 
@@ -158,16 +153,20 @@ pub struct OperationBeForBe2<B: OperationBe2> {
     _b: std::marker::PhantomData<B>,
 }
 
-impl<B: OperationBe2> OperationBe for OperationBeForBe2<B> {
+impl<B: OperationBe2> Optionsable for OperationBeForBe2<B> {
     type Options = AndArgsOptions<B::Options>;
 
+    fn options(opt: &mut OptionsPile<AndArgsOptions<B::Options>>) {
+        let mut opt1 = OptionsPile::new();
+        B::options(&mut opt1);
+        opt.add_sub(|p| &mut p.p.0, opt1);
+        opt.match_extra_soft(|p, a| p.args.maybe_push(a));
+    }
+}
+
+impl<B: OperationBe2> OperationBe for OperationBeForBe2<B> {
     fn names() -> Vec<&'static str> {
         return B::names();
-    }
-
-    fn options<'a>(opt: &mut OptParserView<'a, AndArgsOptions<B::Options>>) {
-        B::options(&mut opt.sub(|p| &mut p.p.0));
-        opt.sub(|p| &mut p.args).match_extra_soft(StringVecOption::maybe_push);
     }
 
     fn get_extra(p: Arc<AndArgsOptionsValidated<B::Options>>) -> Vec<String> {

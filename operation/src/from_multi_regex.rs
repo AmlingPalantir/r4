@@ -1,4 +1,5 @@
-use opts::parser::OptParserView;
+use opts::parser::OptionsPile;
+use opts::parser::Optionsable;
 use opts::vals::BooleanOption;
 use opts::vals::StringVecOption;
 use opts::vals::UnvalidatedOption;
@@ -31,14 +32,10 @@ pub(crate) type ImplBe = OperationBeForBe2<ImplBe2>;
 
 pub(crate) struct ImplBe2();
 
-impl OperationBe2 for ImplBe2 {
+impl Optionsable for ImplBe2 {
     type Options = Options;
 
-    fn names() -> Vec<&'static str> {
-        return vec!["from-multire"];
-    }
-
-    fn options<'a>(opt: &mut OptParserView<'a, Options>) {
+    fn options(opt: &mut OptionsPile<Options>) {
         fn _add_re(p: &mut Options, pre_flush: bool, post_flush: bool, s: &str) -> ValidationResult<()> {
             match s.find('=') {
                 Some(idx) => {
@@ -57,10 +54,16 @@ impl OperationBe2 for ImplBe2 {
         opt.match_single(&["pre"], |p, a| _add_re(p, true, false, a));
         opt.match_single(&["post"], |p, a| _add_re(p, false, true, a));
 
-        opt.sub(|p| &mut p.keep).match_single(&["keep"], StringVecOption::push);
-        opt.sub(|p| &mut p.keep_all).match_zero(&["keep-all"], BooleanOption::set);
+        opt.match_single(&["keep"], |p, a| p.keep.push(a));
+        opt.match_zero(&["keep-all"], |p| p.keep_all.set());
 
-        opt.sub(|p| &mut p.clobber).match_zero(&["clobber"], BooleanOption::set);
+        opt.match_zero(&["clobber"], |p| p.clobber.set());
+    }
+}
+
+impl OperationBe2 for ImplBe2 {
+    fn names() -> Vec<&'static str> {
+        return vec!["from-multire"];
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {

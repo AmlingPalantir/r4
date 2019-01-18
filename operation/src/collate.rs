@@ -1,4 +1,5 @@
-use opts::parser::OptParserView;
+use opts::parser::OptionsPile;
+use opts::parser::Optionsable;
 use opts::vals::IntoArcOption;
 use std::sync::Arc;
 use stream::Stream;
@@ -11,23 +12,25 @@ use super::aggregate;
 #[derive(Validates)]
 pub struct Options {
     cl: ClumperOptions,
-    ag: IntoArcOption<<aggregate::ImplBe as OperationBe>::Options>,
+    ag: IntoArcOption<<aggregate::ImplBe as Optionsable>::Options>,
 }
 
 pub(crate) type Impl = OperationRegistrant<ImplBe>;
 
 pub(crate) struct ImplBe();
 
-impl OperationBe for ImplBe {
+impl Optionsable for ImplBe {
     type Options = Options;
 
+    fn options(opt: &mut OptionsPile<Options>) {
+        opt.add_sub(|p| &mut p.cl, ClumperOptions::new_options());
+        opt.add_sub(|p| &mut p.ag.0, aggregate::ImplBe::new_options());
+    }
+}
+
+impl OperationBe for ImplBe {
     fn names() -> Vec<&'static str> {
         return vec!["collate"];
-    }
-
-    fn options<'a>(opt: &mut OptParserView<'a, Options>) {
-        ClumperOptions::options(&mut opt.sub(|p| &mut p.cl));
-        aggregate::ImplBe::options(&mut opt.sub(|p| &mut p.ag.0));
     }
 
     fn get_extra(o: Arc<OptionsValidated>) -> Vec<String> {

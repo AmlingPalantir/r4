@@ -1,5 +1,6 @@
 use executor::BoxedExecutor2;
-use opts::parser::OptParserView;
+use opts::parser::OptionsPile;
+use opts::parser::Optionsable;
 use opts::vals::BooleanOption;
 use opts::vals::DefaultedOption;
 use opts::vals::OptionDefaulter;
@@ -81,18 +82,14 @@ pub struct EvalBe2<B: EvalBe> {
     _b: std::marker::PhantomData<B>,
 }
 
-impl<B: EvalBe + 'static> OperationBe2 for EvalBe2<B> {
+impl<B: EvalBe + 'static> Optionsable for EvalBe2<B> {
     type Options = EvalOptions<B::I, B::O, B::R>;
 
-    fn names() -> Vec<&'static str> {
-        return B::names();
-    }
-
-    fn options<'a>(opt: &mut OptParserView<'a, Self::Options>) {
-        opt.sub(|p| &mut p.invert).match_zero(&["v", "invert"], BooleanOption::set);
-        opt.sub(|p| &mut p.invert).match_zero(&["no-invert"], BooleanOption::clear);
-        opt.sub(|p| &mut p.code.code).match_extra_soft(RequiredStringOption::maybe_set_str);
-        opt.sub(|p| &mut p.code.engine).match_single(&["engine"], OptionalStringOption::set_str);
+    fn options(opt: &mut OptionsPile<Self::Options>) {
+        opt.match_zero(&["v", "invert"], |p| p.invert.set());
+        opt.match_zero(&["no-invert"], |p| p.invert.clear());
+        opt.match_extra_soft(|p, a| p.code.code.maybe_set_str(a));
+        opt.match_single(&["engine"], |p, a| p.code.engine.set_str(a));
         opt.match_zero(&["lua"], |p| p.code.engine.set("lua".to_string()));
         opt.match_zero(&["input-lines"], |p| p.input.set(InputType::Lines()));
         opt.match_zero(&["input-records"], |p| p.input.set(InputType::Records()));
@@ -101,6 +98,12 @@ impl<B: EvalBe + 'static> OperationBe2 for EvalBe2<B> {
         opt.match_zero(&["output-grep"], |p| p.output.set(OutputType::Grep()));
         opt.match_zero(&["return"], |p| p.ret.set(true));
         opt.match_zero(&["no-return"], |p| p.ret.set(false));
+    }
+}
+
+impl<B: EvalBe + 'static> OperationBe2 for EvalBe2<B> {
+    fn names() -> Vec<&'static str> {
+        return B::names();
     }
 
     fn stream(o: Arc<EvalOptionsValidated<B::I, B::O, B::R>>) -> Stream {

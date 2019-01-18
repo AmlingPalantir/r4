@@ -1,5 +1,6 @@
 use deaggregator::BoxedDeaggregator;
-use opts::parser::OptParserView;
+use opts::parser::OptionsPile;
+use opts::parser::Optionsable;
 use opts::vals::UnvalidatedOption;
 use std::sync::Arc;
 use stream::Entry;
@@ -20,16 +21,18 @@ pub(crate) type ImplBe = OperationBeForBe2<ImplBe2>;
 
 pub(crate) struct ImplBe2();
 
-impl OperationBe2 for ImplBe2 {
+impl Optionsable for ImplBe2 {
     type Options = Options;
 
+    fn options(opt: &mut OptionsPile<Options>) {
+        opt.add_sub(|p| &mut p.deaggs.0, deaggregator::REGISTRY.single_options(&["d", "deagg", "deaggregator"]));
+        opt.add_sub(|p| &mut p.deaggs.0, deaggregator::REGISTRY.multiple_options(&["d", "deagg", "deaggregator"]));
+    }
+}
+
+impl OperationBe2 for ImplBe2 {
     fn names() -> Vec<&'static str> {
         return vec!["decollate"];
-    }
-
-    fn options<'a>(opt: &mut OptParserView<'a, Options>) {
-        deaggregator::REGISTRY.single_options(&mut opt.sub(|p| &mut p.deaggs.0), &["d", "deagg", "deaggregator"]);
-        deaggregator::REGISTRY.multiple_options(&mut opt.sub(|p| &mut p.deaggs.0), &["d", "deagg", "deaggregator"]);
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {

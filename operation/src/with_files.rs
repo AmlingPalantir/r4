@@ -1,4 +1,5 @@
-use opts::parser::OptParserView;
+use opts::parser::OptionsPile;
+use opts::parser::Optionsable;
 use opts::vals::DefaultedStringOption;
 use record::Record;
 use record::RecordTrait;
@@ -24,16 +25,18 @@ pub(crate) type Impl = OperationRegistrant<ImplBe>;
 
 pub(crate) struct ImplBe();
 
-impl OperationBe for ImplBe {
+impl Optionsable for ImplBe {
     type Options = Options;
 
+    fn options(opt: &mut OptionsPile<Options>) {
+        opt.match_single(&["fk", "file-key"], |p, a| p.fk.set_str(a));
+        opt.match_extra_hard(|p, a| p.op.push(a));
+    }
+}
+
+impl OperationBe for ImplBe {
     fn names() -> Vec<&'static str> {
         return vec!["with-files"];
-    }
-
-    fn options<'a>(opt: &mut OptParserView<'a, Options>) {
-        opt.sub(|p| &mut p.fk).match_single(&["fk", "file-key"], DefaultedStringOption::set_str);
-        opt.sub(|p| &mut p.op).match_extra_hard(SubOperationOption::push);
     }
 
     fn get_extra(o: Arc<OptionsValidated>) -> Vec<String> {

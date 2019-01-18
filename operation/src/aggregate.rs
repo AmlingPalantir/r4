@@ -1,5 +1,6 @@
 use aggregator::BoxedAggregator;
-use opts::parser::OptParserView;
+use opts::parser::OptionsPile;
+use opts::parser::Optionsable;
 use opts::vals::BooleanOption;
 use opts::vals::UnvalidatedOption;
 use record::Record;
@@ -27,21 +28,23 @@ pub(crate) type ImplBe = OperationBeForBe2<ImplBe2>;
 
 pub(crate) struct ImplBe2();
 
-impl OperationBe2 for ImplBe2 {
+impl Optionsable for ImplBe2 {
     type Options = Options;
 
+    fn options(opt: &mut OptionsPile<Options>) {
+        opt.add_sub(|p| &mut p.aggs.0, aggregator::REGISTRY.labelled_single_options(&["a", "agg", "aggregator"]));
+        opt.add_sub(|p| &mut p.aggs.0, aggregator::REGISTRY.labelled_multiple_options(&["a", "agg", "aggregator"]));
+        opt.add_sub(|p| &mut p.tru, TwoRecordUnionOption::new_options());
+        opt.match_zero(&["incremental"], |p| p.incremental.set());
+        opt.match_zero(&["no-incremental"], |p| p.incremental.clear());
+        opt.match_zero(&["bucket"], |p| p.no_bucket.clear());
+        opt.match_zero(&["no-bucket"], |p| p.no_bucket.set());
+    }
+}
+
+impl OperationBe2 for ImplBe2 {
     fn names() -> Vec<&'static str> {
         return vec!["aggregate"];
-    }
-
-    fn options<'a>(opt: &mut OptParserView<'a, Options>) {
-        aggregator::REGISTRY.labelled_single_options(&mut opt.sub(|p| &mut p.aggs.0), &["a", "agg", "aggregator"]);
-        aggregator::REGISTRY.labelled_multiple_options(&mut opt.sub(|p| &mut p.aggs.0), &["a", "agg", "aggregator"]);
-        TwoRecordUnionOption::options(&mut opt.sub(|p| &mut p.tru));
-        opt.sub(|p| &mut p.incremental).match_zero(&["incremental"], BooleanOption::set);
-        opt.sub(|p| &mut p.incremental).match_zero(&["no-incremental"], BooleanOption::clear);
-        opt.sub(|p| &mut p.no_bucket).match_zero(&["bucket"], BooleanOption::clear);
-        opt.sub(|p| &mut p.no_bucket).match_zero(&["no-bucket"], BooleanOption::set);
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {
