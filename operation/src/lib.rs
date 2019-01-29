@@ -52,6 +52,7 @@ registry! {
     decollate,
     deparse,
     eval,
+    expand_files,
     from_lines,
     from_multi_regex,
     from_regex,
