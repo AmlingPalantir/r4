@@ -1,0 +1,16 @@
+invent match_custom to control match
+
+change subop options to be list of subops
+
+match '(', args, ')' as one subop (and leave args beyond)
+    could match '((', args, '))', etc.  as well
+    or maybe understand balanced?
+    ugh, all of (, [, { are magic already...
+
+match args as one subop (leave nothing)
+
+if more than one subop wrap up into chain
+
+also change global `r4` parsing to use subop so you can:
+
+r4 ( what ) ( ever )
