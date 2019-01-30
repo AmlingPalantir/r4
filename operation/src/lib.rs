@@ -54,7 +54,6 @@ registry! {
     eval,
     expand_files,
     expand_lines,
-    from_lines,
     from_multi_regex,
     from_regex,
     from_split,
@@ -67,8 +66,6 @@ registry! {
     sort,
     to_ptable,
     to_table,
-    with_files,
-    with_lines,
     wrap_lines,
     xform,
 }
