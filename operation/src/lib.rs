@@ -53,6 +53,7 @@ registry! {
     deparse,
     eval,
     expand_files,
+    expand_lines,
     from_lines,
     from_multi_regex,
     from_regex,
