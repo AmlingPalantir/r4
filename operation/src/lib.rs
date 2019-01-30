@@ -69,6 +69,7 @@ registry! {
     to_table,
     with_files,
     with_lines,
+    wrap_lines,
     xform,
 }
 
