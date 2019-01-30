@@ -43,26 +43,19 @@ impl OperationBe2 for ImplBe2 {
                 stream::closures(
                     (),
                     move |_s, e, w| {
-                        match e {
-                            Entry::Bof(file) => {
-                                return w(Entry::Bof(file));
+                        let r = e.parse();
+
+                        for pairs in deagg.deaggregate(r.clone()) {
+                            let mut r2 = r.clone();
+                            for (k, v) in pairs {
+                                r2.set_path(&k, v);
                             }
-                            Entry::Record(r) => {
-                                for pairs in deagg.deaggregate(r.clone()) {
-                                    let mut r2 = r.clone();
-                                    for (k, v) in pairs {
-                                        r2.set_path(&k, v);
-                                    }
-                                    if !w(Entry::Record(r2)) {
-                                        return false;
-                                    }
-                                }
-                                return true;
-                            }
-                            Entry::Line(_line) => {
-                                panic!("Unexpected line in DeaggregateStream");
+                            if !w(Entry::Record(r2)) {
+                                return false;
                             }
                         }
+
+                        return true;
                     },
                     |_s, _w| {
                     },

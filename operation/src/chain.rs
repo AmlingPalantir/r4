@@ -1,6 +1,5 @@
 use opts::parser::OptionsPile;
 use opts::parser::Optionsable;
-use opts::vals::BooleanOption;
 use opts::vals::OptionalStringOption;
 use std::sync::Arc;
 use stream::Stream;
@@ -15,7 +14,6 @@ use validates::ValidationResult;
 #[derive(Default)]
 #[derive(Validates)]
 pub struct Options {
-    keep_bof: BooleanOption,
     cmds: CmdsOption,
 }
 
@@ -32,8 +30,6 @@ impl Optionsable for ImplBe {
             p.cmds.args.extend_from_slice(a);
             return Result::Ok(());
         });
-        opt.match_zero(&["keep-bof"], |p| p.keep_bof.set());
-        opt.match_zero(&["no-keep-bof"], |p| p.keep_bof.clear());
     }
 }
 
@@ -47,12 +43,9 @@ impl OperationBe for ImplBe {
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {
-        return o.cmds.wrs.iter().rev().fold((true, stream::id()), |(first, mut s), wr| {
-            if !first && !o.keep_bof {
-                s = stream::compound(stream::drop_bof(), s);
-            }
-            return (false, stream::compound(wr.stream(), s));
-        }).1;
+        return o.cmds.wrs.iter().rev().fold(stream::id(), |s, wr| {
+            return stream::compound(wr.stream(), s);
+        });
     }
 }
 

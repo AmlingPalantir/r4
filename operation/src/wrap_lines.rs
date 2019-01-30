@@ -43,32 +43,21 @@ impl OperationBe2 for ImplBe2 {
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {
-        return stream::compound(
-            stream::deparse(),
-            stream::closures(
-                1,
-                move |s, e, w| {
-                    match e {
-                        Entry::Bof(file) => {
-                            return w(Entry::Bof(file));
-                        }
-                        Entry::Record(_r) => {
-                            panic!("Unexpected record in FromLinesStream");
-                        }
-                        Entry::Line(line) => {
-                            let mut r = Record::empty_hash();
+        return stream::closures(
+            1,
+            move |s, e, w| {
+                let line = e.deparse();
 
-                            r.set_path(&o.lk, Record::from(line));
-                            r.set_path(&o.lnk, Record::from(*s));
-                            *s += 1;
+                let mut r = Record::empty_hash();
 
-                            return w(Entry::Record(r));
-                        }
-                    }
-                },
-                |_s, _w| {
-                },
-            ),
+                r.set_path(&o.lk, Record::from(line));
+                r.set_path(&o.lnk, Record::from(*s));
+                *s += 1;
+
+                return w(Entry::Record(r));
+            },
+            |_s, _w| {
+            },
         );
     }
 }

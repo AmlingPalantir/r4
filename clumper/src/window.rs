@@ -21,43 +21,32 @@ impl ClumperBe for ImplBe {
     fn stream(size: &usize, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream {
         let size = *size;
 
-        return stream::compound(
-            stream::parse(),
-            stream::closures(
-                VecDeque::new(),
-                move |s, e, w| {
-                    match e {
-                        Entry::Bof(file) => {
-                            s.clear();
-                            return w(Entry::Bof(file));
-                        },
-                        Entry::Record(r) => {
-                            s.push_back(r);
-                            if s.len() > size {
-                                s.pop_front();
-                            }
-                            if s.len() == size {
-                                let mut substream = bsw(vec![]);
+        return stream::closures(
+            VecDeque::new(),
+            move |s, e, w| {
+                let r = e.parse();
 
-                                for r in s {
-                                    // Disregard flow since one substream
-                                    // ending does not mean we're done (e.g.
-                                    // each substream could be head -n 1).
-                                    substream.write(Entry::Record(r.clone()), w);
-                                }
+                s.push_back(r);
+                if s.len() > size {
+                    s.pop_front();
+                }
+                if s.len() == size {
+                    let mut substream = bsw(vec![]);
 
-                                substream.close(w);
-                            }
-                            return true;
-                        },
-                        Entry::Line(_line) => {
-                            panic!("Unexpected line in WindowStream");
-                        },
+                    for r in s {
+                        // Disregard flow since one substream
+                        // ending does not mean we're done (e.g.
+                        // each substream could be head -n 1).
+                        substream.write(Entry::Record(r.clone()), w);
                     }
-                },
-                |_s, _w| {
-                },
-            ),
+
+                    substream.close(w);
+                }
+
+                return true;
+            },
+            |_s, _w| {
+            },
         );
     }
 }

@@ -51,34 +51,24 @@ impl OperationBe2 for ImplBe2 {
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {
-        return stream::compound(
-            stream::deparse(),
-            stream::closures(
-                (),
-                move |_s, e, w| {
-                    match e {
-                        Entry::Bof(file) => {
-                            return w(Entry::Bof(file));
-                        }
-                        Entry::Record(_r) => {
-                            panic!("Unexpected record in FromSplitStream");
-                        }
-                        Entry::Line(line) => {
-                            let mut r = Record::empty_hash();
-                            let vals: Vec<_> = match o.delimiter {
-                                DelimiterOption::String(ref s) => line.split(s).collect(),
-                                DelimiterOption::Regex(ref re) => re.split(&line).collect(),
-                            };
-                            for (k, v) in o.keys.iter().zip(vals) {
-                                r.set_path(k, Record::from(v));
-                            }
-                            return w(Entry::Record(r));
-                        }
-                    }
-                },
-                |_s, _w| {
-                },
-            ),
+        return stream::closures(
+            (),
+            move |_s, e, w| {
+                let line = e.deparse();
+
+                let mut r = Record::empty_hash();
+                let vals: Vec<_> = match o.delimiter {
+                    DelimiterOption::String(ref s) => line.split(s).collect(),
+                    DelimiterOption::Regex(ref re) => re.split(&line).collect(),
+                };
+                for (k, v) in o.keys.iter().zip(vals) {
+                    r.set_path(k, Record::from(v));
+                }
+
+                return w(Entry::Record(r));
+            },
+            |_s, _w| {
+            },
         );
     }
 }

@@ -58,39 +58,30 @@ impl OperationBe2 for ImplBe2 {
 
         let rs = o.sorts.new_bucket();
 
-        return stream::compound(
-            stream::parse(),
-            stream::closures(
-                State {
-                    o: o,
-                    rs: rs,
-                },
-                |s, e, _w| {
-                    match e {
-                        Entry::Bof(_file) => {
-                        }
-                        Entry::Record(r) => {
-                            s.rs.add(r, ());
-                            if let Some(limit) = s.o.partial {
-                                if s.rs.size() > limit {
-                                    s.rs.remove_last();
-                                }
-                            }
-                        }
-                        Entry::Line(_line) => {
-                            panic!("Unexpected line in SortStream");
-                        }
+        return stream::closures(
+            State {
+                o: o,
+                rs: rs,
+            },
+            |s, e, _w| {
+                let r = e.parse();
+
+                s.rs.add(r, ());
+                if let Some(limit) = s.o.partial {
+                    if s.rs.size() > limit {
+                        s.rs.remove_last();
                     }
-                    return true;
-                },
-                |mut s, w| {
-                    while let Some((r, _)) = s.rs.remove_first() {
-                        if !w(Entry::Record(r)) {
-                            return;
-                        }
+                }
+
+                return true;
+            },
+            |mut s, w| {
+                while let Some((r, _)) = s.rs.remove_first() {
+                    if !w(Entry::Record(r)) {
+                        return;
                     }
-                },
-            ),
+                }
+            },
         );
     }
 }

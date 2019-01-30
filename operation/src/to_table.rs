@@ -35,67 +35,58 @@ impl OperationBe2 for ImplBe2 {
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {
-        return stream::compound(
-            stream::parse(),
-            stream::closures(
-                Vec::new(),
-                |s, e, _w| {
-                    match e {
-                        Entry::Bof(_file) => {
-                        }
-                        Entry::Record(r) => {
-                            s.push(r);
-                        }
-                        Entry::Line(_line) => {
-                            panic!("Unexpected line in ToTableStream");
-                        }
-                    }
-                    return true;
-                },
-                move |s, w| {
-                    let mut keys = o.keys.clone();
+        return stream::closures(
+            Vec::new(),
+            |s, e, _w| {
+                let r = e.parse();
 
-                    if keys.is_empty() {
-                        let mut acc = HashSet::new();
+                s.push(r);
 
-                        for r in s.iter() {
-                            for k in r.expect_hash().keys() {
-                                acc.insert(k.to_string());
-                            }
-                        }
+                return true;
+            },
+            move |s, w| {
+                let mut keys = o.keys.clone();
 
-                        keys = acc.into_iter().collect();
-                    }
+                if keys.is_empty() {
+                    let mut acc = HashSet::new();
 
-                    let mut rows = Vec::new();
-                    {
-                        let mut row0 = Vec::new();
-                        let mut row1 = Vec::new();
-                        for (n, key) in keys.iter().enumerate() {
-                            if n > 0 {
-                                row0.push(("   ".to_string(), ' '));
-                                row1.push(("   ".to_string(), ' '));
-                            }
-                            row0.push((key.to_string(), ' '));
-                            row1.push(("".to_string(), '-'));
-                        }
-                        rows.push(row0);
-                        rows.push(row1);
-                    }
                     for r in s.iter() {
-                        let mut row = Vec::new();
-                        for (n, key) in keys.iter().enumerate() {
-                            if n > 0 {
-                                row.push(("   ".to_string(), ' '));
-                            }
-                            row.push((r.get_path(key).pretty_string(), ' '));
+                        for k in r.expect_hash().keys() {
+                            acc.insert(k.to_string());
                         }
-                        rows.push(row);
                     }
 
-                    dump_table(&rows, w);
-                },
-            ),
+                    keys = acc.into_iter().collect();
+                }
+
+                let mut rows = Vec::new();
+                {
+                    let mut row0 = Vec::new();
+                    let mut row1 = Vec::new();
+                    for (n, key) in keys.iter().enumerate() {
+                        if n > 0 {
+                            row0.push(("   ".to_string(), ' '));
+                            row1.push(("   ".to_string(), ' '));
+                        }
+                        row0.push((key.to_string(), ' '));
+                        row1.push(("".to_string(), '-'));
+                    }
+                    rows.push(row0);
+                    rows.push(row1);
+                }
+                for r in s.iter() {
+                    let mut row = Vec::new();
+                    for (n, key) in keys.iter().enumerate() {
+                        if n > 0 {
+                            row.push(("   ".to_string(), ' '));
+                        }
+                        row.push((r.get_path(key).pretty_string(), ' '));
+                    }
+                    rows.push(row);
+                }
+
+                dump_table(&rows, w);
+            },
         );
     }
 }

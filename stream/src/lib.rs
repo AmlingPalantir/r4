@@ -5,9 +5,24 @@ use std::sync::Arc;
 
 #[derive(Clone)]
 pub enum Entry {
-    Bof(Arc<str>),
     Record(Record),
     Line(Arc<str>),
+}
+
+impl Entry {
+    pub fn parse(self) -> Record {
+        return match self {
+            Entry::Record(r) => r,
+            Entry::Line(line) => Record::parse(&line),
+        };
+    }
+
+    pub fn deparse(self) -> Arc<str> {
+        return match self {
+            Entry::Record(r) => Arc::from(r.deparse()),
+            Entry::Line(line) => line,
+        };
+    }
 }
 
 pub trait StreamTrait {
@@ -64,10 +79,7 @@ pub fn parse() -> Stream {
     return closures(
         (),
         |_s, e, w| {
-            return w(match e {
-                Entry::Line(line) => Entry::Record(Record::parse(&line)),
-                e => e,
-            });
+            return w(Entry::Record(e.parse()));
         },
         |_s, _w| {
         },
@@ -78,10 +90,7 @@ pub fn deparse() -> Stream {
     return closures(
         (),
         |_s, e, w| {
-            return w(match e {
-                Entry::Record(r) => Entry::Line(Arc::from(r.deparse())),
-                e => e,
-            });
+            return w(Entry::Line(e.deparse()));
         },
         |_s, _w| {
         },
@@ -98,20 +107,6 @@ pub fn transform_records<F: FnMut(Record) -> Record + 'static>(f: F) -> Stream {
             });
         },
         |_f, _w| {
-        },
-    );
-}
-
-pub fn drop_bof() -> Stream {
-    return closures(
-        (),
-        |_s, e, w| {
-            return match e {
-                Entry::Bof(_file) => true,
-                e => w(e),
-            };
-        },
-        |_s, _w| {
         },
     );
 }

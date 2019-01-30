@@ -53,40 +53,29 @@ impl OperationBe2 for ImplBe2 {
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {
-        return stream::compound(
-            stream::deparse(),
-            stream::closures(
-                (),
-                move |_s, e, w| {
-                    match e {
-                        Entry::Bof(file) => {
-                            return w(Entry::Bof(file));
-                        }
-                        Entry::Record(_r) => {
-                            panic!("Unexpected record in FromRegexStream");
-                        }
-                        Entry::Line(line) => {
-                            if let Some(m) = o.re.captures(&line) {
-                                let mut r = Record::empty_hash();
+        return stream::closures(
+            (),
+            move |_s, e, w| {
+                let line = e.deparse();
 
-                                let ki = o.keys.iter();
-                                let gi = m.iter().skip(1);
-                                for (k, g) in ki.zip(gi) {
-                                    if let Some(m) = g {
-                                        r.set_path(&k, Record::from(m.as_str()));
-                                    }
-                                }
+                if let Some(m) = o.re.captures(&line) {
+                    let mut r = Record::empty_hash();
 
-                                return w(Entry::Record(r));
-                            }
-
-                            return true;
+                    let ki = o.keys.iter();
+                    let gi = m.iter().skip(1);
+                    for (k, g) in ki.zip(gi) {
+                        if let Some(m) = g {
+                            r.set_path(&k, Record::from(m.as_str()));
                         }
                     }
-                },
-                |_s, _w| {
-                },
-            ),
+
+                    return w(Entry::Record(r));
+                }
+
+                return true;
+            },
+            |_s, _w| {
+            },
         );
     }
 }

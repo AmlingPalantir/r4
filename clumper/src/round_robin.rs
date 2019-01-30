@@ -1,7 +1,6 @@
 use record::Record;
 use registry::args::OneUsizeArgs;
 use std::sync::Arc;
-use stream::Entry;
 use stream::Stream;
 use super::ClumperBe;
 use super::ClumperRegistrant;
@@ -24,22 +23,15 @@ impl ClumperBe for ImplBe {
         return stream::closures(
             (substreams, 0),
             |s, e, w| {
-                match e {
-                    Entry::Bof(_file) => {
-                        return true;
-                    },
-                    e => {
-                        let i = s.1;
-                        let i = (i + 1) % s.0.len();
-                        s.1 = i;
+                let i = s.1;
+                let i = (i + 1) % s.0.len();
+                s.1 = i;
 
-                        // Again, substream ending does not concern us, we may
-                        // need to truck on for other streams.
-                        s.0[i].write(e, w);
+                // Again, substream ending does not concern us, we may
+                // need to truck on for other streams.
+                s.0[i].write(e, w);
 
-                        return true;
-                    },
-                }
+                return true;
             },
             |s, w| {
                 for substream in s.0.into_iter() {

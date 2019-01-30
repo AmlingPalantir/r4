@@ -45,27 +45,17 @@ impl OperationBe2 for ImplBe2 {
         return stream::closures(
             o.op.wr.stream(),
             move |s, e, w| {
-                match e {
-                    Entry::Bof(file) => {
-                        return s.write(Entry::Bof(file), w);
+                let ro = match e.clone() {
+                    Entry::Record(r) => r,
+                    Entry::Line(line) => Record::from(line),
+                };
+
+                return s.write(e, &mut |mut e| {
+                    if let Entry::Record(ref mut r2) = e {
+                        r2.set_path(&o.ok, ro.clone());
                     }
-                    Entry::Record(r) => {
-                        return s.write(Entry::Record(r.clone()), &mut |mut e| {
-                            if let Entry::Record(ref mut r2) = e {
-                                r2.set_path(&o.ok, r.clone());
-                            }
-                            return w(e);
-                        });
-                    }
-                    Entry::Line(line) => {
-                        return s.write(Entry::Line(line.clone()), &mut |mut e| {
-                            if let Entry::Record(ref mut r2) = e {
-                                r2.set_path(&o.ok, Record::from(line.clone()));
-                            }
-                            return w(e);
-                        });
-                    }
-                }
+                    return w(e);
+                });
             },
             |s, w| {
                 s.close(w);

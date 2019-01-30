@@ -48,43 +48,32 @@ impl OperationBe2 for ImplBe2 {
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {
-        return stream::compound(
-            stream::parse(),
-            stream::closures(
-                (),
-                move |_s, e, w| {
-                    match e {
-                        Entry::Bof(_file) => {
-                        }
-                        Entry::Record(r1) => {
-                            let o1 = o.clone();
-                            let file = r1.get_path(&o.fk).coerce_string();
-                            let mut substream = stream::compound(
-                                o.op.wr.stream(),
-                                stream::transform_records(move |r2| {
-                                    return o1.tru.union(r1.clone(), r2);
-                                }),
-                            );
-                            for line in BufReader::new(File::open(&file as &str).unwrap()).lines() {
-                                let line = line.unwrap();
-                                if !substream.write(Entry::Line(Arc::from(line)), w) {
-                                    // flow hint ends substream, but nothing more
-                                    break;
-                                }
-                            }
-                            substream.close(w);
+        return stream::closures(
+            (),
+            move |_s, e, w| {
+                let r1 = e.parse();
 
-                            return true;
-                        }
-                        Entry::Line(_line) => {
-                            panic!("Unexpected line in ExpandFilesStream");
-                        }
+                let o1 = o.clone();
+                let file = r1.get_path(&o.fk).coerce_string();
+                let mut substream = stream::compound(
+                    o.op.wr.stream(),
+                    stream::transform_records(move |r2| {
+                        return o1.tru.union(r1.clone(), r2);
+                    }),
+                );
+                for line in BufReader::new(File::open(&file as &str).unwrap()).lines() {
+                    let line = line.unwrap();
+                    if !substream.write(Entry::Line(Arc::from(line)), w) {
+                        // flow hint ends substream, but nothing more
+                        break;
                     }
-                    return true;
-                },
-                |_s, _w| {
-                },
-            ),
+                }
+                substream.close(w);
+
+                return true;
+            },
+            |_s, _w| {
+            },
         );
     }
 }

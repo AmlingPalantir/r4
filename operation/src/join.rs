@@ -109,49 +109,39 @@ impl OperationBe2 for ImplBe2 {
         let o1 = o;
         let o2 = o1.clone();
 
-        return stream::compound(
-            stream::parse(),
-            stream::closures(
-                db,
-                move |s, e, w| {
-                    match e {
-                        Entry::Bof(_file) => {
-                            return true;
-                        }
-                        Entry::Record(r) => {
-                            match s.query(&r) {
-                                Some(r2s) => {
-                                    for r2 in r2s {
-                                        if !w(Entry::Record(o1.tru.union(r2.clone(), r.clone()))) {
-                                            return false;
-                                        }
-                                    }
-                                }
-                                None => {
-                                    if o1.fills.0 {
-                                        if !w(Entry::Record(o1.tru.union_maybe(None, Some(r)))) {
-                                            return false;
-                                        }
-                                    }
-                                }
-                            }
-                            return true;
-                        }
-                        Entry::Line(_line) => {
-                            panic!("Unexpected line in JoinStream");
-                        }
-                    }
-                },
-                move |s, w| {
-                    if o2.fills.1 {
-                        for r2 in s.leftover() {
-                            if !w(Entry::Record(o2.tru.union_maybe(Some(r2.clone()), None))) {
-                                return;
+        return stream::closures(
+            db,
+            move |s, e, w| {
+                let r = e.parse();
+
+                match s.query(&r) {
+                    Some(r2s) => {
+                        for r2 in r2s {
+                            if !w(Entry::Record(o1.tru.union(r2.clone(), r.clone()))) {
+                                return false;
                             }
                         }
                     }
-                },
-            ),
+                    None => {
+                        if o1.fills.0 {
+                            if !w(Entry::Record(o1.tru.union_maybe(None, Some(r)))) {
+                                return false;
+                            }
+                        }
+                    }
+                }
+
+                return true;
+            },
+            move |s, w| {
+                if o2.fills.1 {
+                    for r2 in s.leftover() {
+                        if !w(Entry::Record(o2.tru.union_maybe(Some(r2.clone()), None))) {
+                            return;
+                        }
+                    }
+                }
+            },
         );
     }
 }

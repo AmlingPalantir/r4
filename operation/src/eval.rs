@@ -113,24 +113,16 @@ impl<B: EvalBe + 'static> OperationBe2 for EvalBe2<B> {
         return stream::closures(
             f,
             move |s, e, w| {
-                let ri;
-                match e.clone() {
-                    Entry::Bof(file) => {
-                        return w(Entry::Bof(file));
-                    }
-                    Entry::Record(r) => {
-                        ri = match o.input {
-                            InputType::Records() => r,
-                            InputType::Lines() => Record::from(r.deparse()),
-                        };
-                    }
-                    Entry::Line(line) => {
-                        ri = match o.input {
-                            InputType::Records() => Record::parse(&line),
-                            InputType::Lines() => Record::from(line),
-                        };
-                    }
-                }
+                let ri = match e.clone() {
+                    Entry::Record(r) => match o.input {
+                        InputType::Records() => r,
+                        InputType::Lines() => Record::from(r.deparse()),
+                    },
+                    Entry::Line(line) => match o.input {
+                        InputType::Records() => Record::parse(&line),
+                        InputType::Lines() => Record::from(line),
+                    },
+                };
                 let ro = s(ri);
                 let ro = if o.invert { Record::from(!ro.coerce_bool()) } else { ro };
                 return match o.output {

@@ -93,65 +93,49 @@ impl OperationBe2 for ImplBe2 {
             }
         }
 
-        return stream::compound(
-            stream::deparse(),
-            stream::closures(
-                (State(Record::empty_hash()), o),
-                |s, e, w| {
-                    match e {
-                        Entry::Bof(file) => {
-                            if !s.1.clobber {
-                                s.0.flush(&s.1, w);
-                            }
+        return stream::closures(
+            (State(Record::empty_hash()), o),
+            |s, e, w| {
+                let line = e.deparse();
 
-                            (s.0).0 = Record::empty_hash();
-
-                            return w(Entry::Bof(file));
-                        }
-                        Entry::Record(_r) => {
-                            panic!("Unexpected record in FromMultiRegexStream");
-                        }
-                        Entry::Line(line) => {
-                            for (pre_flush, post_flush, keys, re) in s.1.res.iter() {
-                                let mut pre_flush = *pre_flush;
-                                if let Some(m) = re.captures(&line) {
-                                    if !s.1.clobber {
-                                        let ki = keys.iter();
-                                        let gi = m.iter().skip(1);
-                                        for (k, g) in ki.zip(gi) {
-                                            if g.is_some() {
-                                                if (s.0).0.has_path(&k) {
-                                                    pre_flush = true;
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                    }
-                                    if pre_flush {
-                                        s.0.flush(&s.1, w);
-                                    }
-                                    let ki = keys.iter();
-                                    let gi = m.iter().skip(1);
-                                    for (k, g) in ki.zip(gi) {
-                                        if let Some(m) = g {
-                                            (s.0).0.set_path(&k, Record::from(m.as_str()));
-                                        }
-                                    }
-                                    if *post_flush {
-                                        s.0.flush(&s.1, w);
+                for (pre_flush, post_flush, keys, re) in s.1.res.iter() {
+                    let mut pre_flush = *pre_flush;
+                    if let Some(m) = re.captures(&line) {
+                        if !s.1.clobber {
+                            let ki = keys.iter();
+                            let gi = m.iter().skip(1);
+                            for (k, g) in ki.zip(gi) {
+                                if g.is_some() {
+                                    if (s.0).0.has_path(&k) {
+                                        pre_flush = true;
+                                        break;
                                     }
                                 }
                             }
-                            return true;
+                        }
+                        if pre_flush {
+                            s.0.flush(&s.1, w);
+                        }
+                        let ki = keys.iter();
+                        let gi = m.iter().skip(1);
+                        for (k, g) in ki.zip(gi) {
+                            if let Some(m) = g {
+                                (s.0).0.set_path(&k, Record::from(m.as_str()));
+                            }
+                        }
+                        if *post_flush {
+                            s.0.flush(&s.1, w);
                         }
                     }
-                },
-                |mut s, w| {
-                    if !s.1.clobber {
-                        s.0.flush(&s.1, w);
-                    }
-                },
-            ),
+                }
+
+                return true;
+            },
+            |mut s, w| {
+                if !s.1.clobber {
+                    s.0.flush(&s.1, w);
+                }
+            },
         );
     }
 }

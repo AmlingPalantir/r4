@@ -8,7 +8,6 @@ use std::collections::BTreeSet;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::sync::Arc;
-use stream::Entry;
 use stream::Stream;
 use super::OperationBe2;
 use super::OperationBeForBe2;
@@ -58,117 +57,107 @@ impl OperationBe2 for ImplBe2 {
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {
-        return stream::compound(
-            stream::parse(),
-            stream::closures(
-                (o, Vec::new()),
-                |s, e, _w| {
-                    let (o, cell_tuples) = s;
+        return stream::closures(
+            (o, Vec::new()),
+            |s, e, _w| {
+                let (o, cell_tuples) = s;
+                let r = e.parse();
 
-                    match e {
-                        Entry::Bof(_file) => {
-                        }
-                        Entry::Record(r) => {
-                            for (k, ve) in o.pins.iter() {
-                                let vo = r.get_path(k).coerce_string();
-                                let vo = &vo as &str;
-                                if ve != vo {
-                                    return true;
-                                }
-                            }
-
-                            let mut rvk = o.vk.clone();
-                            if rvk.is_empty() {
-                                let mut unused = BTreeSet::new();
-                                for k in r.expect_hash().keys() {
-                                    unused.insert(k.to_string());
-                                }
-                                for k in o.xk.iter() {
-                                    unused.remove(k);
-                                }
-                                for k in o.yk.iter() {
-                                    unused.remove(k);
-                                }
-                                for k in o.pins.keys() {
-                                    unused.remove(k);
-                                }
-                                rvk = unused.into_iter().collect();
-                            }
-
-                            for vk in rvk {
-                                let mut xs = Vec::new();
-                                let mut ys = Vec::new();
-                                for (zk, zs) in vec![(&o.xk, &mut xs), (&o.yk, &mut ys)] {
-                                    for k in zk.iter() {
-                                        let v;
-                                        if k == "VALUE" {
-                                            v = Record::from(&vk as &str);
-                                        }
-                                        else {
-                                            v = r.get_path(&k);
-                                        }
-                                        zs.push(v);
-                                    }
-                                }
-
-                                let v = r.get_path(&vk);
-
-                                cell_tuples.push((xs, ys, v));
-                            }
-                        }
-                        Entry::Line(_line) => {
-                            panic!("Unexpected line in ToPivotTableStream");
-                        }
+                for (k, ve) in o.pins.iter() {
+                    let vo = r.get_path(k).coerce_string();
+                    let vo = &vo as &str;
+                    if ve != vo {
+                        return true;
                     }
-                    return true;
-                },
-                |s, w| {
-                    let (o, cell_tuples) = s;
+                }
 
-                    let (xh, xh_width) = build_header_tree(&o.xk, &o.xs, cell_tuples.iter().map(|(xs, _ys, _v)| xs));
-                    let (yh, yh_width) = build_header_tree(&o.yk, &o.ys, cell_tuples.iter().map(|(_xs, ys, _v)| ys));
-
-                    let width = o.yk.len() + 1 + xh_width;
-                    let height = o.xk.len() + 1 + yh_width;
-
-                    let mut cells: Vec<Vec<_>> = (0..height).map(|_| (0..width).map(|_| ("".to_string(), ' ')).collect()).collect();
-
-                    for (i, k) in o.xk.iter().enumerate() {
-                        cells[i][o.yk.len()] = (k.to_string(), ' ');
+                let mut rvk = o.vk.clone();
+                if rvk.is_empty() {
+                    let mut unused = BTreeSet::new();
+                    for k in r.expect_hash().keys() {
+                        unused.insert(k.to_string());
                     }
-                    for (i, k) in o.yk.iter().enumerate() {
-                        cells[o.xk.len()][i] = (k.to_string(), ' ');
+                    for k in o.xk.iter() {
+                        unused.remove(k);
                     }
-
-                    xh.visit(0, &mut |width, depth, v| cells[depth][o.yk.len() + 1 + width] = (v.pretty_string(), ' '));
-                    yh.visit(0, &mut |width, depth, v| cells[o.xk.len() + 1 + width][depth] = (v.pretty_string(), ' '));
-
-                    for (xs, ys, v) in cell_tuples.iter() {
-                        let x = o.yk.len() + 1 + xh.tag(&xs);
-                        let y = o.xk.len() + 1 + yh.tag(&ys);
-                        cells[y][x] = (v.pretty_string(), ' ');
+                    for k in o.yk.iter() {
+                        unused.remove(k);
                     }
+                    for k in o.pins.keys() {
+                        unused.remove(k);
+                    }
+                    rvk = unused.into_iter().collect();
+                }
 
-                    let mut cells2: Vec<Vec<_>> = (0..=(2 * height)).map(|_| (0..=(2 * width)).map(|_| ("".to_string(), ' ')).collect()).collect();
-
-                    for x in 0..=width {
-                        for y in 0..=height {
-                            cells2[2 * y][2 * x] = ("+".to_string(), ' ');
-                            if x < width {
-                                cells2[2 * y][2 * x + 1] = ("".to_string(), '-');
+                for vk in rvk {
+                    let mut xs = Vec::new();
+                    let mut ys = Vec::new();
+                    for (zk, zs) in vec![(&o.xk, &mut xs), (&o.yk, &mut ys)] {
+                        for k in zk.iter() {
+                            let v;
+                            if k == "VALUE" {
+                                v = Record::from(&vk as &str);
                             }
-                            if y < height {
-                                cells2[2 * y + 1][2 * x] = ("|".to_string(), ' ');
+                            else {
+                                v = r.get_path(&k);
                             }
-                            if x < width && y < height {
-                                cells2[2 * y + 1][2 * x + 1] = cells[y][x].clone();
-                            }
+                            zs.push(v);
                         }
                     }
 
-                    super::to_table::dump_table(&cells2, w);
-                },
-            ),
+                    let v = r.get_path(&vk);
+
+                    cell_tuples.push((xs, ys, v));
+                }
+
+                return true;
+            },
+            |s, w| {
+                let (o, cell_tuples) = s;
+
+                let (xh, xh_width) = build_header_tree(&o.xk, &o.xs, cell_tuples.iter().map(|(xs, _ys, _v)| xs));
+                let (yh, yh_width) = build_header_tree(&o.yk, &o.ys, cell_tuples.iter().map(|(_xs, ys, _v)| ys));
+
+                let width = o.yk.len() + 1 + xh_width;
+                let height = o.xk.len() + 1 + yh_width;
+
+                let mut cells: Vec<Vec<_>> = (0..height).map(|_| (0..width).map(|_| ("".to_string(), ' ')).collect()).collect();
+
+                for (i, k) in o.xk.iter().enumerate() {
+                    cells[i][o.yk.len()] = (k.to_string(), ' ');
+                }
+                for (i, k) in o.yk.iter().enumerate() {
+                    cells[o.xk.len()][i] = (k.to_string(), ' ');
+                }
+
+                xh.visit(0, &mut |width, depth, v| cells[depth][o.yk.len() + 1 + width] = (v.pretty_string(), ' '));
+                yh.visit(0, &mut |width, depth, v| cells[o.xk.len() + 1 + width][depth] = (v.pretty_string(), ' '));
+
+                for (xs, ys, v) in cell_tuples.iter() {
+                    let x = o.yk.len() + 1 + xh.tag(&xs);
+                    let y = o.xk.len() + 1 + yh.tag(&ys);
+                    cells[y][x] = (v.pretty_string(), ' ');
+                }
+
+                let mut cells2: Vec<Vec<_>> = (0..=(2 * height)).map(|_| (0..=(2 * width)).map(|_| ("".to_string(), ' ')).collect()).collect();
+
+                for x in 0..=width {
+                    for y in 0..=height {
+                        cells2[2 * y][2 * x] = ("+".to_string(), ' ');
+                        if x < width {
+                            cells2[2 * y][2 * x + 1] = ("".to_string(), '-');
+                        }
+                        if y < height {
+                            cells2[2 * y + 1][2 * x] = ("|".to_string(), ' ');
+                        }
+                        if x < width && y < height {
+                            cells2[2 * y + 1][2 * x + 1] = cells[y][x].clone();
+                        }
+                    }
+                }
+
+                super::to_table::dump_table(&cells2, w);
+            },
         );
     }
 }

@@ -52,16 +52,8 @@ impl OperationBe for ImplBe {
             let mut lw = LineWriter::new(p_stdin);
             loop {
                 match rbe.read() {
-                    Some(Entry::Bof(_file)) => {
-                        continue;
-                    }
-                    Some(Entry::Record(r)) => {
-                        if writeln!(lw, "{}", r.deparse()).is_err() {
-                            rbe.rclose();
-                        }
-                    }
-                    Some(Entry::Line(line)) => {
-                        if writeln!(lw, "{}", line).is_err() {
+                    Some(e) => {
+                        if writeln!(lw, "{}", e.deparse()).is_err() {
                             rbe.rclose();
                         }
                     }

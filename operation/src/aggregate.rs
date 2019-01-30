@@ -61,61 +61,51 @@ impl OperationBe2 for ImplBe2 {
             return rhs;
         }
 
-        return stream::compound(
-            stream::parse(),
-            stream::closures(
-                State {
-                    o: o.clone(),
-                    aggs: o.aggs.clone(),
-                    recs: Vec::new(),
-                },
-                |s, e, w| {
-                    match e {
-                        Entry::Bof(_file) => {
-                            return true;
-                        }
-                        Entry::Record(r) => {
-                            for (_, ref mut state) in s.aggs.iter_mut() {
-                                state.add(r.clone());
-                            }
+        return stream::closures(
+            State {
+                o: o.clone(),
+                aggs: o.aggs.clone(),
+                recs: Vec::new(),
+            },
+            |s, e, w| {
+                let r = e.parse();
 
-                            if s.o.incremental {
-                                if s.o.no_bucket {
-                                    return w(Entry::Record(s.o.tru.union(r, aggregate_record(s.aggs.clone()))));
-                                }
+                for (_, ref mut state) in s.aggs.iter_mut() {
+                    state.add(r.clone());
+                }
 
-                                return w(Entry::Record(s.o.tru.union_maybe(None, Some(aggregate_record(s.aggs.clone())))));
-                            }
-
-                            if s.o.no_bucket {
-                                s.recs.push(r);
-                            }
-                            return true;
-                        }
-                        Entry::Line(_line) => {
-                            panic!("Unexpected line in AggregateStream");
-                        }
+                if s.o.incremental {
+                    if s.o.no_bucket {
+                        return w(Entry::Record(s.o.tru.union(r, aggregate_record(s.aggs.clone()))));
                     }
-                },
-                |s, w| {
-                    if s.o.incremental {
+
+                    return w(Entry::Record(s.o.tru.union_maybe(None, Some(aggregate_record(s.aggs.clone())))));
+                }
+
+                if s.o.no_bucket {
+                    s.recs.push(r);
+                }
+
+                return true;
+            },
+            |s, w| {
+                if s.o.incremental {
+                    return;
+                }
+
+                let rhs = aggregate_record(s.aggs);
+
+                if !s.o.no_bucket {
+                    w(Entry::Record(s.o.tru.union_maybe(None, Some(rhs))));
+                    return;
+                }
+
+                for lhs in s.recs {
+                    if !w(Entry::Record(s.o.tru.union(lhs, rhs.clone()))) {
                         return;
                     }
-
-                    let rhs = aggregate_record(s.aggs);
-
-                    if !s.o.no_bucket {
-                        w(Entry::Record(s.o.tru.union_maybe(None, Some(rhs))));
-                        return;
-                    }
-
-                    for lhs in s.recs {
-                        if !w(Entry::Record(s.o.tru.union(lhs, rhs.clone()))) {
-                            return;
-                        }
-                    }
-                },
-            ),
+                }
+            },
         );
     }
 }
