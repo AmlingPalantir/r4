@@ -9,3 +9,4 @@ record = { path = "../record" }
 registry = { path = "../registry" }
 validates = { path = "../validates" }
 lazy_static = "1.2.0"
+rand = "0.6.1"

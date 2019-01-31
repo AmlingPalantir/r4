@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate lazy_static;
 extern crate misc;
+extern crate rand;
 extern crate record;
 #[macro_use]
 extern crate registry;
@@ -42,6 +43,7 @@ registry! {
     record_for_min,
     record_for_percentile,
     records,
+    sample,
     standard_deviation,
     sum,
 }
