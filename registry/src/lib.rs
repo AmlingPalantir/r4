@@ -22,10 +22,12 @@ impl<R> Default for Registry<R> {
     }
 }
 
-impl<R> Registry<R> {
-    pub fn add<F: Fn(&[&str]) -> ValidationResult<R> + Send + Sync + 'static>(&mut self, name: &str, argct: usize, f: F) {
-        let prev = self.map.insert(name.to_string(), (argct, Box::new(f)));
-        assert!(prev.is_none(), "registry collision for {}", name);
+impl<R: 'static> Registry<R> {
+    pub fn add<I: Registrant<R> + 'static>(&mut self) {
+        for name in I::names() {
+            let prev = self.map.insert(name.to_string(), (I::argct(), Box::new(I::init)));
+            assert!(prev.is_none(), "registry collision for {}", name);
+        }
     }
 
     pub fn find(&self, name: &str, args: &[&str]) -> ValidationResult<R> {
@@ -114,9 +116,7 @@ macro_rules! registry {
             pub static ref REGISTRY: $crate::Registry<$r> = {
                 let mut r = $crate::Registry::default();
                 $(
-                    for name in <$id::Impl as $crate::Registrant<$r>>::names() {
-                        r.add(name, <$id::Impl as $crate::Registrant<$r>>::argct(), <$id::Impl as $crate::Registrant<$r>>::init);
-                    }
+                    r.add::<$id::Impl>();
                 )*
                 r
             };
