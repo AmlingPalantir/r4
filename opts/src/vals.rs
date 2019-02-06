@@ -128,6 +128,14 @@ impl<T> OptionalOption<T> {
         self.0 = Some(t);
         return Result::Ok(());
     }
+
+    pub fn maybe_set(&mut self, t: T) -> ValidationResult<bool> {
+        if self.0.is_some() {
+            return Result::Ok(false);
+        }
+        self.0 = Some(t);
+        return Result::Ok(true);
+    }
 }
 
 pub type OptionalStringOption = OptionalOption<String>;
@@ -135,6 +143,10 @@ pub type OptionalStringOption = OptionalOption<String>;
 impl OptionalStringOption {
     pub fn set_str(&mut self, a: &str) -> ValidationResult<()> {
         return self.set(a.to_string());
+    }
+
+    pub fn maybe_set_str(&mut self, a: &str) -> ValidationResult<bool> {
+        return self.maybe_set(a.to_string());
     }
 }
 
