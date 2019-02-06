@@ -7,31 +7,42 @@ use self::args::RegistryArgs;
 use opts::parser::OptionsPile;
 use opts::parser::ToOptionsHelp;
 use std::collections::HashMap;
+use std::sync::Arc;
 use validates::ValidationError;
 use validates::ValidationResult;
 
+struct RegistrantData<R> {
+    names: Vec<&'static str>,
+    argct: usize,
+    init: Box<Fn(&[&str]) -> ValidationResult<R> + Send + Sync>,
+}
+
 pub struct Registry<R> {
-    map: HashMap<&'static str, (usize, Box<Fn(&[&str]) -> ValidationResult<R> + Send + Sync>)>,
-    aliaseses: Vec<Vec<&'static str>>,
+    map: HashMap<&'static str, Arc<RegistrantData<R>>>,
+    list: Vec<Arc<RegistrantData<R>>>,
 }
 
 impl<R> Default for Registry<R> {
     fn default() -> Self {
         return Registry {
             map: HashMap::new(),
-            aliaseses: Vec::new(),
+            list: Vec::new(),
         };
     }
 }
 
 impl<R: 'static> Registry<R> {
     pub fn add<I: Registrant<R> + 'static>(&mut self) {
-        let names = I::names();
-        for name in names.iter() {
-            let prev = self.map.insert(name, (I::argct(), Box::new(I::init)));
+        let data = Arc::new(RegistrantData {
+            names: I::names(),
+            argct: I::argct(),
+            init: Box::new(I::init),
+        });
+        for name in &data.names {
+            let prev = self.map.insert(name, data.clone());
             assert!(prev.is_none(), "registry collision for {}", name);
         }
-        self.aliaseses.push(names);
+        self.list.push(data);
     }
 
     pub fn find(&self, name: &str, args: &[&str]) -> ValidationResult<R> {
@@ -39,25 +50,25 @@ impl<R: 'static> Registry<R> {
             None => {
                 return ValidationError::message(format!("No implementation named {}", name));
             }
-            Some((argct, f)) => {
-                if args.len() != *argct {
+            Some(data) => {
+                if args.len() != data.argct {
                     return ValidationError::message(format!("Wrong number of args for {}", name));
                 }
-                return f(args);
+                return (data.init)(args);
             }
         }
     }
 
     pub fn labelled_multiple_options(&'static self, prefixes: &[&str]) -> OptionsPile<Vec<(String, R)>> {
         let mut opt = OptionsPile::<Vec<(String, R)>>::new();
-        for (alias, (argct, f)) in &self.map {
+        for (alias, data) in &self.map {
             let aliases: Vec<_> = prefixes.iter().map(|prefix| format!("{}-{}", prefix, alias)).collect();
             let aliases: Vec<_> = aliases.iter().map(|s| s as &str).collect();
-            opt.match_n(&aliases, argct + 1, move |rs, a| {
+            opt.match_n(&aliases, data.argct + 1, move |rs, a| {
                 let mut iter = a.iter();
                 let label = iter.next().unwrap().to_string();
                 let a: Vec<_> = iter.map(|s| s as &str).collect();
-                rs.push((label, f(&a)?));
+                rs.push((label, (data.init)(&a)?));
                 return Result::Ok(());
             }, None);
         }
@@ -83,12 +94,12 @@ impl<R: 'static> Registry<R> {
 
     pub fn multiple_options(&'static self, prefixes: &[&str]) -> OptionsPile<Vec<R>> {
         let mut opt = OptionsPile::<Vec<R>>::new();
-        for (alias, (argct, f)) in &self.map {
+        for (alias, data) in &self.map {
             let aliases: Vec<_> = prefixes.iter().map(|prefix| format!("{}-{}", prefix, alias)).collect();
             let aliases: Vec<_> = aliases.iter().map(|s| s as &str).collect();
-            opt.match_n(&aliases, *argct, move |rs, a| {
+            opt.match_n(&aliases, data.argct, move |rs, a| {
                 let a: Vec<_> = a.iter().map(|s| s as &str).collect();
-                rs.push(f(&a)?);
+                rs.push((data.init)(&a)?);
                 return Result::Ok(());
             }, None);
         }
@@ -110,10 +121,10 @@ impl<R: 'static> Registry<R> {
 
     pub fn help_options<X: 'static>(&'static self, type_name: &str) -> OptionsPile<X> {
         let mut opt = OptionsPile::<X>::new();
-        let aliaseses = &self.aliaseses;
+        let list = &self.list;
         opt.match_zero(&[&format!("list-{}", type_name)], move |_p| {
-            return ValidationError::help(aliaseses.iter().map(|aliases| {
-                let (first, rest) = aliases.split_first().unwrap();
+            return ValidationError::help(list.iter().map(|data| {
+                let (first, rest) = data.names.split_first().unwrap();
                 let mut line = first.to_string();
                 if !rest.is_empty() {
                     line.push_str(&format!(" [{}]", rest.join(", ")));
