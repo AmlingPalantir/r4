@@ -106,29 +106,29 @@ impl<B: OperationBe> Default for OperationInboxImpl<B> {
     }
 }
 
-#[derive(Default)]
-pub struct AndHelpOptions<P: Validates> {
-    p: P,
-    help: bool,
+impl<B: OperationBe + 'static> OperationInboxImpl<B> where <B::Options as Validates>::Target: Send + Sync {
+    fn new_options() -> OptionsPile<B::Options> {
+        let mut opt = OptionsPile::<B::Options>::new();
+        B::options(&mut opt);
+        opt.match_zero(&["help"], |_p| {
+            return ValidationError::help(Self::static_help());
+        }, "show help");
+        return opt;
+    }
+
+    fn static_help() -> Vec<String> {
+        let mut lines = Vec::new();
+        lines.push(format!("{}:", B::names()[0]));
+        lines.append(&mut Self::new_options().dump_help());
+        return lines;
+    }
 }
 
 impl<B: OperationBe + 'static> OperationInbox for OperationInboxImpl<B> where <B::Options as Validates>::Target: Send + Sync {
     fn parse(&self, args: &mut Vec<String>) -> ValidationResult<StreamWrapper> {
-        let mut opt = OptionsPile::<AndHelpOptions<B::Options>>::new();
-        opt.add_sub(|p| &mut p.p, B::new_options());
-        opt.match_zero(&["help"], |p| {
-            p.help = true;
-            return Result::Ok(());
-        }, "show help");
+        let opt = Self::new_options();
         let o = opt.to_parser().parse(args);
         let o = o.map_err(|e| e.label("While parsing arguments"))?;
-        if o.help {
-            let mut lines = Vec::new();
-            lines.push(format!("{}:", B::names()[0]));
-            lines.append(&mut opt.dump_help());
-            return ValidationError::help(lines);
-        }
-        let o = o.p;
         let o = o.validate();
         let o = o.map_err(|e| e.label("While validating arguments"))?;
         let o = Arc::new(o);
