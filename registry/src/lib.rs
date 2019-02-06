@@ -126,17 +126,20 @@ impl<R: 'static> Registry<R> {
         return opt;
     }
 
+    pub fn help_list(&'static self) -> Vec<String> {
+        let lines: Vec<_> = self.list.iter().map(|data| (data.names[0], data.help_msg)).collect();
+
+        let width = lines.iter().map(|(lhs, _rhs)| lhs.len()).max().unwrap();
+
+        let lines = lines.iter().map(|(lhs, rhs)| format!("{:width$}   {}", lhs, rhs, width = width)).collect();
+
+        return lines;
+    }
+
     pub fn help_options<X: 'static>(&'static self, type_name: &str) -> OptionsPile<X> {
         let mut opt = OptionsPile::<X>::new();
-        let list = &self.list;
         opt.match_zero(&[&format!("list-{}", type_name)], move |_p| {
-            let lines: Vec<_> = list.iter().map(|data| (data.names[0], data.help_msg)).collect();
-
-            let width = lines.iter().map(|(lhs, _rhs)| lhs.len()).max().unwrap();
-
-            let lines = lines.iter().map(|(lhs, rhs)| format!("{:width$}   {}", lhs, rhs, width = width)).collect();
-
-            return ValidationError::help(lines);
+            return ValidationError::help(self.help_list());
         }, format!("list {}s", type_name));
         opt.match_single(&[&format!("show-{}", type_name)], move |_p, a| {
             let data = self.find_data(a)?;
