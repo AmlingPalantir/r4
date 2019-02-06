@@ -40,7 +40,11 @@ impl<R: 'static> Registry<R> {
             argct: I::Args::argct(),
             help_meta: I::help_meta(),
             help_msg: I::help_msg(),
-            init: Box::new(I::init),
+            init: Box::new(|args| {
+                let a = I::Args::parse(args)?;
+                let r = I::init2(a);
+                return Result::Ok(r);
+            }),
         });
         for name in &data.names {
             let prev = self.map.insert(name, data.clone());
@@ -195,8 +199,4 @@ pub trait Registrant<R> {
     fn help_msg() -> &'static str;
 
     fn init2(a: <Self::Args as RegistryArgs>::Val) -> R;
-
-    fn init(args: &[&str]) -> ValidationResult<R> {
-        return Result::Ok(Self::init2(Self::Args::parse(args)?));
-    }
 }
