@@ -37,7 +37,7 @@ impl<R: 'static> Registry<R> {
     pub fn add<I: Registrant<R> + 'static>(&mut self) {
         let data = Arc::new(RegistrantData {
             names: I::names(),
-            argct: I::argct(),
+            argct: I::Args::argct(),
             help_meta: I::help_meta(),
             help_msg: I::help_msg(),
             init: Box::new(I::init),
@@ -195,10 +195,6 @@ pub trait Registrant<R> {
     fn help_msg() -> &'static str;
 
     fn init2(a: <Self::Args as RegistryArgs>::Val) -> R;
-
-    fn argct() -> usize {
-        return Self::Args::argct();
-    }
 
     fn init(args: &[&str]) -> ValidationResult<R> {
         return Result::Ok(Self::init2(Self::Args::parse(args)?));
