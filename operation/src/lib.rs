@@ -60,6 +60,7 @@ registry! {
     from_regex,
     from_split,
     grep,
+    help,
     join,
     multiplex,
     parse,
@@ -92,6 +93,7 @@ pub trait OperationBe: Optionsable {
 }
 
 pub trait OperationInbox {
+    fn help(&self) -> Vec<String>;
     fn parse(&self, args: &mut Vec<String>) -> ValidationResult<StreamWrapper>;
 }
 
@@ -126,6 +128,10 @@ impl<B: OperationBe + 'static> OperationInboxImpl<B> where <B::Options as Valida
 }
 
 impl<B: OperationBe + 'static> OperationInbox for OperationInboxImpl<B> where <B::Options as Validates>::Target: Send + Sync {
+    fn help(&self) -> Vec<String> {
+        return Self::static_help();
+    }
+
     fn parse(&self, args: &mut Vec<String>) -> ValidationResult<StreamWrapper> {
         let opt = Self::new_options();
         let o = opt.to_parser().parse(args);
