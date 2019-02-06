@@ -283,13 +283,13 @@ impl<P: 'static> OptParser<P> {
             for extra in &self.extra {
                 match extra {
                     ExtraHandler::Soft(f) => {
-                        if (f.0)(p, &args[next_index]).map_err(|e| e.label(format!("While handling {:?}: {:?}", &args[next_index..=next_index], e)))? {
+                        if (f.0)(p, &args[next_index]).map_err(|e| e.label(format!("While handling {:?}", &args[next_index..=next_index])))? {
                             next_index += 1;
                             continue 'arg;
                         }
                     }
                     ExtraHandler::Hard(f) => {
-                        (f.0)(p, &args[next_index..]).map_err(|e| e.label(format!("While handline {:?}: {:?}", &args[next_index..], e)))?;
+                        (f.0)(p, &args[next_index..]).map_err(|e| e.label(format!("While handline {:?}", &args[next_index..])))?;
                         next_index = args.len();
                         continue 'arg;
                     }
