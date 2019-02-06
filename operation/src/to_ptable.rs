@@ -37,17 +37,17 @@ impl Optionsable for ImplBe2 {
     type Options = Options;
 
     fn options(opt: &mut OptionsPile<Options>) {
-        opt.match_single(&["x"], |p, a| p.xk.push_split(a), ());
-        opt.match_single(&["y"], |p, a| p.yk.push_split(a), ());
+        opt.match_single(&["x"], |p, a| p.xk.push_split(a), "keys to use as columns");
+        opt.match_single(&["y"], |p, a| p.yk.push_split(a), "keys to use as rows");
         opt.match_n(&["p"], 2, |p, a| {
             if let Some(_) = p.pins.0.insert(a[0].clone(), a[1].clone()) {
                 return ValidationError::message(format!("Pin {} specified twice", a[0]));
             }
             return Result::Ok(());
-        }, ());
-        opt.match_single(&["v"], |p, a| p.vk.push_split(a), ());
-        opt.add_sub(|p| &mut p.xs, SortOptions::new_options(&["xs"]));
-        opt.add_sub(|p| &mut p.ys, SortOptions::new_options(&["ys"]));
+        }, "keys (and values) to filter to");
+        opt.match_single(&["v"], |p, a| p.vk.push_split(a), "keys to use as values (default: whatever keys didn't get used otherwise)");
+        opt.add_sub(|p| &mut p.xs, SortOptions::new_options(&["xs"], "sorts for x 'records'"));
+        opt.add_sub(|p| &mut p.ys, SortOptions::new_options(&["ys"], "sorts for y 'records'"));
     }
 }
 

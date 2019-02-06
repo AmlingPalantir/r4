@@ -5,6 +5,7 @@ pub mod args;
 use self::args::RegistryArgs;
 
 use opts::parser::OptionsPile;
+use opts::parser::ToOptionsHelp;
 use std::collections::HashMap;
 use validates::ValidationError;
 use validates::ValidationResult;
@@ -52,12 +53,12 @@ impl<R> Registry<R> {
                 let a: Vec<_> = iter.map(|s| s as &str).collect();
                 rs.push((label, f(&a)?));
                 return Result::Ok(());
-            }, ());
+            }, None);
         }
         return opt;
     }
 
-    pub fn labelled_single_options(&'static self, aliases: &[&str]) -> OptionsPile<Vec<(String, R)>> {
+    pub fn labelled_single_options(&'static self, aliases: &[&str], help: impl ToOptionsHelp) -> OptionsPile<Vec<(String, R)>> {
         let mut opt = OptionsPile::<Vec<(String, R)>>::new();
         opt.match_single(aliases, move |rs, a| {
             let (label, a) = match a.find('=') {
@@ -70,7 +71,7 @@ impl<R> Registry<R> {
             let r = self.find(name, &args)?;
             rs.push((label, r));
             return Result::Ok(());
-        }, ());
+        }, help);
         return opt;
     }
 
@@ -83,12 +84,12 @@ impl<R> Registry<R> {
                 let a: Vec<_> = a.iter().map(|s| s as &str).collect();
                 rs.push(f(&a)?);
                 return Result::Ok(());
-            }, ());
+            }, None);
         }
         return opt;
     }
 
-    pub fn single_options(&'static self, aliases: &[&str]) -> OptionsPile<Vec<R>> {
+    pub fn single_options(&'static self, aliases: &[&str], help: impl ToOptionsHelp) -> OptionsPile<Vec<R>> {
         let mut opt = OptionsPile::<Vec<R>>::new();
         opt.match_single(aliases, move |rs, a| {
             let mut parts = a.split(',');
@@ -97,7 +98,7 @@ impl<R> Registry<R> {
             let r = self.find(name, &args)?;
             rs.push(r);
             return Result::Ok(());
-        }, ());
+        }, help);
         return opt;
     }
 }

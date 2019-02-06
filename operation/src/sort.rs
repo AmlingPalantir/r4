@@ -28,20 +28,20 @@ impl Optionsable for ImplBe2 {
     type Options = Options;
 
     fn options(opt: &mut OptionsPile<Options>) {
-        opt.add_sub(|p| &mut p.sorts, SortOptions::new_options(&["s", "sort"]));
+        opt.add_sub(|p| &mut p.sorts, SortOptions::new_options(&["s", "sort"], "sorts"));
         opt.match_single(&["l", "lex", "lexical"], |p, a| {
             for a in a.split(',') {
                 p.sorts.push(sorts::lexical::Impl::init(&[a])?);
             }
             return Result::Ok(());
-        }, ());
+        }, "keys to sort by lexically, prefix with minus to sort descending");
         opt.match_single(&["n", "num", "numeric"], |p, a| {
             for a in a.split(',') {
                 p.sorts.push(sorts::numeric::Impl::init(&[a])?);
             }
             return Result::Ok(());
-        }, ());
-        opt.match_single(&["p", "partial"], |p, a| p.partial.parse(a), ());
+        }, "keys to sort by numerically, prefix with minus to sort descending");
+        opt.match_single(&["p", "partial"], |p, a| p.partial.parse(a), "limit output to this many [first] records");
     }
 }
 

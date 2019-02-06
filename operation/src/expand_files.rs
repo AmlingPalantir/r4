@@ -37,8 +37,8 @@ impl Optionsable for ImplBe2 {
 
     fn options(opt: &mut OptionsPile<Options>) {
         opt.add_sub(|p| &mut p.tru, TwoRecordUnionOption::new_options());
-        opt.match_single(&["fk", "file-key"], |p, a| p.fk.set_str(a), ());
-        opt.match_extra_hard(|p, a| p.op.push(a), ());
+        opt.match_single(&["fk", "file-key"], |p, a| p.fk.set_str(a), "key to read file names from (default: 'FILE')");
+        opt.match_extra_hard(|p, a| p.op.push(a), "operation to run on each file");
     }
 }
 

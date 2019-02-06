@@ -16,14 +16,14 @@ impl Optionsable for ClumperOptions {
     type Options = ClumperOptions;
 
     fn options(opt: &mut OptionsPile<ClumperOptions>) {
-        opt.add_sub(|p| &mut (p.0).0, clumper::REGISTRY.single_options(&["c", "clumper"]));
+        opt.add_sub(|p| &mut (p.0).0, clumper::REGISTRY.single_options(&["c", "clumper"], "clumpers to bucket by"));
         opt.add_sub(|p| &mut (p.0).0, clumper::REGISTRY.multiple_options(&["c", "clumper"]));
         opt.match_single(&["k", "key"], |p, a| {
             for a in a.split(',') {
                 (p.0).0.push(clumper::key::Impl::init(&[a])?);
             }
             return Result::Ok(());
-        }, ());
+        }, "keys to bucket by");
     }
 }
 

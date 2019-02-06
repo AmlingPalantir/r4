@@ -86,18 +86,18 @@ impl<B: EvalBe + 'static> Optionsable for EvalBe2<B> {
     type Options = EvalOptions<B::I, B::O, B::R>;
 
     fn options(opt: &mut OptionsPile<Self::Options>) {
-        opt.match_zero(&["v", "invert"], |p| p.invert.set(), ());
-        opt.match_zero(&["no-invert"], |p| p.invert.clear(), ());
-        opt.match_extra_soft(|p, a| p.code.code.maybe_set_str(a), ());
-        opt.match_single(&["engine"], |p, a| p.code.engine.set_str(a), ());
-        opt.match_zero(&["lua"], |p| p.code.engine.set("lua".to_string()), ());
-        opt.match_zero(&["input-lines"], |p| p.input.set(InputType::Lines()), ());
-        opt.match_zero(&["input-records"], |p| p.input.set(InputType::Records()), ());
-        opt.match_zero(&["output-lines"], |p| p.output.set(OutputType::Lines()), ());
-        opt.match_zero(&["output-records"], |p| p.output.set(OutputType::Records()), ());
-        opt.match_zero(&["output-grep"], |p| p.output.set(OutputType::Grep()), ());
-        opt.match_zero(&["return"], |p| p.ret.set(true), ());
-        opt.match_zero(&["no-return"], |p| p.ret.set(false), ());
+        opt.match_zero(&["v", "invert"], |p| p.invert.set(), "invert truthiness of output values");
+        opt.match_zero(&["no-invert"], |p| p.invert.clear(), "(default)");
+        opt.match_extra_soft(|p, a| p.code.code.maybe_set_str(a), "code to execute");
+        opt.match_single(&["engine"], |p, a| p.code.engine.set_str(a), "'engine' to execute code with");
+        opt.match_zero(&["lua"], |p| p.code.engine.set("lua".to_string()), "evaluate as lua");
+        opt.match_zero(&["input-lines"], |p| p.input.set(InputType::Lines()), "provide input as string lines");
+        opt.match_zero(&["input-records"], |p| p.input.set(InputType::Records()), "provide input as structured records");
+        opt.match_zero(&["output-lines"], |p| p.output.set(OutputType::Lines()), "interpret output as string lines");
+        opt.match_zero(&["output-records"], |p| p.output.set(OutputType::Records()), "interpret output as structured records");
+        opt.match_zero(&["output-grep"], |p| p.output.set(OutputType::Grep()), "interpret output as flag to indicate if input should be passed");
+        opt.match_zero(&["return"], |p| p.ret.set(true), "interpret return value as output");
+        opt.match_zero(&["no-return"], |p| p.ret.set(false), "interpret r variable value as output");
     }
 }
 

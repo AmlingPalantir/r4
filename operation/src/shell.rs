@@ -22,7 +22,7 @@ impl Optionsable for ImplBe {
     type Options = StringVecOption;
 
     fn options(opt: &mut OptionsPile<StringVecOption>) {
-        opt.match_extra_hard(StringVecOption::push_all, ());
+        opt.match_extra_hard(StringVecOption::push_all, "[external] command to run");
     }
 }
 

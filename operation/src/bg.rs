@@ -21,7 +21,7 @@ impl Optionsable for ImplBe {
     type Options = Options;
 
     fn options(opt: &mut OptionsPile<Options>) {
-        opt.match_extra_hard(|p, a| p.op.push(a), ());
+        opt.match_extra_hard(|p, a| p.op.push(a), "operation to run in the background");
     }
 }
 

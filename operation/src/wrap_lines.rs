@@ -32,8 +32,8 @@ impl Optionsable for ImplBe2 {
     type Options = Options;
 
     fn options(opt: &mut OptionsPile<Options>) {
-        opt.match_single(&["lk", "line-key"], |p, a| p.lk.set_str(a), ());
-        opt.match_single(&["lnk", "lineno-key"], |p, a| p.lnk.set_str(a), ());
+        opt.match_single(&["lk", "line-key"], |p, a| p.lk.set_str(a), "key to set to line (default: 'LINE')");
+        opt.match_single(&["lnk", "lineno-key"], |p, a| p.lnk.set_str(a), "key to set to line number (default: 'LINENO')");
     }
 }
 

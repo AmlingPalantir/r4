@@ -1,4 +1,5 @@
 use opts::parser::OptionsPile;
+use opts::parser::ToOptionsHelp;
 use opts::vals::UnvalidatedOption;
 use record::Record;
 use sorts::BoxedSort;
@@ -12,14 +13,14 @@ use std::rc::Rc;
 pub struct SortOptions(UnvalidatedOption<Vec<BoxedSort>>);
 
 impl SortOptions {
-    pub fn options(opt: &mut OptionsPile<SortOptions>, aliases: &[&str]) {
-        opt.add_sub(|p| &mut (p.0).0, sorts::REGISTRY.single_options(aliases));
+    pub fn options(opt: &mut OptionsPile<SortOptions>, aliases: &[&str], help: impl ToOptionsHelp) {
+        opt.add_sub(|p| &mut (p.0).0, sorts::REGISTRY.single_options(aliases, help));
         opt.add_sub(|p| &mut (p.0).0, sorts::REGISTRY.multiple_options(aliases));
     }
 
-    pub fn new_options(aliases: &[&str]) -> OptionsPile<SortOptions> {
+    pub fn new_options(aliases: &[&str], help: impl ToOptionsHelp) -> OptionsPile<SortOptions> {
         let mut opt = OptionsPile::new();
-        Self::options(&mut opt, aliases);
+        Self::options(&mut opt, aliases, help);
         return opt;
     }
 

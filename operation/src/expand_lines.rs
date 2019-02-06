@@ -34,8 +34,8 @@ impl Optionsable for ImplBe2 {
 
     fn options(opt: &mut OptionsPile<Options>) {
         opt.add_sub(|p| &mut p.tru, TwoRecordUnionOption::new_options());
-        opt.match_single(&["lk", "line-key"], |p, a| p.lk.set_str(a), ());
-        opt.match_extra_hard(|p, a| p.op.push(a), ());
+        opt.match_single(&["lk", "line-key"], |p, a| p.lk.set_str(a), "key to read lines from (default: 'LINE')");
+        opt.match_extra_hard(|p, a| p.op.push(a), "operation to run on each line");
     }
 }
 

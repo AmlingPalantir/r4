@@ -50,14 +50,14 @@ impl Optionsable for ImplBe2 {
             return Result::Ok(());
         }
 
-        opt.match_single(&["re"], |p, a| _add_re(p, false, false, a), ());
-        opt.match_single(&["pre"], |p, a| _add_re(p, true, false, a), ());
-        opt.match_single(&["post"], |p, a| _add_re(p, false, true, a), ());
+        opt.match_single(&["re"], |p, a| _add_re(p, false, false, a), "regex to match (no flush)");
+        opt.match_single(&["pre"], |p, a| _add_re(p, true, false, a), "regex to match (flush before)");
+        opt.match_single(&["post"], |p, a| _add_re(p, false, true, a), "regex to match (flush after)");
 
-        opt.match_single(&["keep"], |p, a| p.keep.push(a), ());
-        opt.match_zero(&["keep-all"], |p| p.keep_all.set(), ());
+        opt.match_single(&["keep"], |p, a| p.keep.push(a), "keys to keep between flushes");
+        opt.match_zero(&["keep-all"], |p| p.keep_all.set(), "keep all keys between flushes");
 
-        opt.match_zero(&["clobber"], |p| p.clobber.set(), ());
+        opt.match_zero(&["clobber"], |p| p.clobber.set(), "overwrite colliding keys rather than flush");
     }
 }
 

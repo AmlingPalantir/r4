@@ -42,8 +42,8 @@ impl Optionsable for ImplBe2 {
     type Options = Options;
 
     fn options(opt: &mut OptionsPile<Options>) {
-        opt.match_single(&["re", "regex"], |p, a| p.re.0.set_str(a), ());
-        opt.match_single(&["k", "keys"], |p, a| p.keys.push_split(a), ());
+        opt.match_single(&["re", "regex"], |p, a| p.re.0.set_str(a), "regular expression to match");
+        opt.match_single(&["k", "keys"], |p, a| p.keys.push_split(a), "keys to set from capture groups");
     }
 }
 
