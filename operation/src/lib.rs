@@ -41,6 +41,7 @@ use std::sync::Arc;
 use stream::Stream;
 use validates::Validates;
 use validates::ValidationError;
+use validates::ValidationResult;
 
 pub type BoxedOperation = Box<OperationInbox>;
 
@@ -90,7 +91,7 @@ pub trait OperationBe: Optionsable {
 }
 
 pub trait OperationInbox {
-    fn parse(&self, args: &mut Vec<String>) -> StreamWrapper;
+    fn parse(&self, args: &mut Vec<String>) -> ValidationResult<StreamWrapper>;
 }
 
 struct OperationInboxImpl<B: OperationBe> {
@@ -112,7 +113,7 @@ pub struct AndHelpOptions<P: Validates> {
 }
 
 impl<B: OperationBe + 'static> OperationInbox for OperationInboxImpl<B> where <B::Options as Validates>::Target: Send + Sync {
-    fn parse(&self, args: &mut Vec<String>) -> StreamWrapper {
+    fn parse(&self, args: &mut Vec<String>) -> ValidationResult<StreamWrapper> {
         let mut opt = OptionsPile::<AndHelpOptions<B::Options>>::new();
         opt.add_sub(|p| &mut p.p, B::new_options());
         opt.match_zero(&["help"], |p| {
@@ -120,40 +121,20 @@ impl<B: OperationBe + 'static> OperationInbox for OperationInboxImpl<B> where <B
             return Result::Ok(());
         }, "show help");
         let o = opt.to_parser().parse(args);
-        let o = match o {
-            Result::Ok(o) => o,
-            Result::Err(e) => {
-                match e {
-                    ValidationError::Message(s) => {
-                        println!("Error parsing arguments: {}", s);
-                    }
-                };
-                opt.dump_help();
-                std::process::exit(1);
-            }
-        };
+        let o = o.map_err(|e| e.label("While parsing arguments"))?;
         if o.help {
-            opt.dump_help();
-            std::process::exit(0);
+            let mut lines = Vec::new();
+            lines.push(format!("{}:", B::names()[0]));
+            lines.append(&mut opt.dump_help());
+            return ValidationError::help(lines);
         }
         let o = o.p;
         let o = o.validate();
-        let o = match o {
-            Result::Ok(o) => o,
-            Result::Err(e) => {
-                match e {
-                    ValidationError::Message(s) => {
-                        println!("Error validating arguments: {}", s);
-                    }
-                };
-                opt.dump_help();
-                std::process::exit(1);
-            }
-        };
+        let o = o.map_err(|e| e.label("While validating arguments"))?;
         let o = Arc::new(o);
         *args = B::get_extra(o.clone());
 
-        return StreamWrapper::new(move || B::stream(o.clone()));
+        return Result::Ok(StreamWrapper::new(move || B::stream(o.clone())));
     }
 }
 

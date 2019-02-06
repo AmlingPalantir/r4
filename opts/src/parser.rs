@@ -147,7 +147,7 @@ impl<P: 'static> OptionsPile<P> {
         }).collect());
     }
 
-    pub fn dump_help(&self) {
+    pub fn dump_help(&self) -> Vec<String> {
         let lines: Vec<_> = self.0.iter().filter_map(|e| {
             let (m, help) = e;
             return help.as_ref().map(|help| {
@@ -201,9 +201,7 @@ impl<P: 'static> OptionsPile<P> {
 
         let width = lines.iter().map(|(lhs, _rhs)| lhs.len()).max().unwrap();
 
-        for (lhs, rhs) in lines {
-            println!("{:width$}   {}", lhs, rhs, width = width);
-        }
+        return lines.iter().map(|(lhs, rhs)| format!("{:width$}   {}", lhs, rhs, width = width)).collect();
     }
 }
 

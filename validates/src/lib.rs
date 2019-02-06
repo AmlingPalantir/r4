@@ -3,6 +3,7 @@ use std::ops::Deref;
 
 pub enum ValidationError {
     Message(String),
+    Help(Vec<String>),
 }
 
 impl<E: Error + 'static> From<E> for ValidationError {
@@ -16,15 +17,26 @@ impl ValidationError {
         return Result::Err(ValidationError::Message(msg.to_string()));
     }
 
+    pub fn help<R>(lines: Vec<String>) -> ValidationResult<R> {
+        return Result::Err(ValidationError::Help(lines));
+    }
+
     pub fn label<S: Deref<Target = str>>(self, prefix: S) -> ValidationError {
         return match self {
             ValidationError::Message(s) => ValidationError::Message(format!("{}: {:?}", &*prefix, s)),
+            ValidationError::Help(lines) => ValidationError::Help(lines),
         };
     }
 
     pub fn panic(&self) -> ! {
         match self {
             ValidationError::Message(s) => panic!("{}", s),
+            ValidationError::Help(lines) => {
+                for line in lines {
+                    println!("{}", line);
+                }
+                std::process::exit(0);
+            },
         }
     }
 }
