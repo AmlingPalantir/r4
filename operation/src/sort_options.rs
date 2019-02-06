@@ -18,6 +18,10 @@ impl SortOptions {
         opt.add_sub(|p| &mut (p.0).0, sorts::REGISTRY.multiple_options(aliases));
     }
 
+    pub fn help_options<X: 'static>() -> OptionsPile<X> {
+        return sorts::REGISTRY.help_options("sort");
+    }
+
     pub fn new_options(aliases: &[&str], help: impl ToOptionsHelp) -> OptionsPile<SortOptions> {
         let mut opt = OptionsPile::new();
         Self::options(&mut opt, aliases, help);

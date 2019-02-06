@@ -90,6 +90,7 @@ impl<B: EvalBe + 'static> Optionsable for EvalBe2<B> {
         opt.match_zero(&["no-invert"], |p| p.invert.clear(), "(default)");
         opt.match_extra_soft(|p, a| p.code.code.maybe_set_str(a), "code to execute");
         opt.match_single(&["engine"], |p, a| p.code.engine.set_str(a), "'engine' to execute code with");
+        opt.add(executor::REGISTRY.help_options("executor"));
         opt.match_zero(&["lua"], |p| p.code.engine.set("lua".to_string()), "evaluate as lua");
         opt.match_zero(&["input-lines"], |p| p.input.set(InputType::Lines()), "provide input as string lines");
         opt.match_zero(&["input-records"], |p| p.input.set(InputType::Records()), "provide input as structured records");

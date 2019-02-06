@@ -48,6 +48,7 @@ impl Optionsable for ImplBe2 {
         opt.match_single(&["v"], |p, a| p.vk.push_split(a), "keys to use as values (default: whatever keys didn't get used otherwise)");
         opt.add_sub(|p| &mut p.xs, SortOptions::new_options(&["xs"], "sorts for x 'records'"));
         opt.add_sub(|p| &mut p.ys, SortOptions::new_options(&["ys"], "sorts for y 'records'"));
+        opt.add(SortOptions::help_options());
     }
 }
 

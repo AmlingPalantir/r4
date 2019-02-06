@@ -34,6 +34,7 @@ impl Optionsable for ImplBe2 {
     fn options(opt: &mut OptionsPile<Options>) {
         opt.add_sub(|p| &mut p.aggs.0, aggregator::REGISTRY.labelled_single_options(&["a", "agg", "aggregator"], "aggregators to compute"));
         opt.add_sub(|p| &mut p.aggs.0, aggregator::REGISTRY.labelled_multiple_options(&["a", "agg", "aggregator"]));
+        opt.add(aggregator::REGISTRY.help_options("aggregator"));
         opt.add_sub(|p| &mut p.tru, TwoRecordUnionOption::new_options());
         opt.match_zero(&["incremental"], |p| p.incremental.set(), "Output one record after each input (instead of one at end)");
         opt.match_zero(&["no-incremental"], |p| p.incremental.clear(), "(default)");

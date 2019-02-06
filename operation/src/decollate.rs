@@ -27,6 +27,7 @@ impl Optionsable for ImplBe2 {
     fn options(opt: &mut OptionsPile<Options>) {
         opt.add_sub(|p| &mut p.deaggs.0, deaggregator::REGISTRY.single_options(&["d", "deagg", "deaggregator"], "deaggregator to ... do"));
         opt.add_sub(|p| &mut p.deaggs.0, deaggregator::REGISTRY.multiple_options(&["d", "deagg", "deaggregator"]));
+        opt.add(deaggregator::REGISTRY.help_options("deaggregator"));
     }
 }
 

@@ -12,22 +12,26 @@ use validates::ValidationResult;
 
 pub struct Registry<R> {
     map: HashMap<&'static str, (usize, Box<Fn(&[&str]) -> ValidationResult<R> + Send + Sync>)>,
+    aliaseses: Vec<Vec<&'static str>>,
 }
 
 impl<R> Default for Registry<R> {
     fn default() -> Self {
         return Registry {
             map: HashMap::new(),
+            aliaseses: Vec::new(),
         };
     }
 }
 
 impl<R: 'static> Registry<R> {
     pub fn add<I: Registrant<R> + 'static>(&mut self) {
-        for name in I::names() {
+        let names = I::names();
+        for name in names.iter() {
             let prev = self.map.insert(name, (I::argct(), Box::new(I::init)));
             assert!(prev.is_none(), "registry collision for {}", name);
         }
+        self.aliaseses.push(names);
     }
 
     pub fn find(&self, name: &str, args: &[&str]) -> ValidationResult<R> {
@@ -101,6 +105,22 @@ impl<R: 'static> Registry<R> {
             rs.push(r);
             return Result::Ok(());
         }, help);
+        return opt;
+    }
+
+    pub fn help_options<X: 'static>(&'static self, type_name: &str) -> OptionsPile<X> {
+        let mut opt = OptionsPile::<X>::new();
+        let aliaseses = &self.aliaseses;
+        opt.match_zero(&[&format!("list-{}", type_name)], move |_p| {
+            return ValidationError::help(aliaseses.iter().map(|aliases| {
+                let (first, rest) = aliases.split_first().unwrap();
+                let mut line = first.to_string();
+                if !rest.is_empty() {
+                    line.push_str(&format!(" [{}]", rest.join(", ")));
+                }
+                return line;
+            }).collect());
+        }, format!("list {}s", type_name));
         return opt;
     }
 }

@@ -29,6 +29,7 @@ impl Optionsable for ImplBe2 {
 
     fn options(opt: &mut OptionsPile<Options>) {
         opt.add_sub(|p| &mut p.sorts, SortOptions::new_options(&["s", "sort"], "sorts"));
+        opt.add(SortOptions::help_options());
         opt.match_single(&["l", "lex", "lexical"], |p, a| {
             for a in a.split(',') {
                 p.sorts.push(sorts::lexical::Impl::init(&[a])?);
