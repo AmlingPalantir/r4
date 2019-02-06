@@ -15,7 +15,7 @@ impl SortSimpleBe for ImplSimpleBe {
     type T = F64SortDishonorProxy;
 
     fn names() -> Vec<&'static str> {
-        return vec!["n", "num", "numeric"];
+        return vec!["numeric", "num", "n"];
     }
 
     fn get(r: Record) -> F64SortDishonorProxy {

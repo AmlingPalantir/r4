@@ -12,7 +12,7 @@ impl AggregatorBe for ImplBe {
     type State = i64;
 
     fn names() -> Vec<&'static str> {
-        return vec!["ct", "count"];
+        return vec!["count", "ct"];
     }
 
     fn add(state: &mut i64, _a: &(), _r: Record) {

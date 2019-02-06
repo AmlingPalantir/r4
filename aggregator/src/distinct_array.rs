@@ -48,7 +48,7 @@ impl AggregatorBe for ImplBe {
     type State = DistinctSet<Record>;
 
     fn names() -> Vec<&'static str> {
-        return vec!["darr", "darray"];
+        return vec!["darray", "darr"];
     }
 
     fn add(state: &mut DistinctSet<Record>, a: &Arc<str>, r: Record) {

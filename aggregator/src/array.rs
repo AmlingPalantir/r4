@@ -14,7 +14,7 @@ impl AggregatorBe for ImplBe {
     type State = Vec<Record>;
 
     fn names() -> Vec<&'static str> {
-        return vec!["arr", "array"];
+        return vec!["array", "arr"];
     }
 
     fn add(state: &mut Vec<Record>, a: &Arc<str>, r: Record) {

@@ -13,7 +13,7 @@ impl AggregatorBe for ImplBe {
     type State = Vec<Record>;
 
     fn names() -> Vec<&'static str> {
-        return vec!["recs", "records"];
+        return vec!["records", "recs"];
     }
 
     fn add(state: &mut Vec<Record>, _a: &(), r: Record) {

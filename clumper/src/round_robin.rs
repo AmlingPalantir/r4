@@ -13,7 +13,7 @@ impl ClumperBe for ImplBe {
     type Args = OneUsizeArgs;
 
     fn names() -> Vec<&'static str> {
-        return vec!["rr", "round-robin"];
+        return vec!["round-robin", "rr"];
     }
 
     fn stream(n: &usize, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream {

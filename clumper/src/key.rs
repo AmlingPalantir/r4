@@ -15,7 +15,7 @@ impl ClumperBe for ImplBe {
     type Args = OneStringArgs;
 
     fn names() -> Vec<&'static str> {
-        return vec!["k", "key"];
+        return vec!["key", "k"];
     }
 
     fn stream(k: &Arc<str>, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream {

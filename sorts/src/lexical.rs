@@ -15,7 +15,7 @@ impl SortSimpleBe for ImplSimpleBe {
     type T = Arc<str>;
 
     fn names() -> Vec<&'static str> {
-        return vec!["l", "lex", "lexical"];
+        return vec!["lexical", "lex", "l"];
     }
 
     fn get(r: Record) -> Arc<str> {

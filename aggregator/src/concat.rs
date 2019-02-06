@@ -14,7 +14,7 @@ impl AggregatorBe for ImplBe {
     type State = Vec<String>;
 
     fn names() -> Vec<&'static str> {
-        return vec!["concat", "concatenate"];
+        return vec!["concatenate", "concat"];
     }
 
     fn add(state: &mut Vec<String>, a: &(Arc<str>, Arc<str>), r: Record) {
