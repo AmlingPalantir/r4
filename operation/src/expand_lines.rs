@@ -5,8 +5,7 @@ use record::RecordTrait;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
-use super::OperationBe2;
-use super::OperationBeForBe2;
+use super::OperationBe;
 use super::OperationRegistrant;
 use super::SubOperationOption;
 use super::TwoRecordUnionOption;
@@ -25,11 +24,9 @@ pub struct Options {
 
 pub(crate) type Impl = OperationRegistrant<ImplBe>;
 
-pub(crate) type ImplBe = OperationBeForBe2<ImplBe2>;
+pub(crate) struct ImplBe();
 
-pub(crate) struct ImplBe2();
-
-impl Optionsable for ImplBe2 {
+impl Optionsable for ImplBe {
     type Options = Options;
 
     fn options(opt: &mut OptionsPile<Options>) {
@@ -39,13 +36,17 @@ impl Optionsable for ImplBe2 {
     }
 }
 
-impl OperationBe2 for ImplBe2 {
+impl OperationBe for ImplBe {
     fn names() -> Vec<&'static str> {
         return vec!["expand-lines"];
     }
 
     fn help_msg() -> &'static str {
         return "run an operation on individual lines, themselves read from input record values";
+    }
+
+    fn get_extra(o: Arc<OptionsValidated>) -> Vec<String> {
+        return o.op.extra.clone();
     }
 
     fn stream(o: Arc<OptionsValidated>) -> Stream {
