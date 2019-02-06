@@ -11,7 +11,7 @@ use validates::ValidationError;
 use validates::ValidationResult;
 
 pub struct Registry<R> {
-    map: HashMap<String, (usize, Box<Fn(&[&str]) -> ValidationResult<R> + Send + Sync>)>,
+    map: HashMap<&'static str, (usize, Box<Fn(&[&str]) -> ValidationResult<R> + Send + Sync>)>,
 }
 
 impl<R> Default for Registry<R> {
@@ -25,7 +25,7 @@ impl<R> Default for Registry<R> {
 impl<R: 'static> Registry<R> {
     pub fn add<I: Registrant<R> + 'static>(&mut self) {
         for name in I::names() {
-            let prev = self.map.insert(name.to_string(), (I::argct(), Box::new(I::init)));
+            let prev = self.map.insert(name, (I::argct(), Box::new(I::init)));
             assert!(prev.is_none(), "registry collision for {}", name);
         }
     }
