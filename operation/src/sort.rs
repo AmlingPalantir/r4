@@ -32,13 +32,13 @@ impl Optionsable for ImplBe2 {
         opt.add(SortOptions::help_options());
         opt.match_single(&["l", "lex", "lexical"], |p, a| {
             for a in a.split(',') {
-                p.sorts.push(sorts::lexical::Impl::init2(Arc::from(a)));
+                p.sorts.push(sorts::lexical::Impl::init(Arc::from(a)));
             }
             return Result::Ok(());
         }, "keys to sort by lexically, prefix with minus to sort descending");
         opt.match_single(&["n", "num", "numeric"], |p, a| {
             for a in a.split(',') {
-                p.sorts.push(sorts::numeric::Impl::init2(Arc::from(a)));
+                p.sorts.push(sorts::numeric::Impl::init(Arc::from(a)));
             }
             return Result::Ok(());
         }, "keys to sort by numerically, prefix with minus to sort descending");

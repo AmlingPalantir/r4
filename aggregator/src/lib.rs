@@ -115,7 +115,7 @@ impl<B: AggregatorBe + 'static> Registrant<BoxedAggregator> for AggregatorRegist
         return B::help_msg();
     }
 
-    fn init2(a: <B::Args as RegistryArgs>::Val) -> BoxedAggregator {
+    fn init(a: <B::Args as RegistryArgs>::Val) -> BoxedAggregator {
         return Box::new(AggregatorInboxImpl::<B>{
             a: Arc::new(a),
             s: B::State::default(),

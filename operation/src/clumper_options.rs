@@ -21,7 +21,7 @@ impl Optionsable for ClumperOptions {
         opt.add(clumper::REGISTRY.help_options("clumper"));
         opt.match_single(&["k", "key"], |p, a| {
             for a in a.split(',') {
-                (p.0).0.push(clumper::key::Impl::init2(Arc::from(a)));
+                (p.0).0.push(clumper::key::Impl::init(Arc::from(a)));
             }
             return Result::Ok(());
         }, "keys to bucket by");

@@ -164,7 +164,7 @@ impl<B: OperationBe + 'static> Registrant<BoxedOperation> for OperationRegistran
         return B::help_msg();
     }
 
-    fn init2(_a: ()) -> BoxedOperation {
+    fn init(_a: ()) -> BoxedOperation {
         return Box::new(OperationInboxImpl::<B>::default());
     }
 }

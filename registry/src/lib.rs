@@ -42,7 +42,7 @@ impl<R: 'static> Registry<R> {
             help_msg: I::help_msg(),
             init: Box::new(|args| {
                 let a = I::Args::parse(args)?;
-                let r = I::init2(a);
+                let r = I::init(a);
                 return Result::Ok(r);
             }),
         });
@@ -198,5 +198,5 @@ pub trait Registrant<R> {
     }
     fn help_msg() -> &'static str;
 
-    fn init2(a: <Self::Args as RegistryArgs>::Val) -> R;
+    fn init(a: <Self::Args as RegistryArgs>::Val) -> R;
 }

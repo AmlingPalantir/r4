@@ -75,7 +75,7 @@ impl<B: DeaggregatorBe + 'static> Registrant<BoxedDeaggregator> for Deaggregator
         return B::help_msg();
     }
 
-    fn init2(a: <B::Args as RegistryArgs>::Val) -> BoxedDeaggregator {
+    fn init(a: <B::Args as RegistryArgs>::Val) -> BoxedDeaggregator {
         return Box::new(DeaggregatorInboxImpl::<B>{
             a: Arc::new(a),
         });

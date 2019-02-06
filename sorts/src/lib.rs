@@ -84,7 +84,7 @@ impl<B: SortBe + 'static> Registrant<BoxedSort> for SortRegistrant<B> {
         return B::help_msg();
     }
 
-    fn init2(a: <B::Args as RegistryArgs>::Val) -> BoxedSort {
+    fn init(a: <B::Args as RegistryArgs>::Val) -> BoxedSort {
         return Box::new(SortInboxImpl::<B>{
             a: Arc::new(a),
         });

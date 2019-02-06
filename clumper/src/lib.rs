@@ -78,7 +78,7 @@ impl<B: ClumperBe + 'static> Registrant<BoxedClumper> for ClumperRegistrant<B> {
         return B::help_msg();
     }
 
-    fn init2(a: <B::Args as RegistryArgs>::Val) -> BoxedClumper {
+    fn init(a: <B::Args as RegistryArgs>::Val) -> BoxedClumper {
         return Box::new(ClumperInboxImpl::<B>{
             a: Arc::new(a),
         });

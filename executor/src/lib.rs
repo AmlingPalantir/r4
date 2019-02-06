@@ -77,7 +77,7 @@ impl<B: ExecutorBe + 'static> Registrant<BoxedExecutor> for ExecutorRegistrant<B
         return B::help_msg();
     }
 
-    fn init2(_a: ()) -> BoxedExecutor {
+    fn init(_a: ()) -> BoxedExecutor {
         return Box::new(ExecutorInboxImpl {
             _b: std::marker::PhantomData::<B>,
         });

@@ -4,7 +4,7 @@ use super::Impl;
 
 fn test_one(i: &str, c: &str, o: &str) {
     let r = Record::parse(i);
-    let mut f = Impl::init2(()).parse(c).unwrap_or_else(|_| panic!()).stream(false);
+    let mut f = Impl::init(()).parse(c).unwrap_or_else(|_| panic!()).stream(false);
     let r = f(r);
     assert_eq!(r.deparse(), o);
 }
