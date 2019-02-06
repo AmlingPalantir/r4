@@ -119,7 +119,7 @@ impl<B: OperationBe + 'static> OperationInboxImpl<B> where <B::Options as Valida
 
     fn static_help() -> Vec<String> {
         let mut lines = Vec::new();
-        lines.push(format!("{}:", B::names()[0]));
+        lines.push(format!("{} - {}", B::names()[0], B::help_msg()));
         lines.append(&mut Self::new_options().dump_help());
         return lines;
     }
