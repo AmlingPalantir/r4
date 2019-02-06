@@ -15,6 +15,14 @@ impl DeaggregatorBe for ImplBe {
         return vec!["unhash"];
     }
 
+    fn help_meta() -> Option<&'static str> {
+        return Some("in_key,key_key,value_key");
+    }
+
+    fn help_msg() -> &'static str {
+        return "output one record per hash element of a value";
+    }
+
     fn deaggregate(a: &(Arc<str>, Arc<str>, Arc<str>), r: Record) -> Vec<Vec<(Arc<str>, Record)>> {
         return r.get_path(&a.0).expect_hash().iter().map(|(k, v)| {
             return vec![

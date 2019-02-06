@@ -38,6 +38,10 @@ impl OperationBe for ImplBe {
         return vec!["chain"];
     }
 
+    fn help_msg() -> &'static str {
+        return "chain together multiple operations similar to shell pipeline (but single threaded)";
+    }
+
     fn get_extra(o: Arc<OptionsValidated>) -> Vec<String> {
         return o.cmds.extra.clone();
     }

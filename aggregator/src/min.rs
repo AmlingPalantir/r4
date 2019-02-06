@@ -20,6 +20,14 @@ impl AggregatorBe for ImplBe {
         return vec!["min"];
     }
 
+    fn help_meta() -> Option<&'static str> {
+        return Some("key");
+    }
+
+    fn help_msg() -> &'static str {
+        return "track the numerically minimal value";
+    }
+
     fn add(state: &mut MaxState<ReverseOrd<F64SortDishonorProxy>>, a: &Arc<str>, r: Record) {
         let v = r.get_path(a);
         state.add(ReverseOrd(F64SortDishonorProxy(v.coerce_f64())), v);

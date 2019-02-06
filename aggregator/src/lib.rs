@@ -53,6 +53,10 @@ trait AggregatorBe {
     type State: Clone + Default + Send + Sync;
 
     fn names() -> Vec<&'static str>;
+    fn help_meta() -> Option<&'static str> {
+        return None;
+    }
+    fn help_msg() -> &'static str;
     fn add(state: &mut Self::State, a: &<Self::Args as RegistryArgs>::Val, r: Record);
     fn finish(state: Self::State, a: &<Self::Args as RegistryArgs>::Val) -> Record;
 }
@@ -101,6 +105,14 @@ impl<B: AggregatorBe + 'static> Registrant<BoxedAggregator> for AggregatorRegist
 
     fn names() -> Vec<&'static str> {
         return B::names();
+    }
+
+    fn help_meta() -> Option<&'static str> {
+        return B::help_meta();
+    }
+
+    fn help_msg() -> &'static str {
+        return B::help_msg();
     }
 
     fn init2(a: <B::Args as RegistryArgs>::Val) -> BoxedAggregator {

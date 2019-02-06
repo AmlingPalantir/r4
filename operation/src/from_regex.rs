@@ -52,6 +52,10 @@ impl OperationBe2 for ImplBe2 {
         return vec!["from-regex"];
     }
 
+    fn help_msg() -> &'static str {
+        return "parse records by matching a single regex against input lines";
+    }
+
     fn stream(o: Arc<OptionsValidated>) -> Stream {
         return stream::closures(
             (),

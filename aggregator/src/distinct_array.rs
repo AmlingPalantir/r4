@@ -51,6 +51,14 @@ impl AggregatorBe for ImplBe {
         return vec!["darray", "darr"];
     }
 
+    fn help_meta() -> Option<&'static str> {
+        return Some("key");
+    }
+
+    fn help_msg() -> &'static str {
+        return "collect distinct values into an array";
+    }
+
     fn add(state: &mut DistinctSet<Record>, a: &Arc<str>, r: Record) {
         state.add(r.get_path(&a));
     }

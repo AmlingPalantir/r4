@@ -16,6 +16,14 @@ impl DeaggregatorBe for ImplBe {
         return vec!["split"];
     }
 
+    fn help_meta() -> Option<&'static str> {
+        return Some("in_key,delimiter,out_key");
+    }
+
+    fn help_msg() -> &'static str {
+        return "split one value and output one record per split piece";
+    }
+
     fn deaggregate(a: &(Arc<str>, Arc<str>, Arc<str>), r: Record) -> Vec<Vec<(Arc<str>, Record)>> {
         let v = r.get_path(&a.0).expect_string();
         return v.split(&*a.1).map(|v| vec![(a.2.clone(), Record::from(v))]).collect();

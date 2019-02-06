@@ -42,6 +42,14 @@ impl AggregatorBe for ImplBe {
         return vec!["lmax"];
     }
 
+    fn help_meta() -> Option<&'static str> {
+        return Some("key");
+    }
+
+    fn help_msg() -> &'static str {
+        return "track the lexically maximal value";
+    }
+
     fn add(state: &mut MaxState<Arc<str>>, a: &Arc<str>, r: Record) {
         let v = r.get_path(a);
         state.add(v.expect_string(), v);

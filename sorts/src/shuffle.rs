@@ -70,6 +70,10 @@ impl SortBe for ImplBe {
         return vec!["shuffle"];
     }
 
+    fn help_msg() -> &'static str {
+        return "'sort' randomly";
+    }
+
     fn new_bucket(_a: &(), next: Rc<Fn() -> Box<SortBucket>>) -> Box<SortBucket> {
         return KeySortBucket::new(|_r, i| RandomSortKey::new(i), next);
     }

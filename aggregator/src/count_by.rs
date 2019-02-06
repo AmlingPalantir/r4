@@ -18,6 +18,14 @@ impl AggregatorBe for ImplBe {
         return vec!["countby", "ctby", "cb"];
     }
 
+    fn help_meta() -> Option<&'static str> {
+        return Some("key");
+    }
+
+    fn help_msg() -> &'static str {
+        return "collect counts of values into a hash";
+    }
+
     fn add(state: &mut HashMap<Arc<str>, i64>, a: &Arc<str>, r: Record) {
         *state.entry(r.get_path(a).expect_string()).or_insert(0) += 1;
     }

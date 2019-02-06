@@ -14,6 +14,8 @@ use validates::ValidationResult;
 struct RegistrantData<R> {
     names: Vec<&'static str>,
     argct: usize,
+    help_meta: Option<&'static str>,
+    help_msg: &'static str,
     init: Box<Fn(&[&str]) -> ValidationResult<R> + Send + Sync>,
 }
 
@@ -36,6 +38,8 @@ impl<R: 'static> Registry<R> {
         let data = Arc::new(RegistrantData {
             names: I::names(),
             argct: I::argct(),
+            help_meta: I::help_meta(),
+            help_msg: I::help_msg(),
             init: Box::new(I::init),
         });
         for name in &data.names {
@@ -126,15 +130,35 @@ impl<R: 'static> Registry<R> {
         let mut opt = OptionsPile::<X>::new();
         let list = &self.list;
         opt.match_zero(&[&format!("list-{}", type_name)], move |_p| {
-            return ValidationError::help(list.iter().map(|data| {
-                let (first, rest) = data.names.split_first().unwrap();
-                let mut line = first.to_string();
-                if !rest.is_empty() {
-                    line.push_str(&format!(" [{}]", rest.join(", ")));
-                }
-                return line;
-            }).collect());
+            let lines: Vec<_> = list.iter().map(|data| (data.names[0], data.help_msg)).collect();
+
+            let width = lines.iter().map(|(lhs, _rhs)| lhs.len()).max().unwrap();
+
+            let lines = lines.iter().map(|(lhs, rhs)| format!("{:width$}   {}", lhs, rhs, width = width)).collect();
+
+            return ValidationError::help(lines);
         }, format!("list {}s", type_name));
+        opt.match_single(&[&format!("show-{}", type_name)], move |_p, a| {
+            let data = self.find_data(a)?;
+            let mut lines = Vec::new();
+            let mut line0 = data.names[0].to_string();
+            match data.help_meta {
+                None => {
+                    for _ in 0..data.argct {
+                        line0.push_str(",arg");
+                    }
+                }
+                Some(meta) => {
+                    line0.push_str(&format!(",{}", meta));
+                }
+            }
+            lines.push(line0);
+            if data.names.len() > 1 {
+                lines.push(format!("   aliases: {}", data.names[1..].join(", ")));
+            }
+            lines.push(format!("   {}", data.help_msg));
+            return ValidationError::help(lines);
+        }, format!("show one {}", type_name));
         return opt;
     }
 }
@@ -162,6 +186,11 @@ pub trait Registrant<R> {
     type Args: RegistryArgs;
 
     fn names() -> Vec<&'static str>;
+    fn help_meta() -> Option<&'static str> {
+        return None;
+    }
+    fn help_msg() -> &'static str;
+
     fn init2(a: <Self::Args as RegistryArgs>::Val) -> R;
 
     fn argct() -> usize {

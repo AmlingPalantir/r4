@@ -17,6 +17,14 @@ impl AggregatorBe for ImplBe {
         return vec!["stddev", "sd"];
     }
 
+    fn help_meta() -> Option<&'static str> {
+        return Some("key");
+    }
+
+    fn help_msg() -> &'static str {
+        return "compute standard deviation of numeric values";
+    }
+
     fn add(state: &mut (f64, f64, f64), a: &Arc<str>, r: Record) {
         let v = r.get_path(a);
         let v = v.coerce_f64();

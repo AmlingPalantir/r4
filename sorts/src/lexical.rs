@@ -18,6 +18,14 @@ impl SortSimpleBe for ImplSimpleBe {
         return vec!["lexical", "lex", "l"];
     }
 
+    fn help_meta() -> Option<&'static str> {
+        return Some("key");
+    }
+
+    fn help_msg() -> &'static str {
+        return "sort by a key, lexically";
+    }
+
     fn get(r: Record) -> Arc<str> {
         return r.coerce_string();
     }

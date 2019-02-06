@@ -41,6 +41,10 @@ impl OperationBe2 for ImplBe2 {
         return vec!["provenance"];
     }
 
+    fn help_msg() -> &'static str {
+        return "run an operation on individual inputs and stamp outputs with original input";
+    }
+
     fn stream(o: Arc<OptionsValidated>) -> Stream {
         return stream::closures(
             o.op.wr.stream(),

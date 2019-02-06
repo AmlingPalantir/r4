@@ -36,6 +36,10 @@ impl OperationBe2 for ImplBe2 {
         return vec!["decollate"];
     }
 
+    fn help_msg() -> &'static str {
+        return "a mixed bag of 'decollate' operations that split records up";
+    }
+
     fn stream(o: Arc<OptionsValidated>) -> Stream {
         return o.deaggs.iter().fold(stream::parse(), |s, deagg| {
             let deagg = deagg.clone();

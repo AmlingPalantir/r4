@@ -48,6 +48,10 @@ impl OperationBe2 for ImplBe2 {
         return vec!["aggregate"];
     }
 
+    fn help_msg() -> &'static str {
+        return "compute aggregates of all input records";
+    }
+
     fn stream(o: Arc<OptionsValidated>) -> Stream {
         struct State {
             o: Arc<OptionsValidated>,

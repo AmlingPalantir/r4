@@ -34,6 +34,10 @@ impl OperationBe2 for ImplBe2 {
         return vec!["to-table"];
     }
 
+    fn help_msg() -> &'static str {
+        return "construct a text table from input records";
+    }
+
     fn stream(o: Arc<OptionsValidated>) -> Stream {
         return stream::closures(
             Vec::new(),

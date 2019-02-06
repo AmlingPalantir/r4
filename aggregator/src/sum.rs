@@ -27,6 +27,14 @@ impl AggregatorBe for ImplBe {
         return vec!["sum"];
     }
 
+    fn help_meta() -> Option<&'static str> {
+        return Some("key");
+    }
+
+    fn help_msg() -> &'static str {
+        return "compute sum of numeric values";
+    }
+
     fn add(state: &mut State, a: &Arc<str>, r: Record) {
         let n1 = r.get_path(a).coerce_num();
         let n2 = state.0.clone();

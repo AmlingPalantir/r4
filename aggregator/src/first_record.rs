@@ -15,6 +15,10 @@ impl AggregatorBe for ImplBe {
         return vec!["firstrecord", "firstrec"];
     }
 
+    fn help_msg() -> &'static str {
+        return "track first record";
+    }
+
     fn add(state: &mut Option<Record>, _a: &(), r: Record) {
         state.get_or_insert(r);
     }

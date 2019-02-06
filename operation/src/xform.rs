@@ -15,6 +15,10 @@ impl EvalBe for EvalBeImpl {
     fn names() -> Vec<&'static str> {
         return vec!["xform"];
     }
+
+    fn help_msg() -> &'static str {
+        return "evaluate code on each record, outputting the [modified] record";
+    }
 }
 
 pub type Impl = EvalImpl<EvalBeImpl>;

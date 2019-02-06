@@ -66,6 +66,10 @@ impl OperationBe2 for ImplBe2 {
         return vec!["from-multire"];
     }
 
+    fn help_msg() -> &'static str {
+        return "parse records by matching multiple regexes against input lines";
+    }
+
     fn stream(o: Arc<OptionsValidated>) -> Stream {
         struct State(Record);
 

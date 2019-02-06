@@ -133,6 +133,10 @@ impl ExecutorBe for ImplBe {
         return vec!["lua"];
     }
 
+    fn help_msg() -> &'static str {
+        return "evaluate code using rlua";
+    }
+
     fn parse(code: &str) -> ValidationResult<String> {
         return Result::Ok(code.to_string());
     }

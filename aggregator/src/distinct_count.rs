@@ -17,6 +17,14 @@ impl AggregatorBe for ImplBe {
         return vec!["dcount", "dct"];
     }
 
+    fn help_meta() -> Option<&'static str> {
+        return Some("key");
+    }
+
+    fn help_msg() -> &'static str {
+        return "count distinct values";
+    }
+
     fn add(state: &mut DistinctSet<Record>, a: &Arc<str>, r: Record) {
         state.add(r.get_path(&a));
     }

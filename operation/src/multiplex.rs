@@ -32,6 +32,10 @@ impl OperationBe for ImplBe {
         return vec!["multiplex"];
     }
 
+    fn help_msg() -> &'static str {
+        return "bucket records and run an operation within each bucket";
+    }
+
     fn get_extra(o: Arc<OptionsValidated>) -> Vec<String> {
         return o.op.extra.clone();
     }

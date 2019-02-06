@@ -29,6 +29,14 @@ impl AggregatorBe for ImplBe {
         return vec!["linreg"];
     }
 
+    fn help_meta() -> Option<&'static str> {
+        return Some("x_key,y_key");
+    }
+
+    fn help_msg() -> &'static str {
+        return "compute a linear regression from pairs of values";
+    }
+
     fn add(state: &mut State, a: &(Arc<str>, Arc<str>), r: Record) {
         let x = r.get_path(&a.0).coerce_f64();
         let y = r.get_path(&a.1).coerce_f64();

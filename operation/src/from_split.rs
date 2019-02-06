@@ -50,6 +50,10 @@ impl OperationBe2 for ImplBe2 {
         return vec!["from-split"];
     }
 
+    fn help_msg() -> &'static str {
+        return "parse records by splitting input lines on a delimiter";
+    }
+
     fn stream(o: Arc<OptionsValidated>) -> Stream {
         return stream::closures(
             (),

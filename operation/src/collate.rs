@@ -33,6 +33,10 @@ impl OperationBe for ImplBe {
         return vec!["collate"];
     }
 
+    fn help_msg() -> &'static str {
+        return "bucket records and compute aggregates within each bucket";
+    }
+
     fn get_extra(o: Arc<OptionsValidated>) -> Vec<String> {
         return aggregate::ImplBe::get_extra(o.ag.clone());
     }

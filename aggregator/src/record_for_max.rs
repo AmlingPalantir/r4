@@ -19,6 +19,14 @@ impl AggregatorBe for ImplBe {
         return vec!["recformax"];
     }
 
+    fn help_meta() -> Option<&'static str> {
+        return Some("key");
+    }
+
+    fn help_msg() -> &'static str {
+        return "track the record for the numerically maximal value";
+    }
+
     fn add(state: &mut MaxState<F64SortDishonorProxy>, a: &Arc<str>, r: Record) {
         let v = r.get_path(a);
         state.add(F64SortDishonorProxy(v.coerce_f64()), r);

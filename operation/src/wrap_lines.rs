@@ -42,6 +42,10 @@ impl OperationBe2 for ImplBe2 {
         return vec!["wrap-lines"];
     }
 
+    fn help_msg() -> &'static str {
+        return "wrap input lines up into records";
+    }
+
     fn stream(o: Arc<OptionsValidated>) -> Stream {
         return stream::closures(
             1,

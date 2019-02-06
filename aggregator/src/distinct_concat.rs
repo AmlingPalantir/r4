@@ -18,6 +18,14 @@ impl AggregatorBe for ImplBe {
         return vec!["dconcatenate", "dconcat"];
     }
 
+    fn help_meta() -> Option<&'static str> {
+        return Some("key");
+    }
+
+    fn help_msg() -> &'static str {
+        return "collect distinct values into a string joined by a delimter";
+    }
+
     fn add(state: &mut DistinctSet<String>, a: &(Arc<str>, Arc<str>), r: Record) {
         state.add(r.get_path(&a.1).expect_string().to_string());
     }

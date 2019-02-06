@@ -19,6 +19,14 @@ impl AggregatorBe for ImplBe {
         return vec!["perc"];
     }
 
+    fn help_meta() -> Option<&'static str> {
+        return Some("percent,key");
+    }
+
+    fn help_msg() -> &'static str {
+        return "compute a percentile of values sorted numerically";
+    }
+
     fn add(state: &mut PercentileState<F64SortDishonorProxy>, a: &(f64, Arc<str>), r: Record) {
         let v = r.get_path(&a.1);
         state.add(F64SortDishonorProxy(v.coerce_f64()), v);

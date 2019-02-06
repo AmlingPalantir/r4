@@ -19,6 +19,14 @@ impl AggregatorBe for ImplBe {
         return vec!["recforlmin"];
     }
 
+    fn help_meta() -> Option<&'static str> {
+        return Some("key");
+    }
+
+    fn help_msg() -> &'static str {
+        return "track the record for the lexically minimal value";
+    }
+
     fn add(state: &mut MaxState<ReverseOrd<Arc<str>>>, a: &Arc<str>, r: Record) {
         let v = r.get_path(a);
         state.add(ReverseOrd(v.expect_string()), r);

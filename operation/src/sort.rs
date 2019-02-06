@@ -51,6 +51,10 @@ impl OperationBe2 for ImplBe2 {
         return vec!["sort"];
     }
 
+    fn help_msg() -> &'static str {
+        return "sort records";
+    }
+
     fn stream(o: Arc<OptionsValidated>) -> Stream {
         struct State {
             o: Arc<OptionsValidated>,

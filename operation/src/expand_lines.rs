@@ -44,6 +44,10 @@ impl OperationBe2 for ImplBe2 {
         return vec!["expand-lines"];
     }
 
+    fn help_msg() -> &'static str {
+        return "run an operation on individual lines, themselves read from input record values";
+    }
+
     fn stream(o: Arc<OptionsValidated>) -> Stream {
         return stream::closures(
             (),

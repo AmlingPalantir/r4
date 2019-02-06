@@ -202,6 +202,10 @@ impl ExecutorBe for ImplBe {
         return vec!["r4l"];
     }
 
+    fn help_msg() -> &'static str {
+        return "evaluate code using r4 custom expression language";
+    }
+
     fn parse(code: &str) -> ValidationResult<Code> {
         let parsed = parse::StatementParser::new().parse(code);
         let expr = parsed.map_err(|e| ValidationError::Message(format!("Parse error: {:?}", e)))?;

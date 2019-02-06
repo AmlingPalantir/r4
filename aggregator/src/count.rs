@@ -15,6 +15,10 @@ impl AggregatorBe for ImplBe {
         return vec!["count", "ct"];
     }
 
+    fn help_msg() -> &'static str {
+        return "count records";
+    }
+
     fn add(state: &mut i64, _a: &(), _r: Record) {
         *state += 1;
     }

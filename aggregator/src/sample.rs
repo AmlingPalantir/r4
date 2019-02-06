@@ -36,6 +36,14 @@ impl AggregatorBe for ImplBe {
         return vec!["sample"];
     }
 
+    fn help_meta() -> Option<&'static str> {
+        return Some("count,key");
+    }
+
+    fn help_msg() -> &'static str {
+        return "sample a specified number of values";
+    }
+
     fn add(state: &mut (usize, Vec<(usize, Record)>), a: &(usize, Arc<str>), r: Record) {
         let idx = state.0;
         state.0 += 1;

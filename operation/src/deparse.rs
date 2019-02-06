@@ -25,6 +25,10 @@ impl OperationBe2 for ImplBe2 {
         return vec!["deparse"];
     }
 
+    fn help_msg() -> &'static str {
+        return "deparse input records into lines";
+    }
+
     fn stream(_o: Arc<()>) -> Stream {
         return stream::deparse();
     }

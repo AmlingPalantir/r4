@@ -15,6 +15,10 @@ impl EvalBe for EvalBeImpl {
     fn names() -> Vec<&'static str> {
         return vec!["grep"];
     }
+
+    fn help_msg() -> &'static str {
+        return "evaluate code on each record, determining whether to pass inputs by truthiness of result";
+    }
 }
 
 pub type Impl = EvalImpl<EvalBeImpl>;

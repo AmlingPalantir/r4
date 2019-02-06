@@ -86,6 +86,7 @@ impl StreamWrapper {
 
 pub trait OperationBe: Optionsable {
     fn names() -> Vec<&'static str>;
+    fn help_msg() -> &'static str;
     fn get_extra(o: Arc<<Self::Options as Validates>::Target>) -> Vec<String>;
     fn stream(o: Arc<<Self::Options as Validates>::Target>) -> Stream;
 }
@@ -149,6 +150,14 @@ impl<B: OperationBe + 'static> Registrant<BoxedOperation> for OperationRegistran
         return B::names();
     }
 
+    fn help_meta() -> Option<&'static str> {
+        return None;
+    }
+
+    fn help_msg() -> &'static str {
+        return B::help_msg();
+    }
+
     fn init2(_a: ()) -> BoxedOperation {
         return Box::new(OperationInboxImpl::<B>::default());
     }
@@ -159,6 +168,7 @@ impl<B: OperationBe + 'static> Registrant<BoxedOperation> for OperationRegistran
 
 pub trait OperationBe2: Optionsable {
     fn names() -> Vec<&'static str>;
+    fn help_msg() -> &'static str;
     fn stream(o: Arc<<Self::Options as Validates>::Target>) -> Stream;
 }
 
@@ -188,6 +198,10 @@ impl<B: OperationBe2> Optionsable for OperationBeForBe2<B> {
 impl<B: OperationBe2> OperationBe for OperationBeForBe2<B> {
     fn names() -> Vec<&'static str> {
         return B::names();
+    }
+
+    fn help_msg() -> &'static str {
+        return B::help_msg();
     }
 
     fn get_extra(p: Arc<AndArgsOptionsValidated<B::Options>>) -> Vec<String> {

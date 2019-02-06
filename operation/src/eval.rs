@@ -76,6 +76,7 @@ pub trait EvalBe {
     type R: OptionDefaulter<bool> + Default;
 
     fn names() -> Vec<&'static str>;
+    fn help_msg() -> &'static str;
 }
 
 pub struct EvalBe2<B: EvalBe> {
@@ -105,6 +106,10 @@ impl<B: EvalBe + 'static> Optionsable for EvalBe2<B> {
 impl<B: EvalBe + 'static> OperationBe2 for EvalBe2<B> {
     fn names() -> Vec<&'static str> {
         return B::names();
+    }
+
+    fn help_msg() -> &'static str {
+        return B::help_msg();
     }
 
     fn stream(o: Arc<EvalOptionsValidated<B::I, B::O, B::R>>) -> Stream {
@@ -150,6 +155,10 @@ impl EvalBe for EvalBeImpl {
 
     fn names() -> Vec<&'static str> {
         return vec!["eval"];
+    }
+
+    fn help_msg() -> &'static str {
+        return "evaluate code on each record, outputting the string results as lines";
     }
 }
 

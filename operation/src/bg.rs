@@ -30,6 +30,10 @@ impl OperationBe for ImplBe {
         return vec!["bg"];
     }
 
+    fn help_msg() -> &'static str {
+        return "run an operation in a background thread";
+    }
+
     fn get_extra(o: Arc<OptionsValidated>) -> Vec<String> {
         return o.op.extra.clone();
     }

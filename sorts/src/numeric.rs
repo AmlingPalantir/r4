@@ -18,6 +18,14 @@ impl SortSimpleBe for ImplSimpleBe {
         return vec!["numeric", "num", "n"];
     }
 
+    fn help_meta() -> Option<&'static str> {
+        return Some("key");
+    }
+
+    fn help_msg() -> &'static str {
+        return "sort by a key, numerically";
+    }
+
     fn get(r: Record) -> F64SortDishonorProxy {
         return F64SortDishonorProxy(r.coerce_f64());
     }

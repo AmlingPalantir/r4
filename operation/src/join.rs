@@ -104,6 +104,10 @@ impl OperationBe2 for ImplBe2 {
         return vec!["join"];
     }
 
+    fn help_msg() -> &'static str {
+        return "join input stream against a file of records";
+    }
+
     fn stream(o: Arc<OptionsValidated>) -> Stream {
         let db = o.db.clone();
         let o1 = o;

@@ -65,6 +65,14 @@ impl AggregatorBe for ImplBe {
         return vec!["lperc"];
     }
 
+    fn help_meta() -> Option<&'static str> {
+        return Some("percent,key");
+    }
+
+    fn help_msg() -> &'static str {
+        return "compute a percentile of values sorted lexically";
+    }
+
     fn add(state: &mut PercentileState<Arc<str>>, a: &(f64, Arc<str>), r: Record) {
         let v = r.get_path(&a.1);
         state.add(v.expect_string(), v);

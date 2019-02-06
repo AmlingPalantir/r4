@@ -31,6 +31,10 @@ impl OperationBe for ImplBe {
         return vec!["shell"];
     }
 
+    fn help_msg() -> &'static str {
+        return "run an external process";
+    }
+
     fn get_extra(_o: Arc<Vec<String>>) -> Vec<String> {
         return vec![];
     }

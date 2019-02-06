@@ -57,6 +57,10 @@ impl OperationBe2 for ImplBe2 {
         return vec!["to-ptable"];
     }
 
+    fn help_msg() -> &'static str {
+        return "construct a pivot table from input records";
+    }
+
     fn stream(o: Arc<OptionsValidated>) -> Stream {
         return stream::closures(
             (o, Vec::new()),

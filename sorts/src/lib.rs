@@ -31,6 +31,10 @@ pub trait SortBe {
     type Args: RegistryArgs;
 
     fn names() -> Vec<&'static str>;
+    fn help_meta() -> Option<&'static str> {
+        return None;
+    }
+    fn help_msg() -> &'static str;
     fn new_bucket(a: &<Self::Args as RegistryArgs>::Val, next: Rc<Fn() -> Box<SortBucket>>) -> Box<SortBucket>;
 }
 
@@ -72,6 +76,14 @@ impl<B: SortBe + 'static> Registrant<BoxedSort> for SortRegistrant<B> {
         return B::names();
     }
 
+    fn help_meta() -> Option<&'static str> {
+        return B::help_meta();
+    }
+
+    fn help_msg() -> &'static str {
+        return B::help_msg();
+    }
+
     fn init2(a: <B::Args as RegistryArgs>::Val) -> BoxedSort {
         return Box::new(SortInboxImpl::<B>{
             a: Arc::new(a),
@@ -83,6 +95,10 @@ pub trait SortSimpleBe {
     type T: Clone + Ord + 'static;
 
     fn names() -> Vec<&'static str>;
+    fn help_meta() -> Option<&'static str> {
+        return None;
+    }
+    fn help_msg() -> &'static str;
     fn get(r: Record) -> Self::T;
 }
 
@@ -95,6 +111,14 @@ impl<B: SortSimpleBe> SortBe for SortBeFromSimple<B> {
 
     fn names() -> Vec<&'static str> {
         return B::names();
+    }
+
+    fn help_meta() -> Option<&'static str> {
+        return B::help_meta();
+    }
+
+    fn help_msg() -> &'static str {
+        return B::help_msg();
     }
 
     fn new_bucket(a: &Arc<str>, next: Rc<Fn() -> Box<SortBucket>>) -> Box<SortBucket> {

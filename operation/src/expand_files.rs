@@ -47,6 +47,10 @@ impl OperationBe2 for ImplBe2 {
         return vec!["expand-files"];
     }
 
+    fn help_msg() -> &'static str {
+        return "run an operation on multiple files, themselves listed in input record values";
+    }
+
     fn stream(o: Arc<OptionsValidated>) -> Stream {
         return stream::closures(
             (),

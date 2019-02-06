@@ -16,6 +16,10 @@ impl AggregatorBe for ImplBe {
         return vec!["records", "recs"];
     }
 
+    fn help_msg() -> &'static str {
+        return "collect records into an array";
+    }
+
     fn add(state: &mut Vec<Record>, _a: &(), r: Record) {
         state.push(r);
     }
