@@ -40,6 +40,7 @@ use registry::args::ZeroArgs;
 use std::sync::Arc;
 use stream::Stream;
 use validates::Validates;
+use validates::ValidationError;
 
 pub type BoxedOperation = Box<OperationInbox>;
 
@@ -122,7 +123,11 @@ impl<B: OperationBe + 'static> OperationInbox for OperationInboxImpl<B> where <B
         let o = match o {
             Result::Ok(o) => o,
             Result::Err(e) => {
-                println!("Error parsing arguments: {:?}", e);
+                match e {
+                    ValidationError::Message(s) => {
+                        println!("Error parsing arguments: {}", s);
+                    }
+                };
                 opt.dump_help();
                 std::process::exit(1);
             }
@@ -136,7 +141,11 @@ impl<B: OperationBe + 'static> OperationInbox for OperationInboxImpl<B> where <B
         let o = match o {
             Result::Ok(o) => o,
             Result::Err(e) => {
-                println!("Error validating arguments: {:?}", e);
+                match e {
+                    ValidationError::Message(s) => {
+                        println!("Error validating arguments: {}", s);
+                    }
+                };
                 opt.dump_help();
                 std::process::exit(1);
             }
