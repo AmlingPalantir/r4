@@ -45,18 +45,21 @@ impl<R: 'static> Registry<R> {
         self.list.push(data);
     }
 
+    fn find_data(&self, name: &str) -> ValidationResult<Arc<RegistrantData<R>>> {
+        return match self.map.get(name) {
+            None => ValidationError::message(format!("No implementation named {}", name)),
+            Some(data) => Result::Ok(data.clone()),
+        };
+    }
+
     pub fn find(&self, name: &str, args: &[&str]) -> ValidationResult<R> {
-        match self.map.get(name) {
-            None => {
-                return ValidationError::message(format!("No implementation named {}", name));
-            }
-            Some(data) => {
-                if args.len() != data.argct {
-                    return ValidationError::message(format!("Wrong number of args for {}", name));
-                }
-                return (data.init)(args);
-            }
+        let data = self.find_data(name)?;
+
+        if args.len() != data.argct {
+            return ValidationError::message(format!("Wrong number of args for {}", name));
         }
+
+        return (data.init)(args);
     }
 
     pub fn labelled_multiple_options(&'static self, prefixes: &[&str]) -> OptionsPile<Vec<(String, R)>> {
