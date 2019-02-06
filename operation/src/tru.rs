@@ -15,8 +15,8 @@ impl Optionsable for TwoRecordUnionOption {
     type Options = TwoRecordUnionOption;
 
     fn options(opt: &mut OptionsPile<TwoRecordUnionOption>) {
-        opt.match_single(&["lp", "left-prefix"], |p, a| p.left_prefix.set_str(a));
-        opt.match_single(&["rp", "right-prefix"], |p, a| p.right_prefix.set_str(a));
+        opt.match_single(&["lp", "left-prefix"], |p, a| p.left_prefix.set_str(a), ());
+        opt.match_single(&["rp", "right-prefix"], |p, a| p.right_prefix.set_str(a), ());
     }
 }
 

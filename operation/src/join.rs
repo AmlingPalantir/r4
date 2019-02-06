@@ -87,15 +87,15 @@ impl Optionsable for ImplBe2 {
             p.fills.0 = (left, right);
             return Result::Ok(());
         }
-        opt.match_zero(&["inner"], |p| _set_fills(p, false, false));
-        opt.match_zero(&["left"], |p| _set_fills(p, true, false));
-        opt.match_zero(&["right"], |p| _set_fills(p, false, true));
-        opt.match_zero(&["outer"], |p| _set_fills(p, true, true));
+        opt.match_zero(&["inner"], |p| _set_fills(p, false, false), ());
+        opt.match_zero(&["left"], |p| _set_fills(p, true, false), ());
+        opt.match_zero(&["right"], |p| _set_fills(p, false, true), ());
+        opt.match_zero(&["outer"], |p| _set_fills(p, true, true), ());
         opt.match_n(&["on"], 2, |p, a| {
             p.db.pairs.0.push((a[0].to_string(), a[1].to_string()));
             return Result::Ok(());
-        });
-        opt.match_extra_soft(|p, a| p.db.file.maybe_set_str(a));
+        }, ());
+        opt.match_extra_soft(|p, a| p.db.file.maybe_set_str(a), ());
     }
 }
 

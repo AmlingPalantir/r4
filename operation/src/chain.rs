@@ -25,11 +25,11 @@ impl Optionsable for ImplBe {
     type Options = Options;
 
     fn options(opt: &mut OptionsPile<Options>) {
-        opt.match_single(&["d", "delim"], |p, a| p.cmds.delim.set_str(a));
+        opt.match_single(&["d", "delim"], |p, a| p.cmds.delim.set_str(a), ());
         opt.match_extra_hard(|p, a| {
             p.cmds.args.extend_from_slice(a);
             return Result::Ok(());
-        });
+        }, ());
     }
 }
 

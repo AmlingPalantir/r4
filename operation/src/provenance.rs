@@ -31,8 +31,8 @@ impl Optionsable for ImplBe2 {
     type Options = Options;
 
     fn options(opt: &mut OptionsPile<Options>) {
-        opt.match_single(&["ok", "origin-key"], |p, a| p.ok.set_str(a));
-        opt.match_extra_hard(|p, a| p.op.push(a));
+        opt.match_single(&["ok", "origin-key"], |p, a| p.ok.set_str(a), ());
+        opt.match_extra_hard(|p, a| p.op.push(a), ());
     }
 }
 

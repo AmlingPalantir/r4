@@ -52,7 +52,7 @@ impl<R> Registry<R> {
                 let a: Vec<_> = iter.map(|s| s as &str).collect();
                 rs.push((label, f(&a)?));
                 return Result::Ok(());
-            });
+            }, ());
         }
         return opt;
     }
@@ -70,7 +70,7 @@ impl<R> Registry<R> {
             let r = self.find(name, &args)?;
             rs.push((label, r));
             return Result::Ok(());
-        });
+        }, ());
         return opt;
     }
 
@@ -83,7 +83,7 @@ impl<R> Registry<R> {
                 let a: Vec<_> = a.iter().map(|s| s as &str).collect();
                 rs.push(f(&a)?);
                 return Result::Ok(());
-            });
+            }, ());
         }
         return opt;
     }
@@ -97,7 +97,7 @@ impl<R> Registry<R> {
             let r = self.find(name, &args)?;
             rs.push(r);
             return Result::Ok(());
-        });
+        }, ());
         return opt;
     }
 }

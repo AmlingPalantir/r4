@@ -86,18 +86,18 @@ impl<B: EvalBe + 'static> Optionsable for EvalBe2<B> {
     type Options = EvalOptions<B::I, B::O, B::R>;
 
     fn options(opt: &mut OptionsPile<Self::Options>) {
-        opt.match_zero(&["v", "invert"], |p| p.invert.set());
-        opt.match_zero(&["no-invert"], |p| p.invert.clear());
-        opt.match_extra_soft(|p, a| p.code.code.maybe_set_str(a));
-        opt.match_single(&["engine"], |p, a| p.code.engine.set_str(a));
-        opt.match_zero(&["lua"], |p| p.code.engine.set("lua".to_string()));
-        opt.match_zero(&["input-lines"], |p| p.input.set(InputType::Lines()));
-        opt.match_zero(&["input-records"], |p| p.input.set(InputType::Records()));
-        opt.match_zero(&["output-lines"], |p| p.output.set(OutputType::Lines()));
-        opt.match_zero(&["output-records"], |p| p.output.set(OutputType::Records()));
-        opt.match_zero(&["output-grep"], |p| p.output.set(OutputType::Grep()));
-        opt.match_zero(&["return"], |p| p.ret.set(true));
-        opt.match_zero(&["no-return"], |p| p.ret.set(false));
+        opt.match_zero(&["v", "invert"], |p| p.invert.set(), ());
+        opt.match_zero(&["no-invert"], |p| p.invert.clear(), ());
+        opt.match_extra_soft(|p, a| p.code.code.maybe_set_str(a), ());
+        opt.match_single(&["engine"], |p, a| p.code.engine.set_str(a), ());
+        opt.match_zero(&["lua"], |p| p.code.engine.set("lua".to_string()), ());
+        opt.match_zero(&["input-lines"], |p| p.input.set(InputType::Lines()), ());
+        opt.match_zero(&["input-records"], |p| p.input.set(InputType::Records()), ());
+        opt.match_zero(&["output-lines"], |p| p.output.set(OutputType::Lines()), ());
+        opt.match_zero(&["output-records"], |p| p.output.set(OutputType::Records()), ());
+        opt.match_zero(&["output-grep"], |p| p.output.set(OutputType::Grep()), ());
+        opt.match_zero(&["return"], |p| p.ret.set(true), ());
+        opt.match_zero(&["no-return"], |p| p.ret.set(false), ());
     }
 }
 

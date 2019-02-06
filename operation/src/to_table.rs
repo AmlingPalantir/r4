@@ -25,7 +25,7 @@ impl Optionsable for ImplBe2 {
     type Options = Options;
 
     fn options(opt: &mut OptionsPile<Options>) {
-        opt.match_single(&["k", "key"], |p, a| p.keys.push_split(a));
+        opt.match_single(&["k", "key"], |p, a| p.keys.push_split(a), ());
     }
 }
 

@@ -117,7 +117,7 @@ impl<B: OperationBe + 'static> OperationInbox for OperationInboxImpl<B> where <B
         opt.match_zero(&["help"], |p| {
             p.help = true;
             return Result::Ok(());
-        });
+        }, ());
         let o = opt.to_parser().parse(args);
         let o = match o {
             Result::Ok(o) => o,
@@ -191,7 +191,7 @@ impl<B: OperationBe2> Optionsable for OperationBeForBe2<B> {
         let mut opt1 = OptionsPile::new();
         B::options(&mut opt1);
         opt.add_sub(|p| &mut p.p.0, opt1);
-        opt.match_extra_soft(|p, a| p.args.maybe_push(a));
+        opt.match_extra_soft(|p, a| p.args.maybe_push(a), ());
     }
 }
 

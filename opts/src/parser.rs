@@ -1,5 +1,4 @@
 use misc::PointerRc;
-use std::ops::Deref;
 use std::rc::Rc;
 use super::trie::NameTrie;
 use super::trie::NameTrieResult;
@@ -15,94 +14,97 @@ enum ExtraHandler<P> {
     Hard(CbMany<P>),
 }
 
-pub struct OptionsPileElement<P> {
-    m: OptionsPileElementMatch<P>,
-    help_meta: Option<String>,
-    help_msg: Option<String>,
-}
-
-enum OptionsPileElementMatch<P> {
+enum OptionsMatch<P> {
     Args(Vec<String>, usize, CbMany<P>),
     Extra(ExtraHandler<P>),
 }
 
-impl<P> OptionsPileElement<P> {
-    pub fn match_single<F: Fn(&mut P, &str) -> ValidationResult<()> + 'static>(aliases: &[&str], f: F) -> OptionsPileElement<P> {
-        return Self::match_n(aliases, 1, move |p, a| f(p, &a[0]));
-    }
+pub struct OptionsHelp {
+    meta: Option<String>,
+    msg: Option<String>,
+}
 
-    pub fn match_zero<F: Fn(&mut P) -> ValidationResult<()> + 'static>(aliases: &[&str], f: F) -> OptionsPileElement<P> {
-        return Self::match_n(aliases, 0, move |p, _a| f(p));
-    }
+pub trait ToOptionsHelpString {
+    fn to_help_string(self) -> String;
+}
 
-    pub fn match_n<F: Fn(&mut P, &[String]) -> ValidationResult<()> + 'static>(aliases: &[&str], argct: usize, f: F) -> OptionsPileElement<P> {
-        return Self::raw(OptionsPileElementMatch::Args(aliases.iter().map(|s| s.to_string()).collect(), argct, PointerRc(Rc::new(f))));
-    }
-
-    pub fn match_extra_soft<F: Fn(&mut P, &str) -> ValidationResult<bool> + 'static>(f: F) -> OptionsPileElement<P> {
-        return Self::raw(OptionsPileElementMatch::Extra(ExtraHandler::Soft(PointerRc(Rc::new(f)))));
-    }
-
-    pub fn match_extra_hard<F: Fn(&mut P, &[String]) -> ValidationResult<()> + 'static>(f: F) -> OptionsPileElement<P> {
-        return Self::raw(OptionsPileElementMatch::Extra(ExtraHandler::Hard(PointerRc(Rc::new(f)))));
-    }
-
-    fn raw(m: OptionsPileElementMatch<P>) -> OptionsPileElement<P> {
-        return OptionsPileElement {
-            m: m,
-            help_meta: None,
-            help_msg: None,
-        };
-    }
-
-    fn map_match<P2, F: FnOnce(OptionsPileElementMatch<P>) -> OptionsPileElementMatch<P2>>(self, f: F) -> OptionsPileElement<P2> {
-        return OptionsPileElement {
-            m: f(self.m),
-            help_meta: self.help_meta,
-            help_msg: self.help_msg,
-        };
-    }
-
-    pub fn help_meta<S: Deref<Target = str>>(self, s: S) -> OptionsPileElement<P> {
-        return OptionsPileElement {
-            help_meta: Some(s.to_string()),
-            ..self
-        };
-    }
-
-    pub fn help_msg<S: Deref<Target = str>>(self, s: S) -> OptionsPileElement<P> {
-        return OptionsPileElement {
-            help_msg: Some(s.to_string()),
-            ..self
-        };
+impl ToOptionsHelpString for String {
+    fn to_help_string(self) -> String {
+        return self;
     }
 }
 
-pub struct OptionsPile<P>(Vec<OptionsPileElement<P>>);
+impl ToOptionsHelpString for &str {
+    fn to_help_string(self) -> String {
+        return self.to_string();
+    }
+}
+
+pub trait ToOptionsHelp {
+    fn to_help(self) -> Option<OptionsHelp>;
+}
+
+impl ToOptionsHelp for () {
+    fn to_help(self) -> Option<OptionsHelp> {
+        return Some(OptionsHelp {
+            meta: None,
+            msg: None,
+        });
+    }
+}
+
+impl<S: ToOptionsHelpString> ToOptionsHelp for S {
+    fn to_help(self) -> Option<OptionsHelp> {
+        return Some(OptionsHelp {
+            meta: None,
+            msg: Some(self.to_help_string()),
+        });
+    }
+}
+
+impl<S1: ToOptionsHelpString, S2: ToOptionsHelpString> ToOptionsHelp for (S1, S2) {
+    fn to_help(self) -> Option<OptionsHelp> {
+        return Some(OptionsHelp {
+            meta: Some(self.0.to_help_string()),
+            msg: Some(self.1.to_help_string()),
+        });
+    }
+}
+
+pub enum NoHelp {
+}
+
+impl ToOptionsHelp for Option<NoHelp> {
+    fn to_help(self) -> Option<OptionsHelp> {
+        return None;
+    }
+}
+
+pub struct OptionsPile<P>(Vec<(OptionsMatch<P>, Option<OptionsHelp>)>);
 
 impl<P: 'static> OptionsPile<P> {
     pub fn new() -> Self {
         return OptionsPile(Vec::new());
     }
 
-    pub fn match_single<F: Fn(&mut P, &str) -> ValidationResult<()> + 'static>(&mut self, aliases: &[&str], f: F) {
-        self.0.push(OptionsPileElement::match_single(aliases, f));
+    pub fn match_single<F: Fn(&mut P, &str) -> ValidationResult<()> + 'static>(&mut self, aliases: &[&str], f: F, help: impl ToOptionsHelp) {
+        self.match_n(aliases, 1, move |p, a| f(p, &a[0]), help);
     }
 
-    pub fn match_zero<F: Fn(&mut P) -> ValidationResult<()> + 'static>(&mut self, aliases: &[&str], f: F) {
-        self.0.push(OptionsPileElement::match_zero(aliases, f));
+    pub fn match_zero<F: Fn(&mut P) -> ValidationResult<()> + 'static>(&mut self, aliases: &[&str], f: F, help: impl ToOptionsHelp) {
+        self.match_n(aliases, 0, move |p, _a| f(p), help);
     }
 
-    pub fn match_n<F: Fn(&mut P, &[String]) -> ValidationResult<()> + 'static>(&mut self, aliases: &[&str], argct: usize, f: F) {
-        self.0.push(OptionsPileElement::match_n(aliases, argct, f));
+    pub fn match_n<F: Fn(&mut P, &[String]) -> ValidationResult<()> + 'static>(&mut self, aliases: &[&str], argct: usize, f: F, help: impl ToOptionsHelp) {
+        self.0.push((OptionsMatch::Args(aliases.iter().map(|s| s.to_string()).collect(), argct, PointerRc(Rc::new(f))), help.to_help()));
     }
 
-    pub fn match_extra_soft<F: Fn(&mut P, &str) -> ValidationResult<bool> + 'static>(&mut self, f: F) {
-        self.0.push(OptionsPileElement::match_extra_soft(f));
+    pub fn match_extra_soft<F: Fn(&mut P, &str) -> ValidationResult<bool> + 'static>(&mut self, f: F, help: impl ToOptionsHelp) {
+        self.0.push((OptionsMatch::Extra(ExtraHandler::Soft(PointerRc(Rc::new(f)))), help.to_help()));
     }
 
-    pub fn match_extra_hard<F: Fn(&mut P, &[String]) -> ValidationResult<()> + 'static>(&mut self, f: F) {
-        self.0.push(OptionsPileElement::match_extra_hard(f));
+    pub fn match_extra_hard<F: Fn(&mut P, &[String]) -> ValidationResult<()> + 'static>(&mut self, f: F, help: impl ToOptionsHelp) {
+        self.0.push((OptionsMatch::Extra(ExtraHandler::Hard(PointerRc(Rc::new(f)))), help.to_help()));
     }
 
     pub fn add(&mut self, mut other: OptionsPile<P>) {
@@ -116,16 +118,16 @@ impl<P: 'static> OptionsPile<P> {
     pub fn to_parser(&self) -> OptParser<P> {
         let mut opt = OptParser::default();
         for e in self.0.iter() {
-            match e.m {
-                OptionsPileElementMatch::Args(ref aliases, argct, ref f) => {
+            match e.0 {
+                OptionsMatch::Args(ref aliases, argct, ref f) => {
                     for alias in aliases {
                         opt.named.insert(&alias, (argct, f.clone()));
                     }
                 }
-                OptionsPileElementMatch::Extra(ExtraHandler::Soft(ref h)) => {
+                OptionsMatch::Extra(ExtraHandler::Soft(ref h)) => {
                     opt.extra.push(ExtraHandler::Soft(h.clone()));
                 }
-                OptionsPileElementMatch::Extra(ExtraHandler::Hard(ref h)) => {
+                OptionsMatch::Extra(ExtraHandler::Hard(ref h)) => {
                     opt.extra.push(ExtraHandler::Hard(h.clone()));
                 }
             }
@@ -137,63 +139,64 @@ impl<P: 'static> OptionsPile<P> {
         let f1 = Rc::new(f1);
         return OptionsPile(self.0.into_iter().map(|e| {
             let f1 = f1.clone();
-            return e.map_match(|m| {
-                return match m {
-                    OptionsPileElementMatch::Args(aliases, argct, f) => OptionsPileElementMatch::Args(aliases, argct, PointerRc(Rc::new(move |p, a| (f.0)(f1(p), a)))),
-                    OptionsPileElementMatch::Extra(ExtraHandler::Soft(h)) => OptionsPileElementMatch::Extra(ExtraHandler::Soft(PointerRc(Rc::new(move |p, a| (h.0)(f1(p), a))))),
-                    OptionsPileElementMatch::Extra(ExtraHandler::Hard(h)) => OptionsPileElementMatch::Extra(ExtraHandler::Hard(PointerRc(Rc::new(move |p, a| (h.0)(f1(p), a))))),
-                };
-            });
+            return (match e.0 {
+                OptionsMatch::Args(aliases, argct, f) => OptionsMatch::Args(aliases, argct, PointerRc(Rc::new(move |p, a| (f.0)(f1(p), a)))),
+                OptionsMatch::Extra(ExtraHandler::Soft(h)) => OptionsMatch::Extra(ExtraHandler::Soft(PointerRc(Rc::new(move |p, a| (h.0)(f1(p), a))))),
+                OptionsMatch::Extra(ExtraHandler::Hard(h)) => OptionsMatch::Extra(ExtraHandler::Hard(PointerRc(Rc::new(move |p, a| (h.0)(f1(p), a))))),
+            }, e.1);
         }).collect());
     }
 
     pub fn dump_help(&self) {
-        let lines: Vec<_> = self.0.iter().map(|e| {
-            let mut lhs;
-            match e.m {
-                OptionsPileElementMatch::Args(ref aliases, argct, _) => {
-                    lhs = String::new();
-                    for (i, alias) in aliases.iter().enumerate() {
-                        if i > 0 {
-                            lhs.push_str("|")
-                        }
-                        lhs.push_str("-");
-                        if alias.len() > 1 {
-                            lhs.push_str("-");
-                        }
-                        lhs.push_str(alias);
-                    }
-                    if argct > 0 {
-                        match e.help_meta {
-                            Some(ref s) => {
-                                lhs.push_str(" ");
-                                lhs.push_str(s);
+        let lines: Vec<_> = self.0.iter().filter_map(|e| {
+            let (m, help) = e;
+            return help.as_ref().map(|help| {
+                let mut lhs;
+                match *m {
+                    OptionsMatch::Args(ref aliases, argct, _) => {
+                        lhs = String::new();
+                        for (i, alias) in aliases.iter().enumerate() {
+                            if i > 0 {
+                                lhs.push_str("|")
                             }
-                            None => {
-                                for _ in 0..argct {
-                                    lhs.push_str(" <arg>");
+                            lhs.push_str("-");
+                            if alias.len() > 1 {
+                                lhs.push_str("-");
+                            }
+                            lhs.push_str(alias);
+                        }
+                        if argct > 0 {
+                            match help.meta {
+                                Some(ref s) => {
+                                    lhs.push_str(" ");
+                                    lhs.push_str(s);
+                                }
+                                None => {
+                                    for _ in 0..argct {
+                                        lhs.push_str(" <arg>");
+                                    }
                                 }
                             }
                         }
                     }
+                    OptionsMatch::Extra(ExtraHandler::Soft(_)) => {
+                        lhs = match help.meta {
+                            Some(ref s) => s.clone(),
+                            None => "<arg>".to_string(),
+                        };
+                    }
+                    OptionsMatch::Extra(ExtraHandler::Hard(_)) => {
+                        lhs = match help.meta {
+                            Some(ref s) => s.clone(),
+                            None => "<args>".to_string(),
+                        };
+                    }
                 }
-                OptionsPileElementMatch::Extra(ExtraHandler::Soft(_)) => {
-                    lhs = match e.help_meta {
-                        Some(ref s) => s.clone(),
-                        None => "<arg>".to_string(),
-                    };
-                }
-                OptionsPileElementMatch::Extra(ExtraHandler::Hard(_)) => {
-                    lhs = match e.help_meta {
-                        Some(ref s) => s.clone(),
-                        None => "<args>".to_string(),
-                    };
-                }
-            }
 
-            let rhs = e.help_msg.clone().unwrap_or_else(String::new);
+                let rhs = help.msg.clone().unwrap_or_else(String::new);
 
-            return (lhs, rhs);
+                return (lhs, rhs);
+            });
         }).collect();
 
         let width = lines.iter().map(|(lhs, _rhs)| lhs.len()).max().unwrap();

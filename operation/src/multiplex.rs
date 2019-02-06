@@ -22,7 +22,7 @@ impl Optionsable for ImplBe {
     type Options = Options;
 
     fn options(opt: &mut OptionsPile<Options>) {
-        opt.match_extra_hard(|p, a| p.op.push(a));
+        opt.match_extra_hard(|p, a| p.op.push(a), ());
         opt.add_sub(|p| &mut p.cl, ClumperOptions::new_options());
     }
 }

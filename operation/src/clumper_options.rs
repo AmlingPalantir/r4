@@ -23,7 +23,7 @@ impl Optionsable for ClumperOptions {
                 (p.0).0.push(clumper::key::Impl::init(&[a])?);
             }
             return Result::Ok(());
-        });
+        }, ());
     }
 }
 
