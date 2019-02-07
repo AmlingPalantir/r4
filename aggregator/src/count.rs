@@ -1,5 +1,5 @@
 use record::Record;
-use registry_args::ZeroArgs;
+use registry::args::ZeroRegistryArgs;
 use super::AggregatorBe;
 use super::AggregatorRegistrant;
 
@@ -8,7 +8,7 @@ pub(crate) type Impl = AggregatorRegistrant<ImplBe>;
 pub(crate) struct ImplBe();
 
 impl AggregatorBe for ImplBe {
-    type Args = ZeroArgs;
+    type Args = ZeroRegistryArgs;
     type State = i64;
 
     fn names() -> Vec<&'static str> {
@@ -19,11 +19,11 @@ impl AggregatorBe for ImplBe {
         return "count records";
     }
 
-    fn add(state: &mut i64, _a: &(), _r: Record) {
+    fn add(state: &mut i64, _a: &ZeroRegistryArgs, _r: Record) {
         *state += 1;
     }
 
-    fn finish(state: i64, _a: &()) -> Record {
+    fn finish(state: i64, _a: &ZeroRegistryArgs) -> Record {
         return Record::from(state);
     }
 }

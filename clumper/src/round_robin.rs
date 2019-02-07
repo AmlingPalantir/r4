@@ -1,16 +1,20 @@
 use record::Record;
-use registry_args::OneUsizeArgs;
 use std::sync::Arc;
 use stream::Stream;
 use super::ClumperBe;
 use super::ClumperRegistrant;
+
+#[derive(RegistryArgs)]
+pub struct Args {
+    count: usize,
+}
 
 pub type Impl = ClumperRegistrant<ImplBe>;
 
 pub struct ImplBe();
 
 impl ClumperBe for ImplBe {
-    type Args = OneUsizeArgs;
+    type Args = Args;
 
     fn names() -> Vec<&'static str> {
         return vec!["round-robin", "rr"];
@@ -24,8 +28,8 @@ impl ClumperBe for ImplBe {
         return "bucket records rotating between a specified number of buckets";
     }
 
-    fn stream(n: &usize, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream {
-        let n = *n;
+    fn stream(a: &Args, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream {
+        let n = a.count;
         let substreams: Vec<_> = (0..n).map(|_| bsw(vec![])).collect();
 
         return stream::closures(

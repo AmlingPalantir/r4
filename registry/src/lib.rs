@@ -1,6 +1,10 @@
 extern crate opts;
 extern crate registry_args;
+#[macro_use]
+extern crate registry_args_derive;
 extern crate validates;
+
+pub mod args;
 
 use opts::parser::OptionsPile;
 use opts::parser::ToOptionsHelp;
@@ -197,5 +201,5 @@ pub trait Registrant<R> {
     }
     fn help_msg() -> &'static str;
 
-    fn init(a: <Self::Args as RegistryArgs>::Val) -> R;
+    fn init(a: Self::Args) -> R;
 }

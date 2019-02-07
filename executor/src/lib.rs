@@ -12,7 +12,7 @@ extern crate validates;
 
 use record::Record;
 use registry::Registrant;
-use registry_args::ZeroArgs;
+use registry::args::ZeroRegistryArgs;
 use validates::ValidationResult;
 
 pub type BoxedExecutor = Box<ExecutorInbox>;
@@ -64,7 +64,7 @@ struct Executor2InboxImpl<B: ExecutorBe> {
 }
 
 impl<B: ExecutorBe + 'static> Registrant<BoxedExecutor> for ExecutorRegistrant<B> {
-    type Args = ZeroArgs;
+    type Args = ZeroRegistryArgs;
 
     fn names() -> Vec<&'static str> {
         return <B as ExecutorBe>::names();
@@ -78,7 +78,7 @@ impl<B: ExecutorBe + 'static> Registrant<BoxedExecutor> for ExecutorRegistrant<B
         return B::help_msg();
     }
 
-    fn init(_a: ()) -> BoxedExecutor {
+    fn init(_a: ZeroRegistryArgs) -> BoxedExecutor {
         return Box::new(ExecutorInboxImpl {
             _b: std::marker::PhantomData::<B>,
         });

@@ -1,10 +1,15 @@
 use record::Record;
 use record::RecordTrait;
-use registry_args::TwoStringArgs;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use super::AggregatorBe;
 use super::AggregatorRegistrant;
+
+#[derive(RegistryArgs)]
+pub(crate) struct Args {
+    x_key: Arc<str>,
+    y_key: Arc<str>,
+}
 
 #[derive(Clone)]
 #[derive(Default)]
@@ -22,7 +27,7 @@ pub(crate) type Impl = AggregatorRegistrant<ImplBe>;
 pub(crate) struct ImplBe;
 
 impl AggregatorBe for ImplBe {
-    type Args = TwoStringArgs;
+    type Args = Args;
     type State = State;
 
     fn names() -> Vec<&'static str> {
@@ -37,9 +42,9 @@ impl AggregatorBe for ImplBe {
         return "compute a linear regression from pairs of values";
     }
 
-    fn add(state: &mut State, a: &(Arc<str>, Arc<str>), r: Record) {
-        let x = r.get_path(&a.0).coerce_f64();
-        let y = r.get_path(&a.1).coerce_f64();
+    fn add(state: &mut State, a: &Args, r: Record) {
+        let x = r.get_path(&a.x_key).coerce_f64();
+        let y = r.get_path(&a.y_key).coerce_f64();
         state.s1 += 1.0;
         state.sx += x;
         state.sx2 += x * x;
@@ -48,7 +53,7 @@ impl AggregatorBe for ImplBe {
         state.sxy += x * y;
     }
 
-    fn finish(state: State, _a: &(Arc<str>, Arc<str>)) -> Record {
+    fn finish(state: State, _a: &Args) -> Record {
         let beta = (state.sxy * state.s1 - state.sx * state.sy) / (state.sx2 * state.s1 - state.sx * state.sx);
         let alpha = (state.sy - beta * state.sx) / state.s1;
 

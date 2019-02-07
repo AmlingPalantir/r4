@@ -2,6 +2,7 @@ use opts::parser::OptionsPile;
 use opts::parser::Optionsable;
 use opts::vals::OptionalUsizeOption;
 use registry::Registrant;
+use registry::args::OneKeyRegistryArgs;
 use std::sync::Arc;
 use stream::Entry;
 use stream::Stream;
@@ -32,13 +33,13 @@ impl Optionsable for ImplBe2 {
         opt.add(SortOptions::help_options());
         opt.match_single(&["l", "lex", "lexical"], |p, a| {
             for a in a.split(',') {
-                p.sorts.push(sorts::lexical::Impl::init(Arc::from(a)));
+                p.sorts.push(sorts::lexical::Impl::init(OneKeyRegistryArgs::new(a)));
             }
             return Result::Ok(());
         }, "keys to sort by lexically, prefix with minus to sort descending");
         opt.match_single(&["n", "num", "numeric"], |p, a| {
             for a in a.split(',') {
-                p.sorts.push(sorts::numeric::Impl::init(Arc::from(a)));
+                p.sorts.push(sorts::numeric::Impl::init(OneKeyRegistryArgs::new(a)));
             }
             return Result::Ok(());
         }, "keys to sort by numerically, prefix with minus to sort descending");

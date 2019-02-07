@@ -26,12 +26,12 @@ impl AggregatorBe for ImplBe {
         return "find the record for a percentile when records are sorted lexically by a value";
     }
 
-    fn add(state: &mut PercentileState<Arc<str>>, a: &(f64, Arc<str>), r: Record) {
-        let v = r.get_path(&a.1);
+    fn add(state: &mut PercentileState<Arc<str>>, a: &PercentileArgs, r: Record) {
+        let v = r.get_path(&a.key);
         state.add(v.expect_string(), r);
     }
 
-    fn finish(state: PercentileState<Arc<str>>, a: &(f64, Arc<str>)) -> Record {
-        return state.finish(a.0);
+    fn finish(state: PercentileState<Arc<str>>, a: &PercentileArgs) -> Record {
+        return state.finish(a.percentile);
     }
 }

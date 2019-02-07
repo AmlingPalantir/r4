@@ -1,5 +1,5 @@
 use rand::Rng;
-use registry_args::ZeroArgs;
+use registry::args::ZeroRegistryArgs;
 use std::cmp::Ordering;
 use std::rc::Rc;
 use std::sync::Mutex;
@@ -64,7 +64,7 @@ pub type Impl = SortRegistrant<ImplBe>;
 pub struct ImplBe;
 
 impl SortBe for ImplBe {
-    type Args = ZeroArgs;
+    type Args = ZeroRegistryArgs;
 
     fn names() -> Vec<&'static str> {
         return vec!["shuffle"];
@@ -74,7 +74,7 @@ impl SortBe for ImplBe {
         return "'sort' randomly";
     }
 
-    fn new_bucket(_a: &(), next: Rc<Fn() -> Box<SortBucket>>) -> Box<SortBucket> {
+    fn new_bucket(_a: &ZeroRegistryArgs, next: Rc<Fn() -> Box<SortBucket>>) -> Box<SortBucket> {
         return KeySortBucket::new(|_r, i| RandomSortKey::new(i), next);
     }
 }

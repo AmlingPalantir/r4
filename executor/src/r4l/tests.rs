@@ -1,10 +1,11 @@
 use record::Record;
 use registry::Registrant;
+use registry::args::ZeroRegistryArgs;
 use super::Impl;
 
 fn test_one(input: &str, c: &str, eret: &str, er: &str) {
     let r = Record::parse(input);
-    let c = Impl::init(()).parse(c).unwrap_or_else(|_| panic!());
+    let c = Impl::init(ZeroRegistryArgs::new()).parse(c).unwrap_or_else(|_| panic!());
 
     {
         let mut f = c.stream(false);

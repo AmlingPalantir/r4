@@ -4,7 +4,10 @@ extern crate record;
 #[macro_use]
 extern crate registry;
 extern crate registry_args;
+#[macro_use]
+extern crate registry_args_derive;
 extern crate stream;
+extern crate validates;
 
 use record::Record;
 use registry::Registrant;
@@ -30,7 +33,7 @@ pub trait ClumperBe {
         return None;
     }
     fn help_msg() -> &'static str;
-    fn stream(a: &<Self::Args as RegistryArgs>::Val, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream;
+    fn stream(a: &Self::Args, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream;
 }
 
 pub trait ClumperInbox: Send + Sync {
@@ -45,7 +48,7 @@ impl Clone for BoxedClumper {
 }
 
 struct ClumperInboxImpl<B: ClumperBe> {
-    a: Arc<<B::Args as RegistryArgs>::Val>,
+    a: Arc<B::Args>,
 }
 
 impl<B: ClumperBe + 'static> ClumperInbox for ClumperInboxImpl<B> {
@@ -79,7 +82,7 @@ impl<B: ClumperBe + 'static> Registrant<BoxedClumper> for ClumperRegistrant<B> {
         return B::help_msg();
     }
 
-    fn init(a: <B::Args as RegistryArgs>::Val) -> BoxedClumper {
+    fn init(a: B::Args) -> BoxedClumper {
         return Box::new(ClumperInboxImpl::<B>{
             a: Arc::new(a),
         });

@@ -1,7 +1,6 @@
 use record::Record;
 use record::RecordTrait;
-use registry_args::OneStringArgs;
-use std::sync::Arc;
+use registry::args::OneKeyRegistryArgs;
 use super::AggregatorBe;
 use super::AggregatorRegistrant;
 
@@ -10,7 +9,7 @@ pub(crate) type Impl = AggregatorRegistrant<ImplBe>;
 pub(crate) struct ImplBe();
 
 impl AggregatorBe for ImplBe {
-    type Args = OneStringArgs;
+    type Args = OneKeyRegistryArgs;
     type State = Vec<Record>;
 
     fn names() -> Vec<&'static str> {
@@ -25,11 +24,11 @@ impl AggregatorBe for ImplBe {
         return "collect values into an array";
     }
 
-    fn add(state: &mut Vec<Record>, a: &Arc<str>, r: Record) {
-        state.push(r.get_path(a));
+    fn add(state: &mut Vec<Record>, a: &OneKeyRegistryArgs, r: Record) {
+        state.push(r.get_path(&a.key));
     }
 
-    fn finish(state: Vec<Record>, _a: &Arc<str>) -> Record {
+    fn finish(state: Vec<Record>, _a: &OneKeyRegistryArgs) -> Record {
         return Record::from_vec(state);
     }
 }

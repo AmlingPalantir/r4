@@ -1,8 +1,7 @@
 use misc::Either;
 use record::Record;
 use record::RecordTrait;
-use registry_args::OneStringArgs;
-use std::sync::Arc;
+use registry::args::OneKeyRegistryArgs;
 use super::AggregatorBe;
 use super::AggregatorRegistrant;
 
@@ -20,7 +19,7 @@ impl Default for State {
 }
 
 impl AggregatorBe for ImplBe {
-    type Args = OneStringArgs;
+    type Args = OneKeyRegistryArgs;
     type State = State;
 
     fn names() -> Vec<&'static str> {
@@ -35,8 +34,8 @@ impl AggregatorBe for ImplBe {
         return "compute sum of numeric values";
     }
 
-    fn add(state: &mut State, a: &Arc<str>, r: Record) {
-        let n1 = r.get_path(a).coerce_num();
+    fn add(state: &mut State, a: &OneKeyRegistryArgs, r: Record) {
+        let n1 = r.get_path(&a.key).coerce_num();
         let n2 = state.0.clone();
 
         if let Either::Left(i1) = n1 {
@@ -52,7 +51,7 @@ impl AggregatorBe for ImplBe {
         *state = State(Either::Right(f1 + f2));
     }
 
-    fn finish(state: State, _a: &Arc<str>) -> Record {
+    fn finish(state: State, _a: &OneKeyRegistryArgs) -> Record {
         return state.0.map_left(Record::from).map_right(Record::from).join();
     }
 }

@@ -1,5 +1,4 @@
 use record::Record;
-use registry_args::OneUsizeArgs;
 use std::collections::VecDeque;
 use std::sync::Arc;
 use stream::Entry;
@@ -7,12 +6,17 @@ use stream::Stream;
 use super::ClumperBe;
 use super::ClumperRegistrant;
 
+#[derive(RegistryArgs)]
+pub struct Args {
+    count: usize,
+}
+
 pub type Impl = ClumperRegistrant<ImplBe>;
 
 pub struct ImplBe();
 
 impl ClumperBe for ImplBe {
-    type Args = OneUsizeArgs;
+    type Args = Args;
 
     fn names() -> Vec<&'static str> {
         return vec!["window"];
@@ -26,8 +30,8 @@ impl ClumperBe for ImplBe {
         return "'bucket' records by making a bucket for each [overlapping] window of a specified size";
     }
 
-    fn stream(size: &usize, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream {
-        let size = *size;
+    fn stream(a: &Args, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream {
+        let size = a.count;
 
         return stream::closures(
             VecDeque::new(),

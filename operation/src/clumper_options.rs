@@ -4,6 +4,7 @@ use opts::parser::Optionsable;
 use opts::vals::UnvalidatedOption;
 use record::Record;
 use registry::Registrant;
+use registry::args::OneKeyRegistryArgs;
 use std::rc::Rc;
 use std::sync::Arc;
 use stream::Stream;
@@ -21,7 +22,7 @@ impl Optionsable for ClumperOptions {
         opt.add(clumper::REGISTRY.help_options("clumper"));
         opt.match_single(&["k", "key"], |p, a| {
             for a in a.split(',') {
-                (p.0).0.push(clumper::key::Impl::init(Arc::from(a)));
+                (p.0).0.push(clumper::key::Impl::init(OneKeyRegistryArgs::new(a)));
             }
             return Result::Ok(());
         }, "keys to bucket by");

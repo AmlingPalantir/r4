@@ -13,7 +13,7 @@ use self::bucket::SortBucket;
 
 use record::Record;
 use registry::Registrant;
-use registry_args::OneStringArgs;
+use registry::args::OneKeyRegistryArgs;
 use registry_args::RegistryArgs;
 use std::cmp::Reverse;
 use std::rc::Rc;
@@ -36,7 +36,7 @@ pub trait SortBe {
         return None;
     }
     fn help_msg() -> &'static str;
-    fn new_bucket(a: &<Self::Args as RegistryArgs>::Val, next: Rc<Fn() -> Box<SortBucket>>) -> Box<SortBucket>;
+    fn new_bucket(a: &Self::Args, next: Rc<Fn() -> Box<SortBucket>>) -> Box<SortBucket>;
 }
 
 pub trait SortInbox: Send + Sync {
@@ -51,7 +51,7 @@ impl Clone for BoxedSort {
 }
 
 struct SortInboxImpl<B: SortBe> {
-    a: Arc<<B::Args as RegistryArgs>::Val>,
+    a: Arc<B::Args>,
 }
 
 impl<B: SortBe + 'static> SortInbox for SortInboxImpl<B> {
@@ -85,7 +85,7 @@ impl<B: SortBe + 'static> Registrant<BoxedSort> for SortRegistrant<B> {
         return B::help_msg();
     }
 
-    fn init(a: <B::Args as RegistryArgs>::Val) -> BoxedSort {
+    fn init(a: B::Args) -> BoxedSort {
         return Box::new(SortInboxImpl::<B>{
             a: Arc::new(a),
         });
@@ -108,7 +108,7 @@ pub struct SortBeFromSimple<B: SortSimpleBe> {
 }
 
 impl<B: SortSimpleBe> SortBe for SortBeFromSimple<B> {
-    type Args = OneStringArgs;
+    type Args = OneKeyRegistryArgs;
 
     fn names() -> Vec<&'static str> {
         return B::names();
@@ -122,8 +122,8 @@ impl<B: SortSimpleBe> SortBe for SortBeFromSimple<B> {
         return B::help_msg();
     }
 
-    fn new_bucket(a: &Arc<str>, next: Rc<Fn() -> Box<SortBucket>>) -> Box<SortBucket> {
-        let key = a.clone();
+    fn new_bucket(a: &OneKeyRegistryArgs, next: Rc<Fn() -> Box<SortBucket>>) -> Box<SortBucket> {
+        let key = a.key.clone();
         if key.starts_with('-') {
             return KeySortBucket::new(move |r, _i| Reverse(B::get(r.get_path(&key[1..]))), next);
         }

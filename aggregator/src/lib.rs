@@ -6,6 +6,8 @@ extern crate record;
 #[macro_use]
 extern crate registry;
 extern crate registry_args;
+#[macro_use]
+extern crate registry_args_derive;
 extern crate validates;
 
 use record::Record;
@@ -58,8 +60,8 @@ trait AggregatorBe {
         return None;
     }
     fn help_msg() -> &'static str;
-    fn add(state: &mut Self::State, a: &<Self::Args as RegistryArgs>::Val, r: Record);
-    fn finish(state: Self::State, a: &<Self::Args as RegistryArgs>::Val) -> Record;
+    fn add(state: &mut Self::State, a: &Self::Args, r: Record);
+    fn finish(state: Self::State, a: &Self::Args) -> Record;
 }
 
 pub trait AggregatorInbox: Send + Sync {
@@ -75,7 +77,7 @@ impl Clone for BoxedAggregator {
 }
 
 struct AggregatorInboxImpl<B: AggregatorBe> {
-    a: Arc<<B::Args as RegistryArgs>::Val>,
+    a: Arc<B::Args>,
     s: B::State,
 }
 
@@ -116,7 +118,7 @@ impl<B: AggregatorBe + 'static> Registrant<BoxedAggregator> for AggregatorRegist
         return B::help_msg();
     }
 
-    fn init(a: <B::Args as RegistryArgs>::Val) -> BoxedAggregator {
+    fn init(a: B::Args) -> BoxedAggregator {
         return Box::new(AggregatorInboxImpl::<B>{
             a: Arc::new(a),
             s: B::State::default(),

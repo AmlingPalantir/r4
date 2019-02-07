@@ -13,6 +13,7 @@ opts = { path = "../opts" }
 record = { path = "../record" }
 registry = { path = "../registry" }
 registry_args = { path = "../registry_args" }
+registry_args_derive = { path = "../registry_args_derive" }
 sorts = { path = "../sorts" }
 stream = { path = "../stream" }
 validates = { path = "../validates" }

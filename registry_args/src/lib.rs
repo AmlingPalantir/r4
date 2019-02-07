@@ -4,93 +4,65 @@ use std::str::FromStr;
 use std::sync::Arc;
 use validates::ValidationResult;
 
-pub trait RegistryArgs {
-    type Val: Send + Sync;
+pub trait RegistryArg: Send + Sized + Sync {
+    fn parse(arg: &str) -> ValidationResult<Self>;
+}
 
+impl RegistryArg for Arc<str> {
+    fn parse(arg: &str) -> ValidationResult<Arc<str>> {
+        return Result::Ok(Arc::from(arg));
+    }
+}
+
+pub trait RegistryArgs: Send + Sized + Sync {
+    fn help_meta_suffix() -> &'static str;
     fn argct() -> usize;
-    fn parse(args: &[&str]) -> ValidationResult<Self::Val>;
+    fn parse(args: &[&str]) -> ValidationResult<Self>;
 }
 
-pub enum ZeroArgs {
+pub trait MayRegistryArgFromStr {
 }
 
-impl RegistryArgs for ZeroArgs {
-    type Val = ();
-
-    fn argct() -> usize {
-        return 0;
-    }
-
-    fn parse(args: &[&str]) -> ValidationResult<()> {
-        assert_eq!(0, args.len());
-        return Result::Ok(());
+impl<T: FromStr + MayRegistryArgFromStr + Send + Sync> RegistryArg for T where T::Err: std::error::Error {
+    fn parse(arg: &str) -> ValidationResult<T> {
+        return Result::Ok(T::from_str(arg)?);
     }
 }
 
-pub enum OneStringArgs {
+impl MayRegistryArgFromStr for usize {
 }
 
-impl RegistryArgs for OneStringArgs {
-    type Val = Arc<str>;
-
-    fn argct() -> usize {
-        return 1;
-    }
-
-    fn parse(args: &[&str]) -> ValidationResult<Arc<str>> {
-        assert_eq!(1, args.len());
-        return Result::Ok(Arc::from(&*args[0]));
-    }
-}
-
-pub struct OneFromStrArgs<T: FromStr> {
-    _x: std::marker::PhantomData<T>,
-}
-
-impl<T: FromStr + Send + Sync> RegistryArgs for OneFromStrArgs<T> where T::Err: std::error::Error + 'static {
-    type Val = T;
-
-    fn argct() -> usize {
-        return 1;
-    }
-
-    fn parse(args: &[&str]) -> ValidationResult<T> {
-        assert_eq!(1, args.len());
-        return Result::Ok(T::from_str(args[0])?);
-    }
-}
-
-pub type OneIntArgs = OneFromStrArgs<i64>;
-pub type OneUsizeArgs = OneFromStrArgs<usize>;
-
-pub enum TwoStringArgs {
-}
-
-impl RegistryArgs for TwoStringArgs {
-    type Val = (Arc<str>, Arc<str>);
-
-    fn argct() -> usize {
-        return 2;
-    }
-
-    fn parse(args: &[&str]) -> ValidationResult<(Arc<str>, Arc<str>)> {
-        assert_eq!(2, args.len());
-        return Result::Ok((Arc::from(&*args[0]), Arc::from(&*args[1])));
-    }
-}
-
-pub enum ThreeStringArgs {
-}
-
-impl RegistryArgs for ThreeStringArgs {
-    type Val = (Arc<str>, Arc<str>, Arc<str>);
-
-    fn argct() -> usize {
-        return 3;
-    }
-
-    fn parse(args: &[&str]) -> ValidationResult<(Arc<str>, Arc<str>, Arc<str>)> {
-        assert_eq!(3, args.len());
-        return Result::Ok((Arc::from(&*args[0]), Arc::from(&*args[1]), Arc::from(&*args[2])));
-    }
-}
+//pub type OneIntArgs = OneFromStrArgs<i64>;
+//pub type OneUsizeArgs = OneFromStrArgs<usize>;
+//
+//pub enum TwoStringArgs {
+//}
+//
+//impl RegistryArgs for TwoStringArgs {
+//    type Val = (Arc<str>, Arc<str>);
+//
+//    fn argct() -> usize {
+//        return 2;
+//    }
+//
+//    fn parse(args: &[&str]) -> ValidationResult<(Arc<str>, Arc<str>)> {
+//        assert_eq!(2, args.len());
+//        return Result::Ok((Arc::from(&*args[0]), Arc::from(&*args[1])));
+//    }
+//}
+//
+//pub enum ThreeStringArgs {
+//}
+//
+//impl RegistryArgs for ThreeStringArgs {
+//    type Val = (Arc<str>, Arc<str>, Arc<str>);
+//
+//    fn argct() -> usize {
+//        return 3;
+//    }
+//
+//    fn parse(args: &[&str]) -> ValidationResult<(Arc<str>, Arc<str>, Arc<str>)> {
+//        assert_eq!(3, args.len());
+//        return Result::Ok((Arc::from(&*args[0]), Arc::from(&*args[1]), Arc::from(&*args[2])));
+//    }
+//}

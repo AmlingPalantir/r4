@@ -37,7 +37,7 @@ use opts::parser::Optionsable;
 use opts::vals::IntoArcOption;
 use opts::vals::StringVecOption;
 use registry::Registrant;
-use registry_args::ZeroArgs;
+use registry::args::ZeroRegistryArgs;
 use std::sync::Arc;
 use stream::Stream;
 use validates::Validates;
@@ -151,7 +151,7 @@ pub struct OperationRegistrant<B: OperationBe> {
 }
 
 impl<B: OperationBe + 'static> Registrant<BoxedOperation> for OperationRegistrant<B> where <B::Options as Validates>::Target: Send + Sync {
-    type Args = ZeroArgs;
+    type Args = ZeroRegistryArgs;
 
     fn names() -> Vec<&'static str> {
         return B::names();
@@ -165,7 +165,7 @@ impl<B: OperationBe + 'static> Registrant<BoxedOperation> for OperationRegistran
         return B::help_msg();
     }
 
-    fn init(_a: ()) -> BoxedOperation {
+    fn init(_a: ZeroRegistryArgs) -> BoxedOperation {
         return Box::new(OperationInboxImpl::<B>::default());
     }
 }

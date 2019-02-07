@@ -1,5 +1,5 @@
 use record::Record;
-use registry_args::OneStringArgs;
+use registry::args::OneKeyRegistryArgs;
 use std::collections::HashMap;
 use std::sync::Arc;
 use stream::Entry;
@@ -12,7 +12,7 @@ pub type Impl = ClumperRegistrant<ImplBe>;
 pub struct ImplBe();
 
 impl ClumperBe for ImplBe {
-    type Args = OneStringArgs;
+    type Args = OneKeyRegistryArgs;
 
     fn names() -> Vec<&'static str> {
         return vec!["key", "k"];
@@ -26,8 +26,8 @@ impl ClumperBe for ImplBe {
         return "bucket records by values of one key";
     }
 
-    fn stream(k: &Arc<str>, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream {
-        let k = k.clone();
+    fn stream(a: &OneKeyRegistryArgs, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream {
+        let k = a.key.clone();
 
         return stream::closures(
             HashMap::new(),

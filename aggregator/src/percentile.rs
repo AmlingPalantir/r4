@@ -1,7 +1,6 @@
 use record::F64SortDishonorProxy;
 use record::Record;
 use record::RecordTrait;
-use std::sync::Arc;
 use super::AggregatorBe;
 use super::AggregatorRegistrant;
 use super::lexical_percentile::PercentileArgs;
@@ -27,12 +26,12 @@ impl AggregatorBe for ImplBe {
         return "compute a percentile of values sorted numerically";
     }
 
-    fn add(state: &mut PercentileState<F64SortDishonorProxy>, a: &(f64, Arc<str>), r: Record) {
-        let v = r.get_path(&a.1);
+    fn add(state: &mut PercentileState<F64SortDishonorProxy>, a: &PercentileArgs, r: Record) {
+        let v = r.get_path(&a.key);
         state.add(F64SortDishonorProxy(v.coerce_f64()), v);
     }
 
-    fn finish(state: PercentileState<F64SortDishonorProxy>, a: &(f64, Arc<str>)) -> Record {
-        return state.finish(a.0);
+    fn finish(state: PercentileState<F64SortDishonorProxy>, a: &PercentileArgs) -> Record {
+        return state.finish(a.percentile);
     }
 }

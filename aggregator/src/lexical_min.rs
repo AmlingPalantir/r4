@@ -1,6 +1,6 @@
 use record::Record;
 use record::RecordTrait;
-use registry_args::OneStringArgs;
+use registry::args::OneKeyRegistryArgs;
 use std::cmp::Ord;
 use std::cmp::Ordering;
 use std::sync::Arc;
@@ -30,7 +30,7 @@ pub(crate) type Impl = AggregatorRegistrant<ImplBe>;
 pub(crate) struct ImplBe;
 
 impl AggregatorBe for ImplBe {
-    type Args = OneStringArgs;
+    type Args = OneKeyRegistryArgs;
     type State = MaxState<ReverseOrd<Arc<str>>>;
 
     fn names() -> Vec<&'static str> {
@@ -45,12 +45,12 @@ impl AggregatorBe for ImplBe {
         return "track the lexically minimal value";
     }
 
-    fn add(state: &mut MaxState<ReverseOrd<Arc<str>>>, a: &Arc<str>, r: Record) {
-        let v = r.get_path(a);
+    fn add(state: &mut MaxState<ReverseOrd<Arc<str>>>, a: &OneKeyRegistryArgs, r: Record) {
+        let v = r.get_path(&a.key);
         state.add(ReverseOrd(v.expect_string()), v);
     }
 
-    fn finish(state: MaxState<ReverseOrd<Arc<str>>>, _a: &Arc<str>) -> Record {
+    fn finish(state: MaxState<ReverseOrd<Arc<str>>>, _a: &OneKeyRegistryArgs) -> Record {
         return state.finish();
     }
 }

@@ -1,9 +1,8 @@
 use record::Record;
 use record::RecordTrait;
-use registry_args::OneStringArgs;
+use registry::args::OneKeyRegistryArgs;
 use std::collections::HashMap;
 use std::hash::Hash;
-use std::sync::Arc;
 use super::AggregatorBe;
 use super::AggregatorRegistrant;
 
@@ -44,7 +43,7 @@ pub(crate) type Impl = AggregatorRegistrant<ImplBe>;
 pub(crate) struct ImplBe;
 
 impl AggregatorBe for ImplBe {
-    type Args = OneStringArgs;
+    type Args = OneKeyRegistryArgs;
     type State = DistinctSet<Record>;
 
     fn names() -> Vec<&'static str> {
@@ -59,11 +58,11 @@ impl AggregatorBe for ImplBe {
         return "collect distinct values into an array";
     }
 
-    fn add(state: &mut DistinctSet<Record>, a: &Arc<str>, r: Record) {
-        state.add(r.get_path(&a));
+    fn add(state: &mut DistinctSet<Record>, a: &OneKeyRegistryArgs, r: Record) {
+        state.add(r.get_path(&a.key));
     }
 
-    fn finish(state: DistinctSet<Record>, _a: &Arc<str>) -> Record {
+    fn finish(state: DistinctSet<Record>, _a: &OneKeyRegistryArgs) -> Record {
         return Record::from_vec(state.into_iter().collect());
     }
 }

@@ -1,16 +1,22 @@
 use record::Record;
 use record::RecordTrait;
-use registry_args::ThreeStringArgs;
 use std::sync::Arc;
 use super::DeaggregatorBe;
 use super::DeaggregatorRegistrant;
+
+#[derive(RegistryArgs)]
+pub(crate) struct Args {
+    in_key: Arc<str>,
+    delimiter: Arc<str>,
+    out_key: Arc<str>,
+}
 
 pub(crate) type Impl = DeaggregatorRegistrant<ImplBe>;
 
 pub(crate) struct ImplBe();
 
 impl DeaggregatorBe for ImplBe {
-    type Args = ThreeStringArgs;
+    type Args = Args;
 
     fn names() -> Vec<&'static str> {
         return vec!["split"];
@@ -24,8 +30,8 @@ impl DeaggregatorBe for ImplBe {
         return "split one value and output one record per split piece";
     }
 
-    fn deaggregate(a: &(Arc<str>, Arc<str>, Arc<str>), r: Record) -> Vec<Vec<(Arc<str>, Record)>> {
-        let v = r.get_path(&a.0).expect_string();
-        return v.split(&*a.1).map(|v| vec![(a.2.clone(), Record::from(v))]).collect();
+    fn deaggregate(a: &Args, r: Record) -> Vec<Vec<(Arc<str>, Record)>> {
+        let v = r.get_path(&a.in_key).expect_string();
+        return v.split(&*a.delimiter).map(|v| vec![(a.out_key.clone(), Record::from(v))]).collect();
     }
 }

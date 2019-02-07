@@ -4,6 +4,9 @@ extern crate record;
 #[macro_use]
 extern crate registry;
 extern crate registry_args;
+#[macro_use]
+extern crate registry_args_derive;
+extern crate validates;
 
 use record::Record;
 use registry::Registrant;
@@ -27,7 +30,7 @@ trait DeaggregatorBe {
         return None;
     }
     fn help_msg() -> &'static str;
-    fn deaggregate(a: &<Self::Args as RegistryArgs>::Val, r: Record) -> Vec<Vec<(Arc<str>, Record)>>;
+    fn deaggregate(a: &Self::Args, r: Record) -> Vec<Vec<(Arc<str>, Record)>>;
 }
 
 pub trait DeaggregatorInbox: Send + Sync {
@@ -42,7 +45,7 @@ impl Clone for BoxedDeaggregator {
 }
 
 struct DeaggregatorInboxImpl<B: DeaggregatorBe> {
-    a: Arc<<B::Args as RegistryArgs>::Val>,
+    a: Arc<B::Args>,
 }
 
 impl<B: DeaggregatorBe + 'static> DeaggregatorInbox for DeaggregatorInboxImpl<B> {
@@ -76,7 +79,7 @@ impl<B: DeaggregatorBe + 'static> Registrant<BoxedDeaggregator> for Deaggregator
         return B::help_msg();
     }
 
-    fn init(a: <B::Args as RegistryArgs>::Val) -> BoxedDeaggregator {
+    fn init(a: B::Args) -> BoxedDeaggregator {
         return Box::new(DeaggregatorInboxImpl::<B>{
             a: Arc::new(a),
         });
