@@ -6,7 +6,7 @@ pub enum ValidationError {
     Help(Vec<String>),
 }
 
-impl<E: Error + 'static> From<E> for ValidationError {
+impl<E: Error> From<E> for ValidationError {
     fn from(e: E) -> ValidationError {
         return ValidationError::Message(format!("{:?}", e));
     }
