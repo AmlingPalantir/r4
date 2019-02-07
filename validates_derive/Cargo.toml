@@ -9,4 +9,7 @@ proc-macro = true
 [dependencies]
 "proc-macro2" = "0.4.21"
 "quote" = "0.6"
-"syn" = "0.15.23"
+
+[dependencies.syn]
+version = "0.15.23"
+features = ["extra-traits"]
