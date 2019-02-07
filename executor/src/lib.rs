@@ -6,12 +6,13 @@ extern crate misc;
 extern crate record;
 #[macro_use]
 extern crate registry;
+extern crate registry_args;
 extern crate rlua;
 extern crate validates;
 
 use record::Record;
 use registry::Registrant;
-use registry::args::ZeroArgs;
+use registry_args::ZeroArgs;
 use validates::ValidationResult;
 
 pub type BoxedExecutor = Box<ExecutorInbox>;

@@ -1,6 +1,6 @@
 use record::Record;
 use record::RecordTrait;
-use registry::args::ZeroArgs;
+use registry_args::ZeroArgs;
 use super::AggregatorBe;
 use super::AggregatorRegistrant;
 

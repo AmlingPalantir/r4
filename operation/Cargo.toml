@@ -12,6 +12,7 @@ executor = { path = "../executor" }
 opts = { path = "../opts" }
 record = { path = "../record" }
 registry = { path = "../registry" }
+registry_args = { path = "../registry_args" }
 sorts = { path = "../sorts" }
 stream = { path = "../stream" }
 validates = { path = "../validates" }

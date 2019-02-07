@@ -5,6 +5,7 @@ extern crate rand;
 extern crate rand_chacha;
 #[macro_use]
 extern crate registry;
+extern crate registry_args;
 
 pub mod bucket;
 use self::bucket::KeySortBucket;
@@ -12,8 +13,8 @@ use self::bucket::SortBucket;
 
 use record::Record;
 use registry::Registrant;
-use registry::args::OneStringArgs;
-use registry::args::RegistryArgs;
+use registry_args::OneStringArgs;
+use registry_args::RegistryArgs;
 use std::cmp::Reverse;
 use std::rc::Rc;
 use std::sync::Arc;

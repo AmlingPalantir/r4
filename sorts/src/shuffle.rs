@@ -1,5 +1,5 @@
 use rand::Rng;
-use registry::args::ZeroArgs;
+use registry_args::ZeroArgs;
 use std::cmp::Ordering;
 use std::rc::Rc;
 use std::sync::Mutex;

@@ -1,7 +1,7 @@
 use rand::Rng;
 use record::Record;
 use record::RecordTrait;
-use registry::args::RegistryArgs;
+use registry_args::RegistryArgs;
 use std::cmp::Ord;
 use std::sync::Arc;
 use super::AggregatorBe;

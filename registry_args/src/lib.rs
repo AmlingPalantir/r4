@@ -1,3 +1,5 @@
+extern crate validates;
+
 use std::str::FromStr;
 use std::sync::Arc;
 use validates::ValidationResult;

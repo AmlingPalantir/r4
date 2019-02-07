@@ -11,6 +11,7 @@ extern crate record;
 extern crate regex;
 #[macro_use]
 extern crate registry;
+extern crate registry_args;
 extern crate sorts;
 extern crate stream;
 extern crate validates;
@@ -36,7 +37,7 @@ use opts::parser::Optionsable;
 use opts::vals::IntoArcOption;
 use opts::vals::StringVecOption;
 use registry::Registrant;
-use registry::args::ZeroArgs;
+use registry_args::ZeroArgs;
 use std::sync::Arc;
 use stream::Stream;
 use validates::Validates;

@@ -6,4 +6,5 @@ authors = ["Keith Amling <me@amling2.org>"]
 [dependencies]
 record = { path = "../record" }
 registry = { path = "../registry" }
+registry_args = { path = "../registry_args" }
 lazy_static = "1.2.0"

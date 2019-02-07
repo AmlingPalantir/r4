@@ -1,6 +1,6 @@
 use record::Record;
 use record::RecordTrait;
-use registry::args::TwoStringArgs;
+use registry_args::TwoStringArgs;
 use std::sync::Arc;
 use super::AggregatorBe;
 use super::AggregatorRegistrant;

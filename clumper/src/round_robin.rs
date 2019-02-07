@@ -1,5 +1,5 @@
 use record::Record;
-use registry::args::OneUsizeArgs;
+use registry_args::OneUsizeArgs;
 use std::sync::Arc;
 use stream::Stream;
 use super::ClumperBe;

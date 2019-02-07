@@ -1,5 +1,5 @@
 use record::Record;
-use registry::args::ThreeStringArgs;
+use registry_args::ThreeStringArgs;
 use std::sync::Arc;
 use super::DeaggregatorBe;
 use super::DeaggregatorRegistrant;

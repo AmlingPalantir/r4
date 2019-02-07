@@ -1,11 +1,10 @@
 extern crate opts;
+extern crate registry_args;
 extern crate validates;
-
-pub mod args;
-use self::args::RegistryArgs;
 
 use opts::parser::OptionsPile;
 use opts::parser::ToOptionsHelp;
+use registry_args::RegistryArgs;
 use std::collections::HashMap;
 use std::sync::Arc;
 use validates::ValidationError;

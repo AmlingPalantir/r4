@@ -5,11 +5,12 @@ extern crate rand;
 extern crate record;
 #[macro_use]
 extern crate registry;
+extern crate registry_args;
 extern crate validates;
 
 use record::Record;
 use registry::Registrant;
-use registry::args::RegistryArgs;
+use registry_args::RegistryArgs;
 use std::sync::Arc;
 
 pub type BoxedAggregator = Box<AggregatorInbox>;

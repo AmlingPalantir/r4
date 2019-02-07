@@ -1,6 +1,6 @@
 use record::Record;
 use record::RecordTrait;
-use registry::args::TwoStringArgs;
+use registry_args::TwoStringArgs;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use super::AggregatorBe;

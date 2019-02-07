@@ -1,9 +1,7 @@
 [package]
-name = "registry"
+name = "registry_args"
 version = "1.0.0"
 authors = ["Keith Amling <me@amling2.org>"]
 
 [dependencies]
-opts = { path = "../opts" }
-registry_args = { path = "../registry_args" }
 validates = { path = "../validates" }

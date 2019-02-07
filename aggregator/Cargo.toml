@@ -7,6 +7,7 @@ authors = ["Keith Amling <me@amling2.org>"]
 misc = { path = "../misc" }
 record = { path = "../record" }
 registry = { path = "../registry" }
+registry_args = { path = "../registry_args" }
 validates = { path = "../validates" }
 lazy_static = "1.2.0"
 rand = "0.6.1"

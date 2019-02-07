@@ -10,6 +10,7 @@ lalrpop = "0.16.2"
 misc = { path = "../misc" }
 record = { path = "../record" }
 registry = { path = "../registry" }
+registry_args = { path = "../registry_args" }
 validates = { path = "../validates" }
 lalrpop-util = "0.16.2"
 lazy_static = "1.2.0"

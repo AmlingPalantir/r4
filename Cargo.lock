@@ -7,6 +7,7 @@ dependencies = [
  "rand 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "record 1.0.0",
  "registry 1.0.0",
+ "registry_args 1.0.0",
  "validates 1.0.0",
 ]
 
@@ -143,6 +144,7 @@ dependencies = [
  "lazy_static 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "record 1.0.0",
  "registry 1.0.0",
+ "registry_args 1.0.0",
  "stream 1.0.0",
 ]
 
@@ -153,6 +155,7 @@ dependencies = [
  "lazy_static 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "record 1.0.0",
  "registry 1.0.0",
+ "registry_args 1.0.0",
 ]
 
 [[package]]
@@ -204,6 +207,7 @@ dependencies = [
  "record 1.0.0",
  "regex 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "registry 1.0.0",
+ "registry_args 1.0.0",
  "rlua 0.15.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "validates 1.0.0",
 ]
@@ -375,6 +379,7 @@ dependencies = [
  "record 1.0.0",
  "regex 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "registry 1.0.0",
+ "registry_args 1.0.0",
  "serde_json 1.0.33 (registry+https://github.com/rust-lang/crates.io-index)",
  "sorts 1.0.0",
  "stream 1.0.0",
@@ -581,6 +586,14 @@ name = "registry"
 version = "1.0.0"
 dependencies = [
  "opts 1.0.0",
+ "registry_args 1.0.0",
+ "validates 1.0.0",
+]
+
+[[package]]
+name = "registry_args"
+version = "1.0.0"
+dependencies = [
  "validates 1.0.0",
 ]
 
@@ -676,6 +689,7 @@ dependencies = [
  "rand_chacha 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "record 1.0.0",
  "registry 1.0.0",
+ "registry_args 1.0.0",
 ]
 
 [[package]]
