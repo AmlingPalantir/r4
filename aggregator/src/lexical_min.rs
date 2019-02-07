@@ -37,10 +37,6 @@ impl AggregatorBe for ImplBe {
         return vec!["lmin"];
     }
 
-    fn help_meta() -> Option<&'static str> {
-        return Some("key");
-    }
-
     fn help_msg() -> &'static str {
         return "track the lexically minimal value";
     }

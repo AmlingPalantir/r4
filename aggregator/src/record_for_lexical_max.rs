@@ -18,10 +18,6 @@ impl AggregatorBe for ImplBe {
         return vec!["recforlmax"];
     }
 
-    fn help_meta() -> Option<&'static str> {
-        return Some("key");
-    }
-
     fn help_msg() -> &'static str {
         return "track the record for the lexically maximal value";
     }

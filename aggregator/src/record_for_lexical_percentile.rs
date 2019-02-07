@@ -18,10 +18,6 @@ impl AggregatorBe for ImplBe {
         return vec!["recforlperc"];
     }
 
-    fn help_meta() -> Option<&'static str> {
-        return Some("percentile,key");
-    }
-
     fn help_msg() -> &'static str {
         return "find the record for a percentile when records are sorted lexically by a value";
     }

@@ -34,10 +34,6 @@ impl AggregatorBe for ImplBe {
         return vec!["linreg"];
     }
 
-    fn help_meta() -> Option<&'static str> {
-        return Some("x_key,y_key");
-    }
-
     fn help_msg() -> &'static str {
         return "compute a linear regression from pairs of values";
     }

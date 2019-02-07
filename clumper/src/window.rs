@@ -22,10 +22,6 @@ impl ClumperBe for ImplBe {
         return vec!["window"];
     }
 
-    fn help_meta() -> Option<&'static str> {
-        return Some("count");
-    }
-
     fn help_msg() -> &'static str {
         return "'bucket' records by making a bucket for each [overlapping] window of a specified size";
     }

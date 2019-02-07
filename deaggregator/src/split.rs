@@ -22,10 +22,6 @@ impl DeaggregatorBe for ImplBe {
         return vec!["split"];
     }
 
-    fn help_meta() -> Option<&'static str> {
-        return Some("in_key,delimiter,out_key");
-    }
-
     fn help_msg() -> &'static str {
         return "split one value and output one record per split piece";
     }

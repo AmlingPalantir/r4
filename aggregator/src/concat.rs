@@ -22,10 +22,6 @@ impl AggregatorBe for ImplBe {
         return vec!["concatenate", "concat"];
     }
 
-    fn help_meta() -> Option<&'static str> {
-        return Some("delim,key");
-    }
-
     fn help_msg() -> &'static str {
         return "collect values into a string joined by a delimter";
     }

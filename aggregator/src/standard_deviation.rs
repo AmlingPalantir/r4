@@ -16,10 +16,6 @@ impl AggregatorBe for ImplBe {
         return vec!["stddev", "sd"];
     }
 
-    fn help_meta() -> Option<&'static str> {
-        return Some("key");
-    }
-
     fn help_msg() -> &'static str {
         return "compute standard deviation of numeric values";
     }

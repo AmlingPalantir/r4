@@ -67,10 +67,6 @@ impl AggregatorBe for ImplBe {
         return vec!["lperc"];
     }
 
-    fn help_meta() -> Option<&'static str> {
-        return Some("percent,key");
-    }
-
     fn help_msg() -> &'static str {
         return "compute a percentile of values sorted lexically";
     }

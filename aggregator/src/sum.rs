@@ -26,10 +26,6 @@ impl AggregatorBe for ImplBe {
         return vec!["sum"];
     }
 
-    fn help_meta() -> Option<&'static str> {
-        return Some("key");
-    }
-
     fn help_msg() -> &'static str {
         return "compute sum of numeric values";
     }

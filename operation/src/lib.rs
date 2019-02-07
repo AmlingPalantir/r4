@@ -157,10 +157,6 @@ impl<B: OperationBe + 'static> Registrant<BoxedOperation> for OperationRegistran
         return B::names();
     }
 
-    fn help_meta() -> Option<&'static str> {
-        return None;
-    }
-
     fn help_msg() -> &'static str {
         return B::help_msg();
     }

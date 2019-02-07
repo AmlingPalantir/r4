@@ -24,10 +24,6 @@ impl AggregatorBe for ImplBe {
         return vec!["sample"];
     }
 
-    fn help_meta() -> Option<&'static str> {
-        return Some("count,key");
-    }
-
     fn help_msg() -> &'static str {
         return "sample a specified number of values";
     }

@@ -43,9 +43,6 @@ pub trait ExecutorBe {
     type Code: Clone + Send + Sync;
 
     fn names() -> Vec<&'static str>;
-    fn help_meta() -> Option<&'static str> {
-        return None;
-    }
     fn help_msg() -> &'static str;
     fn parse(code: &str) -> ValidationResult<Self::Code>;
     fn stream(code: &Self::Code, ret: bool) -> Box<FnMut(Record) -> Record>;
@@ -68,10 +65,6 @@ impl<B: ExecutorBe + 'static> Registrant<BoxedExecutor> for ExecutorRegistrant<B
 
     fn names() -> Vec<&'static str> {
         return <B as ExecutorBe>::names();
-    }
-
-    fn help_meta() -> Option<&'static str> {
-        return B::help_meta();
     }
 
     fn help_msg() -> &'static str {

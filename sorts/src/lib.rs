@@ -32,9 +32,6 @@ pub trait SortBe {
     type Args: RegistryArgs;
 
     fn names() -> Vec<&'static str>;
-    fn help_meta() -> Option<&'static str> {
-        return None;
-    }
     fn help_msg() -> &'static str;
     fn new_bucket(a: &Self::Args, next: Rc<Fn() -> Box<SortBucket>>) -> Box<SortBucket>;
 }
@@ -77,10 +74,6 @@ impl<B: SortBe + 'static> Registrant<BoxedSort> for SortRegistrant<B> {
         return B::names();
     }
 
-    fn help_meta() -> Option<&'static str> {
-        return B::help_meta();
-    }
-
     fn help_msg() -> &'static str {
         return B::help_msg();
     }
@@ -96,9 +89,6 @@ pub trait SortSimpleBe {
     type T: Clone + Ord + 'static;
 
     fn names() -> Vec<&'static str>;
-    fn help_meta() -> Option<&'static str> {
-        return None;
-    }
     fn help_msg() -> &'static str;
     fn get(r: Record) -> Self::T;
 }
@@ -112,10 +102,6 @@ impl<B: SortSimpleBe> SortBe for SortBeFromSimple<B> {
 
     fn names() -> Vec<&'static str> {
         return B::names();
-    }
-
-    fn help_meta() -> Option<&'static str> {
-        return B::help_meta();
     }
 
     fn help_msg() -> &'static str {

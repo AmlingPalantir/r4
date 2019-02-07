@@ -26,9 +26,6 @@ trait DeaggregatorBe {
     type Args: RegistryArgs;
 
     fn names() -> Vec<&'static str>;
-    fn help_meta() -> Option<&'static str> {
-        return None;
-    }
     fn help_msg() -> &'static str;
     fn deaggregate(a: &Self::Args, r: Record) -> Vec<Vec<(Arc<str>, Record)>>;
 }
@@ -69,10 +66,6 @@ impl<B: DeaggregatorBe + 'static> Registrant<BoxedDeaggregator> for Deaggregator
 
     fn names() -> Vec<&'static str> {
         return B::names();
-    }
-
-    fn help_meta() -> Option<&'static str> {
-        return B::help_meta();
     }
 
     fn help_msg() -> &'static str {

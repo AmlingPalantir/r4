@@ -20,10 +20,6 @@ impl ClumperBe for ImplBe {
         return vec!["round-robin", "rr"];
     }
 
-    fn help_meta() -> Option<&'static str> {
-        return Some("count");
-    }
-
     fn help_msg() -> &'static str {
         return "bucket records rotating between a specified number of buckets";
     }

@@ -18,10 +18,6 @@ impl ClumperBe for ImplBe {
         return vec!["key", "k"];
     }
 
-    fn help_meta() -> Option<&'static str> {
-        return Some("key");
-    }
-
     fn help_msg() -> &'static str {
         return "bucket records by values of one key";
     }

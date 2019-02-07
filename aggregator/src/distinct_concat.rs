@@ -23,10 +23,6 @@ impl AggregatorBe for ImplBe {
         return vec!["dconcatenate", "dconcat"];
     }
 
-    fn help_meta() -> Option<&'static str> {
-        return Some("key");
-    }
-
     fn help_msg() -> &'static str {
         return "collect distinct values into a string joined by a delimter";
     }

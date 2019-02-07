@@ -17,7 +17,7 @@ use validates::ValidationResult;
 struct RegistrantData<R> {
     names: Vec<&'static str>,
     argct: usize,
-    help_meta: Option<&'static str>,
+    help_meta_suffix: &'static str,
     help_msg: &'static str,
     init: Box<Fn(&[&str]) -> ValidationResult<R> + Send + Sync>,
 }
@@ -41,7 +41,7 @@ impl<R: 'static> Registry<R> {
         let data = Arc::new(RegistrantData {
             names: I::names(),
             argct: I::Args::argct(),
-            help_meta: I::help_meta(),
+            help_meta_suffix: I::Args::help_meta_suffix(),
             help_msg: I::help_msg(),
             init: Box::new(|args| {
                 let a = I::Args::parse(args)?;
@@ -151,18 +151,7 @@ impl<R: 'static> Registry<R> {
         opt.match_single(&[&format!("show-{}", type_name)], move |_p, a| {
             let data = self.find_data(a)?;
             let mut lines = Vec::new();
-            let mut line0 = data.names[0].to_string();
-            match data.help_meta {
-                None => {
-                    for _ in 0..data.argct {
-                        line0.push_str(",arg");
-                    }
-                }
-                Some(meta) => {
-                    line0.push_str(&format!(",{}", meta));
-                }
-            }
-            lines.push(line0);
+            lines.push(format!("{}{}", data.names[0].to_string(), data.help_meta_suffix));
             if data.names.len() > 1 {
                 lines.push(format!("   aliases: {}", data.names[1..].join(", ")));
             }
@@ -196,9 +185,6 @@ pub trait Registrant<R> {
     type Args: RegistryArgs;
 
     fn names() -> Vec<&'static str>;
-    fn help_meta() -> Option<&'static str> {
-        return None;
-    }
     fn help_msg() -> &'static str;
 
     fn init(a: Self::Args) -> R;

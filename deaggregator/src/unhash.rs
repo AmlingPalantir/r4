@@ -21,10 +21,6 @@ impl DeaggregatorBe for ImplBe {
         return vec!["unhash"];
     }
 
-    fn help_meta() -> Option<&'static str> {
-        return Some("in_key,key_key,value_key");
-    }
-
     fn help_msg() -> &'static str {
         return "output one record per hash element of a value";
     }

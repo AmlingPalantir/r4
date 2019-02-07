@@ -29,9 +29,6 @@ pub trait ClumperBe {
     type Args: RegistryArgs;
 
     fn names() -> Vec<&'static str>;
-    fn help_meta() -> Option<&'static str> {
-        return None;
-    }
     fn help_msg() -> &'static str;
     fn stream(a: &Self::Args, bsw: Box<Fn(Vec<(Arc<str>, Record)>) -> Stream>) -> Stream;
 }
@@ -72,10 +69,6 @@ impl<B: ClumperBe + 'static> Registrant<BoxedClumper> for ClumperRegistrant<B> {
 
     fn names() -> Vec<&'static str> {
         return B::names();
-    }
-
-    fn help_meta() -> Option<&'static str> {
-        return B::help_meta();
     }
 
     fn help_msg() -> &'static str {

@@ -18,10 +18,6 @@ impl AggregatorBe for ImplBe {
         return vec!["countby", "ctby", "cb"];
     }
 
-    fn help_meta() -> Option<&'static str> {
-        return Some("key");
-    }
-
     fn help_msg() -> &'static str {
         return "collect counts of values into a hash";
     }

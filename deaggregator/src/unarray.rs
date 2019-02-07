@@ -20,10 +20,6 @@ impl DeaggregatorBe for ImplBe {
         return vec!["unarray", "unarr"];
     }
 
-    fn help_meta() -> Option<&'static str> {
-        return Some("in_key,out_key");
-    }
-
     fn help_msg() -> &'static str {
         return "output one record per array element of a value";
     }

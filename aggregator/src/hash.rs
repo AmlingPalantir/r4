@@ -23,10 +23,6 @@ impl AggregatorBe for ImplBe {
         return vec!["hash"];
     }
 
-    fn help_meta() -> Option<&'static str> {
-        return Some("key_key,value_key");
-    }
-
     fn help_msg() -> &'static str {
         return "collect pairs (key and value) of values into a hash";
     }

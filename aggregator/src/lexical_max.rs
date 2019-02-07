@@ -42,10 +42,6 @@ impl AggregatorBe for ImplBe {
         return vec!["lmax"];
     }
 
-    fn help_meta() -> Option<&'static str> {
-        return Some("key");
-    }
-
     fn help_msg() -> &'static str {
         return "track the lexically maximal value";
     }
